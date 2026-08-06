@@ -1,0 +1,148 @@
+\documentclass[a4paper,11pt]{book}
+\usepackage{ifxetex}
+\ifxetex
+  \usepackage{fontspec}
+  \setmainfont{Times New Roman}
+\else
+  \usepackage[utf8]{inputenc}
+  \usepackage[utf8]{vietnam}
+  \usepackage{times}
+\fi
+
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[english]{babel}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Capstone Project Document - AR-IMMS},
+    pdfpagemode=FullScreen,
+}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\begin{document}
+
+\frontmatter
+
+% Cover / Title Page matching the exact template layout
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge \textbf{Capstone Project Document}} \\[0.8cm]
+    {\color{lightgray}\rule{\linewidth}{0.5pt}} \\[2cm]
+    
+    \begin{table}[H]
+        \centering
+        \renewcommand{\arraystretch}{1.5}
+        \begin{tabular}{|p{4.5cm}|p{9.5cm}|}
+            \hline
+            \multicolumn{2}{|c|}{\parbox[c][2.8cm][c]{14cm}{\centering \Large \textbf{AR-Integrated Infrastructure Monitoring and Maintenance System (AR-IMMS)}}} \\ \hline
+            \textbf{Group Members} & 
+            \begin{tabular}[t]{@{}p{6.0cm} l@{}}
+                Nguyễn Thành Tài (Leader) & 079205002360 \\
+                Hồ An Lộc & 082207006118 \\
+                Dương Thanh Lâm & 080207007832 \\
+                Nguyễn Lê Như Quỳnh & 066305002611 \\
+                Phạm Phú Anh Duy & 051207022078 \\
+            \end{tabular} \\ \hline
+            \textbf{Supervisor} & Nguyễn Văn Chiến \\ \hline
+        \end{tabular}
+    \end{table}
+
+    \vfill
+
+    {\large - Ho Chi Minh, May 2025 -}
+\end{titlepage}
+
+% Table of Contents
+\tableofcontents
+\listoffigures
+\listoftables
+
+% Acknowledgements
+\chapter*{Acknowledgement}
+\addcontentsline{toc}{chapter}{Acknowledgement}
+We would like to express our deepest gratitude and respect to our project supervisor and the faculty members of the Software Engineering Department for their valuable guidance, insightful feedback, and constant support throughout the duration of this Capstone Project.
+
+\mbox{}\\
+\noindent Best regards,\\
+\noindent \textbf{Project Team}
+
+% Acronyms
+\chapter*{Definition and Acronyms}
+\addcontentsline{toc}{chapter}{Definition and Acronyms}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|p{11cm}|}
+        \hline
+        \textbf{Acronym} & \textbf{Definition} \\ \hline
+        AR & Augmented Reality \\ \hline
+        AR-IMMS & AR-Integrated Infrastructure Monitoring and Maintenance System \\ \hline
+        API & Application Programming Interface \\ \hline
+        BR & Business Rule \\ \hline
+        ERD & Entity Relationship Diagram \\ \hline
+        GUI & Graphical User Interface \\ \hline
+        JWT & JSON Web Token \\ \hline
+        mTLS & Mutual Transport Layer Security \\ \hline
+        MTTR & Mean Time To Resolution \\ \hline
+        MTBF & Mean Time Between Failures \\ \hline
+        PUE & Power Usage Effectiveness \\ \hline
+        QR & Quick Response (Code) \\ \hline
+        RBAC & Role-Based Access Control \\ \hline
+        SDD & Software Design Description \\ \hline
+        SPMP & Software Project Management Plan \\ \hline
+        SRS & Software Requirement Specification \\ \hline
+        UC & Use Case \\ \hline
+        WBS & Work Breakdown Structure \\ \hline
+    \end{tabular}
+\end{table}
+
+\mainmatter
+
+% Include Chapters
+\include{chapters/ch1_introduction}
+\include{chapters/ch2_spmp}
+\include{chapters/ch3_srs}
+\include{chapters/ch4_sdd}
+\include{chapters/ch5_testing}
+\include{chapters/ch6_release}
+
+\end{document}

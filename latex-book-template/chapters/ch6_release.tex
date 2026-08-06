@@ -1,0 +1,83 @@
+\chapter{Release Package \& User Guides}
+
+\section{Deliverable Package}
+The **AR-IMMS** release package consists of the following components:
+
+\begin{table}[H]
+    \centering
+    \caption{Release Package Deliverable Items}
+    \begin{tabular}{|c|l|p{9cm}|}
+        \hline
+        \textbf{No.} & \textbf{Deliverable Item} & \textbf{Description} \\ \hline
+        1 & \textbf{Cloud Backend API} & NestJS RESTful API, Socket.IO Event Engine, and TypeORM database migrations. \\ \hline
+        2 & \textbf{Web Command Center} & Next.js 14 Web Portal source code for operators and administrators. \\ \hline
+        3 & \textbf{Mobile AR App} & React Native mobile AR project for Android field technicians. \\ \hline
+        4 & \textbf{Collector Agent} & Lightweight cross-platform node monitoring daemon binary / script. \\ \hline
+        5 & \textbf{Docker Scripts} & \texttt{docker-compose.yml} scripts for containerized testbed deployment. \\ \hline
+        6 & \textbf{Documentation} & Final Capstone Report (LaTeX source \& compiled PDF), User Guides, and API specs. \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{Installation Guides}
+
+\subsection{Backend Services Setup}
+\begin{lstlisting}[language=bash, caption=NestJS Backend Installation Commands]
+# Clone repository
+git clone https://github.com/AR-IMMS/ar-imms-backend.git
+cd ar-imms-backend
+
+# Install dependencies
+npm install
+
+# Configure environment variables (.env)
+PORT=4000
+DATABASE_URL=postgresql://postgres:password@localhost:5432/ar_imms_db
+JWT_SECRET=super_secret_jwt_key
+
+# Run database migrations & start dev server
+npm run typeorm:migration:run
+npm run start:dev
+\end{lstlisting}
+
+\subsection{Web Admin Command Center Setup}
+\begin{lstlisting}[language=bash, caption=Next.js Web Admin Portal Installation Commands]
+# Clone repository
+git clone https://github.com/AR-IMMS/ar-imms-web.git
+cd ar-imms-web
+
+# Install dependencies
+npm install
+
+# Start Next.js development server
+npm run dev
+\end{lstlisting}
+
+\subsection{Mobile AR Application Build}
+\begin{lstlisting}[language=bash, caption=React Native AR Application Build Commands]
+# Clone repository
+git clone https://github.com/AR-IMMS/ar-imms-mobile.git
+cd ar-imms-mobile
+
+# Install dependencies
+npm install
+
+# Connect Android test device over ADB and launch
+npx react-native run-android
+\end{lstlisting}
+
+\section{User Manual}
+
+\subsection{Operator Command Center Manual}
+\begin{enumerate}
+    \item \textbf{Login:} Open the Web Command Center in a web browser, select campus credentials, and authenticate using Google OAuth / system credentials.
+    \item \textbf{Digital Twin Navigation:} Navigate to the Infrastructure Overview tab. Click through Site $\rightarrow$ Room $\rightarrow$ Rack $\rightarrow$ Server Node to inspect real-time CPU/RAM streaming gauges and running container workloads.
+    \item \textbf{Alert \& Ticket Dispatch:} When an alert triggers, click **Create Maintenance Ticket**, select target node, assign a Field Technician, and dispatch.
+\end{enumerate}
+
+\subsection{Field Technician AR Application Manual}
+\begin{enumerate}
+    \item \textbf{Login \& Assigned Tickets:} Open the Android AR app, log in, and view assigned maintenance tickets.
+    \item \textbf{AR Marker Scanning:} Point the mobile camera feed at the physical ArUco/QR spatial marker attached to the server rack node.
+    \item \textbf{Contextual HUD Overlay:} Observe live live metrics, container runtime indicators, and diagnostic logs overlaid directly onto the target server chassis.
+    \item \textbf{Remediation \& Ticket Closure:} Tap the AR HUD to record inspection notes, mark remediation actions completed, and submit ticket closure request for operator verification.
+\end{enumerate}

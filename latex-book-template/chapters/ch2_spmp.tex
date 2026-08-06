@@ -1,0 +1,130 @@
+\chapter{Software Project Management Plan}
+
+\section{Overview}
+
+\subsection{Scope \& Estimation}
+The development of **AR-IMMS** is executed across six core work packages spanning initiating, planning, requirements analysis, design, implementation, testing, and deployment.
+
+\begin{table}[H]
+    \centering
+    \caption{Work Breakdown Structure (WBS) \& Effort Estimation}
+    \begin{tabular}{|c|l|c|c|}
+        \hline
+        \textbf{\#} & \textbf{WBS Item} & \textbf{Complexity} & \textbf{Est. Effort (Man-days)} \\ \hline
+        \textbf{1} & \textbf{Initiating} & & \textbf{20} \\ \hline
+        1.1 & Define Project Scope \& Stakeholder Requirements & Medium & 12 \\ \hline
+        1.2 & Technical Feasibility \& Testbed Architecture & Medium & 8 \\ \hline
+        \textbf{2} & \textbf{Planning} & & \textbf{14} \\ \hline
+        2.1 & Sprint Planning \& Task Allocation & Medium & 7 \\ \hline
+        2.2 & Architecture \& Interface Specifications & Medium & 7 \\ \hline
+        \textbf{3} & \textbf{Executing} & & \\ \hline
+        \textbf{3.1} & \textbf{Analysis} & & \textbf{18} \\ \hline
+        3.1.1 & Detailed Requirements \& Role Analysis & Medium & 8 \\ \hline
+        3.1.2 & Digital Twin \& Spatial Mapping Modeling & Complex & 10 \\ \hline
+        \textbf{3.2} & \textbf{Design} & & \textbf{12} \\ \hline
+        3.2.1 & Conceptual ERD \& Database Design & Medium & 4 \\ \hline
+        3.2.2 & System Architecture \& WebSocket Streaming Design & Medium & 4 \\ \hline
+        3.2.3 & AR Mobile Application HUD \& Camera UI Design & Medium & 4 \\ \hline
+        \textbf{3.3} & \textbf{Implementation} & & \textbf{120} \\ \hline
+        3.3.1 & NestJS Backend REST API \& Auth Subsystem & Medium & 15 \\ \hline
+        3.3.2 & Socket.IO Real-Time Telemetry Gateway & Complex & 20 \\ \hline
+        3.3.3 & Lightweight Collector Agent (Hardware \& Docker) & Medium & 15 \\ \hline
+        3.3.4 & Next.js Web Admin Command Center & Complex & 30 \\ \hline
+        3.3.5 & React Native AR App (ArUco/QR Scanning \& Overlay) & Complex & 25 \\ \hline
+        3.3.6 & Incident Ticketing \& Asset Audit Module & Medium & 15 \\ \hline
+        \textbf{3.4} & \textbf{Testing \& Integration} & & \textbf{24} \\ \hline
+        3.4.1 & Unit \& Integration Testing & Complex & 8 \\ \hline
+        3.4.2 & WebSocket Load \& High-Throughput Stress Test & Complex & 8 \\ \hline
+        3.4.3 & Mini Data Center Testbed E2E Evaluation & Complex & 8 \\ \hline
+        \textbf{3.5} & \textbf{Monitoring \& Quality Control} & & \textbf{24} \\ \hline
+        3.5.1 & Process Control \& Sprint Reviews & Complex & 12 \\ \hline
+        3.5.2 & Performance \& Security Auditing & Complex & 12 \\ \hline
+        \textbf{3.6} & \textbf{Closing} & & \textbf{20} \\ \hline
+        3.6.1 & Final Report \& Project Documentation & Simple & 20 \\ \hline
+        \multicolumn{3}{|r|}{\textbf{Total Estimated Effort (Man-days)}} & \textbf{232} \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Project Objectives}
+\begin{itemize}
+    \item \textbf{Timelines:} Project delivery targeted within a 14-Sprint release cycle.
+    \item \textbf{Allocated Effort:} Total 232 man-days distributed across 5 team members.
+    \item \textbf{Defect Distribution Target:}
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{|c|l|c|c|p{5cm}|}
+            \hline
+            \textbf{\#} & \textbf{Testing Stage} & \textbf{Max Defects} & \textbf{\% Defect} & \textbf{Focus} \\ \hline
+            1 & Reviewing & $<30$ & 5\% & Security, RBAC, Code Maintainability \\ \hline
+            2 & Unit Test & $<20$ & 3\% & Telemetry parsing, Auth, State machine \\ \hline
+            3 & Integration Test & $<5$ & 1\% & Socket.IO streams, API contracts \\ \hline
+            4 & System Test & $<5$ & 1\% & Digital Twin sync, AR marker camera overlay \\ \hline
+            5 & Acceptance Test & $<5$ & 1\% & Field technician ticket remediation workflow \\ \hline
+        \end{tabular}
+    \end{table}
+\end{itemize}
+
+\subsection{Project Risks}
+\begin{table}[H]
+    \centering
+    \caption{Project Risk Assessment \& Mitigation Plans}
+    \begin{tabular}{|c|p{4cm}|p{4cm}|c|p{4cm}|}
+        \hline
+        \textbf{\#} & \textbf{Risk Description} & \textbf{Impact} & \textbf{Probability} & \textbf{Response Plan} \\ \hline
+        1 & Marker occlusion or lighting variation in AR scanning & Scanner failure causes delayed node recognition & Medium & Implement fallback manual rack selection and ArUco error-correction decoding \\ \hline
+        2 & High WebSocket throughput causing client UI frame drops & Degradation of real-time monitoring dashboard & Medium & Throttle UI chart update rate to 1-second intervals with client-side metric buffering \\ \hline
+        3 & Collector agent network disconnection on nodes & Telemetry loss and false unavailability alerts & High & Implement local buffer queue in agent with automated exponential backoff reconnect \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{Management Approach}
+The team adopts an **Iterative and Incremental Agile/Scrum Development Process**. Incremental product builds are delivered at the end of each two-week Sprint to collect continuous feedback and ensure early risk detection.
+
+\section{Project Deliverables}
+\begin{table}[H]
+    \centering
+    \caption{Sprint Deliverables Schedule}
+    \begin{tabular}{|c|l|l|}
+        \hline
+        \textbf{Sprint} & \textbf{Focus Area} & \textbf{Deliverable Artifacts} \\ \hline
+        Sprint 1-2 & Analysis \& Infrastructure & SRS, WBS, Database Schemas, Testbed Cluster setup \\ \hline
+        Sprint 3-5 & Core Services \& Collector & NestJS Auth/JWT API, Lightweight Telemetry Collector \\ \hline
+        Sprint 6-8 & Real-Time Engine \& Web Admin & Socket.IO Engine, Next.js Command Center \& Digital Twin \\ \hline
+        Sprint 9-11 & Mobile AR App & React Native AR Scanning, ArUco Camera Overlay, On-site UI \\ \hline
+        Sprint 12-14 & System Integration \& Testing & E2E Test Reports, Load Test Results, Final Report Package \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{Responsibility Assignments (RAM / RACI Matrix)}
+Role definitions: \textbf{D} = Do (Responsible), \textbf{R} = Review (Accountable), \textbf{S} = Support, \textbf{I} = Informed.
+
+\begin{table}[H]
+    \centering
+    \caption{RACI Responsibility Assignment Matrix}
+    \begin{tabular}{|p{6cm}|c|c|c|c|c|}
+        \hline
+        \textbf{Task / Deliverable} & \textbf{Nguyễn T. Tài} & \textbf{Hồ A. Lộc} & \textbf{Dương T. Lâm} & \textbf{Nguyễn L. N. Quỳnh} & \textbf{Phạm P. A. Duy} \\ \hline
+        Project Planning \& Architecture & D & R & S & S & S \\ \hline
+        Backend NestJS \& Auth & S & D & D & R & S \\ \hline
+        Telemetry Collector Agent & S & D & S & R & D \\ \hline
+        Next.js Web Command Center & S & S & D & D & R \\ \hline
+        React Native AR Mobile App & D & S & S & D & D \\ \hline
+        Testing \& Final Documentation & S & R & D & D & D \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{Tools \& Infrastructures}
+\begin{table}[H]
+    \centering
+    \caption{Development Tools \& Infrastructure Stack}
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Category} & \textbf{Technologies / Tools} \\ \hline
+        Backend Framework & NestJS, Socket.IO, TypeScript \\ \hline
+        Web Admin Dashboard & Next.js 14, TailwindCSS, Recharts, WebSockets \\ \hline
+        Mobile AR App & React Native, ViroReact / ARKit / ARCore, ArUco / QR OpenCV \\ \hline
+        Databases & PostgreSQL (Relational metadata), TimescaleDB / Time-series store \\ \hline
+        Agent & Node.js / Rust lightweight daemon, systeminformation, Docker API \\ \hline
+        DevOps \& Containerization & Docker, Docker Compose, Git / GitHub, mTLS \\ \hline
+    \end{tabular}
+\end{table}

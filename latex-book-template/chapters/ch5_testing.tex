@@ -1,0 +1,56 @@
+\chapter{Software Testing Documentation}
+
+\section{Scope of Testing}
+
+\subsection{Features to be Tested}
+\begin{itemize}
+    \item \textbf{Collector Agent Ingestion:} Verification of metric collection accuracy across physical nodes (CPU, RAM, Disk I/O, Docker container runtime stats).
+    \item \textbf{Real-Time WebSocket Streaming:} Test connection stability and latency under high metric packet throughput ($>100$ packets/second).
+    \item \textbf{AR Marker Recognition:} Verify ArUco and QR code detection accuracy across varying ambient light levels, camera distances ($0.5$ m to $3.0$ m), and angles ($0^\circ$ to $45^\circ$).
+    \item \textbf{Incident \& Ticket Lifecycle:} Validate automated threshold alerting, ticket assignment dispatch, remediation logging, and operator approval flows.
+    \item \textbf{Security \& RBAC:} Audit mTLS certificate authentication, JWT guard protection, and role-based privilege enforcement.
+\end{itemize}
+
+\subsection{Features Not to be Tested}
+\begin{itemize}
+    \item Physical data center facility failure scenarios (e.g., HVAC cooling plant failure, main power grid blackouts).
+\end{itemize}
+
+\section{Test Strategy}
+\begin{itemize}
+    \item \textbf{Unit Testing:} Jest for NestJS backend controllers and services ($>90\%$ line coverage target).
+    \item \textbf{Integration Testing:} Supertest / Postman API collection test suites validating REST endpoints and JWT guards.
+    \item \textbf{Performance \& Load Testing:} JMeter / Locust testing WebSocket gateway stability under concurrent mobile and web dashboard client connections.
+    \item \textbf{AR Usability Testing:} On-site field technician inspection scenarios evaluating AR HUD camera overlay alignment precision.
+\end{itemize}
+
+\section{Test Plan \& Environments}
+
+\subsection{Hardware Testbed Specification}
+\begin{table}[H]
+    \centering
+    \caption{Mini Data Center Testbed Cluster Hardware Setup}
+    \begin{tabular}{|l|l|p{6cm}|}
+        \hline
+        \textbf{Node Role} & \textbf{Hardware Spec} & \textbf{Workload / Subsystem} \\ \hline
+        Master Backend Server & Intel i7-12700K, 32GB RAM, 1TB NVMe & NestJS Backend API, Socket.IO, PostgreSQL \\ \hline
+        Worker Node 1 & Intel i5-10400, 16GB RAM & Docker Containers, Lightweight Agent \\ \hline
+        Worker Node 2 & AMD Ryzen 5 5600H, 16GB RAM & Docker Containers, Lightweight Agent \\ \hline
+        Mobile Test Device & Android 14 (ARCore supported), 8GB RAM & React Native AR App, 1080p Camera \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{Test Cases \& Verification Reports}
+\begin{table}[H]
+    \centering
+    \caption{Key System Integration Test Scenarios}
+    \begin{tabular}{|c|p{4cm}|p{5cm}|c|c|}
+        \hline
+        \textbf{TC ID} & \textbf{Scenario} & \textbf{Expected Outcome} & \textbf{Status} \\ \hline
+        TC-01 & Node Telemetry Streaming & Agent collects metrics every 5s and streams to backend without loss & PASS \\ \hline
+        TC-02 & Heartbeat Timeout Alert & Disconnecting node network triggers \texttt{UNAVAILABLE} alert within 90s & PASS \\ \hline
+        TC-03 & AR Marker Camera Overlay & Scanning ArUco marker displays live CPU/RAM HUD over target server & PASS \\ \hline
+        TC-04 & Ticket Remediation Flow & Technician logs remediation on mobile app; status updates on web portal & PASS \\ \hline
+        TC-05 & Unauthorized API Access & Accessing admin endpoints without valid JWT returns 401 Unauthorized & PASS \\ \hline
+    \end{tabular}
+\end{table}

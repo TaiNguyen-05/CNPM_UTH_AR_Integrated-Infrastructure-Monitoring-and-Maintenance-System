@@ -1,0 +1,92 @@
+\chapter{Project Introduction}
+
+\section{Overview}
+
+\subsection{Project Information}
+\begin{itemize}
+    \item \textbf{Project Name (English):} AR-Integrated Infrastructure Monitoring and Maintenance System (AR-IMMS)
+    \item \textbf{Project Name (Vietnamese):} Hệ thống Giám sát và Bảo trì Cơ sở Hạ tầng Tích hợp Thực tế Tăng cường
+    \item \textbf{Software Type:} Multi-platform System (Cloud Backend Services, Web Admin Command Center, Mobile AR Application, Lightweight Telemetry Collector Agent)
+\end{itemize}
+
+\subsection{Project Team}
+\begin{table}[H]
+    \centering
+    \caption{Project Team Roster}
+    \begin{tabular}{|l|l|l|c|}
+        \hline
+        \textbf{Full Name} & \textbf{Role} & \textbf{Email} & \textbf{Student ID} \\ \hline
+        Nguyễn Thành Tài & Project Leader & taint2360@ut.edu.vn & 079205002360 \\ \hline
+        Hồ An Lộc & Team Member & lamdt807832@ut.edu.vn & 082207006118 \\ \hline
+        Dương Thanh Lâm & Team Member & lamdt807832@ut.edu.vn & 080207007832 \\ \hline
+        Nguyễn Lê Như Quỳnh & Team Member & quynhnln2611@ut.edu.vn & 066305002611 \\ \hline
+        Phạm Phú Anh Duy & Team Member & duyppa512078@ut.edu.vn & 051207022078 \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{Product Background}
+In modern enterprise environments, large data centers and server rooms host critical compute, storage, and networking infrastructure. Monitoring this infrastructure is traditionally performed through web-based monitoring dashboards and centralized management interfaces (such as Grafana, Zabbix, or Nagios). While these dashboards display real-time operational telemetry (including CPU/RAM utilization, network bandwidth, temperature, and service alerts), they suffer from a fundamental operational limitation: \textbf{digital monitoring data is detached from the physical spatial location of hardware assets}.
+
+When an infrastructure incident occurs, system operators and field maintenance technicians experience severe operational friction:
+\begin{itemize}
+    \item \textbf{Spatial Disconnect \& Identification Delays:} Technicians must manually cross-reference digital alert logs across monitoring screens with physical rack diagrams to locate the exact failing physical node among dozens or hundreds of visually identical server chassis.
+    \item \textbf{Delayed Incident Response:} Searching for specific server nodes, inspecting containerized workloads, and manually checking physical cabling increases Mean Time to Resolution (MTTR) and risks prolonged service outages.
+    \item \textbf{Lack of Contextual Field Information:} On-site field technicians lack immediate, hands-on access to live telemetry, service logs, and historical maintenance tickets directly at the target physical hardware location.
+\end{itemize}
+
+Advances in Augmented Reality (AR), Digital Twin technology, and real-time infrastructure streaming telemetry enable a contextual, spatially-aware approach to data center infrastructure management. **AR-IMMS** bridges the physical-digital gap by connecting physical infrastructure, live operational telemetry, automated alerting, and field maintenance workflows into a unified platform.
+
+\section{Existing Systems}
+
+\subsection{Traditional Monitoring Systems (e.g., Zabbix / Grafana)}
+\begin{itemize}
+    \item \textbf{Description:} Enterprise-grade dashboards offering time-series metric collection, graph visualization, and threshold alerting.
+    \item \textbf{Drawbacks:}
+    \begin{itemize}
+        \item No physical spatial mapping; data exists strictly on two-dimensional web screens.
+        \item High cognitive load for field technicians when navigating physical data center aisles to locate specific hardware nodes.
+        \item Disconnected from on-site maintenance task management and spatial ticket tracking.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Standalone Mobile Asset Management Apps}
+\begin{itemize}
+    \item \textbf{Description:} Mobile inventory tools allowing barcode or QR scanning to pull up static equipment specification sheets.
+    \item \textbf{Drawbacks:}
+    \begin{itemize}
+        \item Displays static asset inventory metadata without live real-time streaming telemetry (CPU, RAM, Docker container health).
+        \item Lacks spatial 3D/AR HUD overlay directly onto camera feeds.
+        \item No integrated Digital Twin spatial hierarchy modeling.
+    \end{itemize}
+\end{itemize}
+
+\section{Business Opportunity}
+By centralizing physical asset tracking, Digital Twin spatial modeling, real-time WebSocket metric streaming, and Mobile AR spatial marker scanning, **AR-IMMS** offers significant operational value:
+\begin{itemize}
+    \item \textbf{MTTR Reduction:} Slashes target node identification time from minutes to seconds via instant AR/QR camera recognition.
+    \item \textbf{Contextual Maintenance:} Equips technicians on-site with real-time container health, diagnostic logs, and historical tickets over target hardware.
+    \item \textbf{Audit Compliance \& Lifecycle Visibility:} Maintains an immutable audit log of asset changes, warranty alerts, and maintenance history.
+\end{itemize}
+
+\section{Software Product Vision}
+**AR-IMMS** aims to deliver a high-performance, enterprise-ready infrastructure management ecosystem comprising:
+\begin{enumerate}
+    \item A cloud-based **NestJS Backend** managing REST APIs, Socket.IO real-time event broadcasting, JWT RBAC authentication, time-series metrics, and spatial asset hierarchies.
+    \item A **Next.js Web Admin Command Center** providing 3-click spatial drilldown monitoring (Site $\rightarrow$ Room $\rightarrow$ Rack $\rightarrow$ Server $\rightarrow$ Workload) and interactive Digital Twin visualization.
+    \item A **React Native Mobile AR Application** enabling field technicians to scan QR/ArUco spatial markers, view live telemetry overlays, and process maintenance tickets on-site.
+    \item A **Lightweight Telemetry Collector Agent** capturing OS, hardware, and Docker container stats from host servers.
+\end{enumerate}
+
+\section{Project Scope \& Limitations}
+
+\subsection{Scope}
+\begin{itemize}
+    \item \textbf{Mini Data Center Physical Testbed:} Implementation and evaluation using a multi-computer hardware cluster where physical machines represent server nodes, device groupings represent server racks, and running applications represent workloads.
+    \item \textbf{Full Lifecycle Maintenance Workflows:} Automated alert generation, ticket creation, technician assignment, on-site AR inspection, remediation logging, and operator closure verification.
+\end{itemize}
+
+\subsection{Limitations \& Exclusions}
+\begin{itemize}
+    \item \textbf{Testbed Environment:} Due to physical data center access constraints, evaluation is conducted on a Mini Data Center testbed rather than a commercial Tier IV data center facility.
+    \item \textbf{AR Marker Dependency:} Spatial recognition relies on line-of-sight QR/ArUco marker tracking under adequate ambient illumination.
+\end{itemize}

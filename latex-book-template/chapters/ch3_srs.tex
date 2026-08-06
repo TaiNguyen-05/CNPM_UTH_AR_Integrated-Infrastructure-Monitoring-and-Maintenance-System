@@ -1,0 +1,90 @@
+\chapter{Software Requirement Specification}
+
+\section{Product Overview}
+**AR-IMMS** is an integrated infrastructure monitoring and maintenance platform designed to bridge physical hardware assets with digital operational telemetry. It structures infrastructure hierarchy model into five distinct spatial levels:
+$$\text{Site} \longrightarrow \text{Room} \longrightarrow \text{Rack} \longrightarrow \text{Server Node} \longrightarrow \text{Container Workload}$$
+
+The system provides dual-interface management:
+\begin{enumerate}
+    \item A **Desktop-First Web Command Center** for macro-level Digital Twin visualization, capacity planning, and operator ticket assignment.
+    \item An **Android AR Mobile Application** for field technicians to scan spatial ArUco/QR markers attached to target servers, displaying contextual live metrics and maintenance workflows directly on the camera feed.
+\end{enumerate}
+
+\section{User Requirements}
+
+\subsection{Actors}
+\begin{table}[H]
+    \centering
+    \caption{System Actors \& Role Descriptions}
+    \begin{tabular}{|c|l|p{10cm}|}
+        \hline
+        \textbf{\#} & \textbf{Actor} & \textbf{Description} \\ \hline
+        1 & \textbf{System Administrator} & Manages user accounts, assigns RBAC roles, configures system-wide settings, inspects global health indicators, and audits system logs. \\ \hline
+        2 & \textbf{System Operator} & Registers physical infrastructure assets (racks, nodes, markers), monitors real-time telemetry, acknowledges alerts, creates/assigns maintenance tickets, and reviews capacity/PUE reports. \\ \hline
+        3 & \textbf{Field Technician} & Uses the mobile AR application on-site to scan server markers, inspect live telemetry/logs over target hardware, execute assigned tickets, log remediation actions, and request ticket closure. \\ \hline
+        4 & \textbf{Automated Monitoring System} & Collects telemetry background streams from node agents, evaluates threshold rules, flags stale node heartbeats, and manages alert lifecycles automatically. \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{Functional Requirements}
+
+\subsection{System Administrator}
+\begin{itemize}
+    \item \textbf{FR-ADM-01:} Account Lifecycle Management -- Create, edit, deactivate, and assign roles to system accounts.
+    \item \textbf{FR-ADM-02:} Global Health Monitoring -- Inspect aggregated system availability, collector agent heartbeats, and alert volumes across integrated services.
+    \item \textbf{FR-ADM-03:} System Settings Configuration -- Configure global telemetry interval defaults, alert retention policies, and authentication parameters.
+    \item \textbf{FR-ADM-04:} Global Audit Logging -- View immutable audit trails capturing user actions, configuration modifications, and ticket updates.
+\end{itemize}
+
+\subsection{System Operator}
+\begin{itemize}
+    \item \textbf{FR-OPE-01:} Asset \& Hierarchy Registration -- Register and manage spatial asset hierarchies (Sites, Rooms, Racks, Nodes, Container Workloads).
+    \item \textbf{FR-OPE-02:} Marker Association -- Link physical QR/ArUco spatial marker identifiers to registered server nodes during onboarding.
+    \item \textbf{FR-OPE-03:} Digital Twin Navigation -- Provide 3-click spatial drilldown visualization from site macro-overview down to container runtime state.
+    \item \textbf{FR-OPE-04:} Alert Management -- Configure metric thresholds, review active system alerts, and acknowledge warning conditions.
+    \item \textbf{FR-OPE-05:} Ticket Lifecyle Dispatch -- Create maintenance tickets from alerts, assign tickets to field technicians, and approve/reject ticket closure requests.
+    \item \textbf{FR-OPE-06:} Analytics \& Reporting -- Generate historical telemetry trend reports, capacity planning analytics, and PUE/power consumption reports.
+\end{itemize}
+
+\subsection{Field Technician}
+\begin{itemize}
+    \item \textbf{FR-TEC-01:} Ticket Inspection -- View assigned maintenance tickets, target rack locations, and node details on the mobile app.
+    \item \textbf{FR-TEC-02:} AR Marker Recognition -- Scan physical QR/ArUco markers on server chassis to recognize node identity instantly.
+    \item \textbf{FR-TEC-03:} Contextual Telemetry Overlay -- Display live HUD camera overlays showing CPU/RAM metrics, active container health, and diagnostic logs over target server nodes.
+    \item \textbf{FR-TEC-04:} Remediation Workflow -- Record investigation notes, update ticket handling status, log corrective actions, and submit ticket closure requests.
+\end{itemize}
+
+\subsection{Automated Monitoring Subsystem}
+\begin{itemize}
+    \item \textbf{FR-MON-01:} Streaming Data Collection -- Ingest periodic metric packets from lightweight node agents via WebSocket/gRPC streams.
+    \item \textbf{FR-MON-02:} Threshold \& Heartbeat Evaluation -- Detect CPU/RAM threshold breaches and flag node unavailability when heartbeats miss configured deadlines.
+    \item \textbf{FR-MON-03:} Alert Suppression \& Lifecycle -- Suppress duplicate metric alerts to avoid alert storms and transition alert states (\texttt{OPEN} $\rightarrow$ \texttt{ACKNOWLEDGED} $\rightarrow$ \texttt{RESOLVED} $\rightarrow$ \texttt{CLOSED}).
+\end{itemize}
+
+\section{Non-Functional Requirements}
+\begin{itemize}
+    \item \textbf{Performance:} Server telemetry collected at configurable interval (default 5 seconds). Server reported unavailable if heartbeat is absent for $>90$ seconds. AR camera overlay tracking latency $<50$ ms.
+    \item \textbf{Availability:} Platform operational uptime 99.9\% during business operations; automated disconnection alerts.
+    \item \textbf{Security:} Enforce JWT role-based access control (RBAC), mTLS encryption for telemetry agent transmissions, and SHA-256 signed audit logs.
+    \item \textbf{Reliability:} Collector agents local retry queue buffers metrics during network dropouts and auto-resumes streaming upon reconnection. Duplicate alert suppression prevents storming.
+    \item \textbf{Scalability:} PoC demonstrates newly registered node streams telemetry and appears in Digital Twin within 5 minutes of onboarding without service restart.
+    \item \textbf{Usability:} Desktop-first Web Command Center and Android AR application with WCAG-compliant responsive interfaces.
+\end{itemize}
+
+\section{Requirement Appendix}
+
+\subsection{Business Rules}
+\begin{table}[H]
+    \centering
+    \caption{System Business Rules Catalog}
+    \begin{tabular}{|l|p{12cm}|}
+        \hline
+        \textbf{Rule ID} & \textbf{Rule Definition} \\ \hline
+        BR-01 & A server node must belong to exactly one registered server rack. \\ \hline
+        BR-02 & Each server node must be associated with a unique QR/ArUco marker code. \\ \hline
+        BR-03 & Telemetry packets without valid mTLS agent credentials must be rejected by the backend ingestion gateway. \\ \hline
+        BR-04 & If no telemetry packet is received from a node for 90 seconds, the node status transitions to \texttt{UNAVAILABLE} and a high-priority alert is generated. \\ \hline
+        BR-05 & Field technicians can only perform destructive remote actions (e.g., service restart) after multi-factor confirmation logged in audit trails. \\ \hline
+        BR-06 & A maintenance ticket cannot be marked \texttt{CLOSED} without System Operator verification and sign-off. \\ \hline
+    \end{tabular}
+\end{table}
