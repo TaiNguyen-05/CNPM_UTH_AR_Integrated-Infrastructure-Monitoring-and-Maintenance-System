@@ -1,0 +1,6 @@
+{
+  "name": "AR-IMMS - Infrastructure Monitor",
+  "description": "Hệ thống giám sát bản sao số hạ tầng máy chủ trung tâm dữ liệu AR-IMMS, định vị thực tế ảo AR và quản trị bảo mật RBAC.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

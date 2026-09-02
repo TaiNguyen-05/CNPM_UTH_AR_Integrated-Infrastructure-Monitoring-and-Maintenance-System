@@ -1,8 +1,3 @@
--- ==============================================================================
--- AR-IMMS (AR-Integrated Infrastructure Monitoring & Maintenance System)
--- SUPABASE / POSTGRESQL COMPLETE DATABASE SCHEMA & INITIAL SEED SCRIPT
--- Compatible with: PostgreSQL 14+, Supabase Cloud, TimescaleDB
--- ==============================================================================
 
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -158,7 +153,7 @@ CREATE TABLE IF NOT EXISTS telemetry_metrics (
 -- 3.6. ALERT THRESHOLD POLICIES
 CREATE TABLE IF NOT EXISTS alert_thresholds (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
     metric_name VARCHAR(100) NOT NULL, -- 'cpu', 'ram', 'temp', 'disk', 'heartbeat'
     operator VARCHAR(10) NOT NULL DEFAULT '>', -- '>', '>=', '<', '<='
     warning_value FLOAT NOT NULL,
@@ -301,7 +296,7 @@ VALUES
 ('Memory (RAM) Utilization Threshold', 'ram', 80.0, 92.0, 30),
 ('Thermal Temperature Threshold', 'temp', 65.0, 80.0, 15),
 ('Heartbeat Stale Detection', 'heartbeat', 45.0, 90.0, 90)
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- 6.6. Seed Sample Initial Audit Log
 INSERT INTO audit_logs (user_email, action, entity_type, entity_id, ip_address, details)
