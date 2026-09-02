@@ -1,0 +1,25 @@
+{
+  "name": "ar-imms-monorepo",
+  "version": "2.0.0",
+  "private": true,
+  "description": "AR-Integrated Infrastructure Monitoring and Maintenance System (AR-IMMS) Monorepo",
+  "scripts": {
+    "install:all": "npm --prefix frontend install",
+    "build": "npm --prefix frontend run build",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "npm --prefix frontend run build && python run.py",
+    "start": "python run.py"
+  },
+  "keywords": [
+    "ar-imms",
+    "augmented-reality",
+    "datacenter",
+    "infrastructure-monitor",
+    "clean-architecture",
+    "flask",
+    "react",
+    "vite"
+  ],
+  "author": "AR-IMMS Engineering Team",
+  "license": "MIT"
+}
