@@ -46,9 +46,11 @@ export const App: React.FC = () => {
   React.useEffect(() => {
     const syncBackendData = async () => {
       try {
-        const [nodesRes, alertsRes] = await Promise.allSettled([
+        const [nodesRes, alertsRes, racksRes, usersRes] = await Promise.allSettled([
           arImmsApi.getNodes(),
-          arImmsApi.getAlerts()
+          arImmsApi.getAlerts(),
+          arImmsApi.getRacks(),
+          arImmsApi.getUsers()
         ]);
 
         if (nodesRes.status === 'fulfilled' && nodesRes.value?.data && nodesRes.value.data.length > 0) {
@@ -95,6 +97,20 @@ export const App: React.FC = () => {
             maintenanceLogs: []
           }));
           setAlerts(mappedAlerts);
+        }
+
+        if (usersRes.status === 'fulfilled' && usersRes.value?.data && usersRes.value.data.length > 0) {
+          const mappedUsers: UserItem[] = usersRes.value.data.map(u => ({
+            id: u.id,
+            userId: u.id,
+            name: u.full_name || u.email.split('@')[0],
+            email: u.email,
+            role: u.role === 'admin' ? 'Admin' : u.role === 'technician' ? 'Technician' : 'Viewer',
+            status: u.status === 'active' ? 'Active' : u.status === 'pending' ? 'Pending' : 'Locked',
+            lastAuth: 'Vừa xong',
+            initials: (u.full_name || u.email.split('@')[0]).slice(0, 2).toUpperCase()
+          }));
+          setUsers(mappedUsers);
         }
       } catch (err) {
         console.warn('Backend offline or falling back to mock state:', err);
