@@ -202,3 +202,6 @@ export const ApiService = {
     });
   }
 };
+
+export const arImmsApi = ApiService;
+

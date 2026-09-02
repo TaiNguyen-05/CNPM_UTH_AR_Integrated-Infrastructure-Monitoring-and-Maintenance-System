@@ -28,6 +28,7 @@ import { SupportModal } from './components/modals/SupportModal';
 import { SettingsModal } from './components/modals/SettingsModal';
 import { NodeDetailModal } from './components/modals/NodeDetailModal';
 import { QRScannerModal } from './components/modals/QRScannerModal';
+import { arImmsApi } from './services/api';
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<TabType>('digital-twin');
@@ -40,6 +41,68 @@ export const App: React.FC = () => {
   const [alerts, setAlerts] = useState<AlertItem[]>(INITIAL_ALERTS);
   const [users, setUsers] = useState<UserItem[]>(INITIAL_USERS);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(INITIAL_AUDIT_LOGS);
+
+  // Live Database / Backend API Synchronization on startup
+  React.useEffect(() => {
+    const syncBackendData = async () => {
+      try {
+        const [nodesRes, alertsRes] = await Promise.allSettled([
+          arImmsApi.getNodes(),
+          arImmsApi.getAlerts()
+        ]);
+
+        if (nodesRes.status === 'fulfilled' && nodesRes.value?.data && nodesRes.value.data.length > 0) {
+          const mappedAssets: AssetItem[] = nodesRes.value.data.map(n => ({
+            id: n.id,
+            name: n.name,
+            model: n.model,
+            rack: `Rack ${n.rack_id?.toUpperCase().replace('RACK-', '') || 'A1'}`,
+            uPosition: `Rack ${n.rack_id?.toUpperCase().replace('RACK-', '') || 'A1'}, U${String(n.u_start).padStart(2, '0')}-${String(n.u_start + (n.u_size || 1) - 1).padStart(2, '0')}`,
+            qrStatus: n.status === 'healthy' ? 'Active' : n.status === 'warning' ? 'Mismatch' : 'Pending',
+            guid: n.qr_code || `guid-${n.id}`,
+            manufacturer: n.model?.split(' ')[0] || 'Enterprise OEM',
+            serialNumber: `CN-0X${n.id.slice(-4).toUpperCase()}`,
+            installDate: '2024-01-15',
+            powerDraw: '450W (Avg)',
+            networkInterfaces: [`eth0: ${n.ip_address || '10.0.1.20'}`]
+          }));
+          setAssets(mappedAssets);
+        }
+
+        if (alertsRes.status === 'fulfilled' && alertsRes.value?.data && alertsRes.value.data.length > 0) {
+          const mappedAlerts: AlertItem[] = alertsRes.value.data.map(a => ({
+            id: a.id,
+            alertCode: `ALT-${a.id.slice(-4).toUpperCase()}`,
+            severity: a.severity === 'critical' ? 'Critical' : a.severity === 'warning' ? 'Warning' : 'Info',
+            title: a.message,
+            description: a.message,
+            time: '14:20:00 (Hôm nay)',
+            loggedTimeUtc: a.created_at || new Date().toISOString(),
+            location: `Tủ Rack A2 (Node ${a.node_id})`,
+            assignedTo: 'Sarah Jenkins',
+            zone: 'Hàng Máy Chủ Alpha (Rack A)',
+            acknowledged: a.status !== 'active',
+            resolved: a.status === 'resolved',
+            snapshot: {
+              rackTemp: '42.8°C',
+              tempRate: '+1.2°C/10m',
+              fanSpeed: '4,200 RPM',
+              fanStatus: 'Cảnh báo hiệu suất quạt',
+              powerDraw: '4.8 kW',
+              powerStatus: 'Ổn định',
+              tempTrend: [38, 39, 40, 41, 42.8]
+            },
+            maintenanceLogs: []
+          }));
+          setAlerts(mappedAlerts);
+        }
+      } catch (err) {
+        console.warn('Backend offline or falling back to mock state:', err);
+      }
+    };
+
+    syncBackendData();
+  }, []);
 
   // QR Scanning & Direct Node Target from URL
   const [selectedNodeForDetail, setSelectedNodeForDetail] = useState<AssetItem | null>(null);
@@ -68,8 +131,6 @@ export const App: React.FC = () => {
     window.addEventListener('popstate', handleUrlParams);
     return () => window.removeEventListener('popstate', handleUrlParams);
   }, [assets]);
-
-  // Authentication State
 
   // Authentication State
   const [currentUser, setCurrentUser] = useState<UserItem | null>(() => {
@@ -150,10 +211,24 @@ export const App: React.FC = () => {
     localStorage.removeItem('ar_imms_current_user');
   };
 
-  // Handlers for Assets
-  const handleSaveAsset = (newAsset: AssetItem) => {
+  // Handlers for Assets with backend persistence
+  const handleSaveAsset = async (newAsset: AssetItem) => {
     setAssets(prev => [newAsset, ...prev]);
-    // Log to audit
+    try {
+      await arImmsApi.createNode({
+        id: newAsset.id,
+        name: newAsset.name,
+        model: newAsset.model,
+        rack_id: newAsset.rack.toLowerCase().replace('rack ', 'rack-'),
+        u_start: 1,
+        u_size: 2,
+        ip_address: '10.0.1.25',
+        qr_code: newAsset.guid
+      });
+    } catch (e) {
+      console.warn('Node persisted locally (backend offline):', e);
+    }
+
     const newLog: AuditLogItem = {
       id: `audit-${Date.now()}`,
       timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
