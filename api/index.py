@@ -8,4 +8,5 @@ if backend_src_dir not in sys.path:
 
 from app import create_app
 
-app = create_app()
+res = create_app()
+app = res[0] if isinstance(res, tuple) else res

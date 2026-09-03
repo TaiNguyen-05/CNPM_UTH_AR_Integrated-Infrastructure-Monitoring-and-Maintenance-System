@@ -13,6 +13,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { TelemetryLogEntry } from '../types';
+import { socketService } from '../services/socketService';
 
 export const TelemetryView: React.FC = () => {
   const [isStreaming, setIsStreaming] = useState<boolean>(true);
@@ -56,66 +57,73 @@ export const TelemetryView: React.FC = () => {
 
   const logContainerRef = useRef<HTMLDivElement>(null);
 
-  // Live simulation ticker
+  // Live real-time WebSocket stream via Flask-SocketIO
   useEffect(() => {
     if (!isStreaming) return;
 
-    const interval = setInterval(() => {
-      // Update charts
+    // Lắng nghe stream Telemetry thời gian thực từ Flask Backend
+    const unsubTelemetry = socketService.onTelemetryStream((payload: any) => {
+      const nodeId = (payload.node_id || '').toUpperCase();
+      const cpu = parseFloat(payload.cpu || 0);
+      const ram = parseFloat(payload.ram || 0);
+      const temp = parseFloat(payload.temp || 0);
+
+      const targetKey = nodeId.includes('01') ? 'node1' : nodeId.includes('02') ? 'node2' : 'node3';
+
       setCpuData(prev => ({
-        node1: [...prev.node1.slice(1), Math.min(60, Math.max(15, prev.node1[prev.node1.length - 1] + (Math.random() * 6 - 3)))],
-        node2: [...prev.node2.slice(1), Math.min(80, Math.max(30, prev.node2[prev.node2.length - 1] + (Math.random() * 8 - 4)))],
-        node3: [...prev.node3.slice(1), Math.min(45, Math.max(10, prev.node3[prev.node3.length - 1] + (Math.random() * 4 - 2)))]
+        ...prev,
+        [targetKey]: [...prev[targetKey as keyof typeof prev].slice(1), cpu]
       }));
 
       setRamData(prev => ({
-        node1: [...prev.node1.slice(1), Math.min(55, Math.max(35, prev.node1[prev.node1.length - 1] + (Math.random() * 4 - 2)))],
-        node2: [...prev.node2.slice(1), Math.min(75, Math.max(50, prev.node2[prev.node2.length - 1] + (Math.random() * 4 - 2)))],
-        node3: [...prev.node3.slice(1), Math.min(99, Math.max(82, prev.node3[prev.node3.length - 1] + (Math.random() * 6 - 2.5)))]
+        ...prev,
+        [targetKey]: [...prev[targetKey as keyof typeof prev].slice(1), ram]
       }));
 
       setTempData(prev => ({
-        node1: [...prev.node1.slice(1), Math.min(55, Math.max(40, prev.node1[prev.node1.length - 1] + (Math.random() * 3 - 1.5)))],
-        node2: [...prev.node2.slice(1), Math.min(65, Math.max(48, prev.node2[prev.node2.length - 1] + (Math.random() * 4 - 2)))],
-        node3: [...prev.node3.slice(1), Math.min(90, Math.max(72, prev.node3[prev.node3.length - 1] + (Math.random() * 4 - 1.8)))]
+        ...prev,
+        [targetKey]: [...prev[targetKey as keyof typeof prev].slice(1), temp]
       }));
 
-      // Generate random log entry occasionally
-      if (Math.random() > 0.4) {
-        const now = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
-        
-        const nodes = ['Node-01', 'Node-02', 'Node-03'];
-        const chosenNode = nodes[Math.floor(Math.random() * nodes.length)];
-        
-        let type: 'INFO' | 'WARN' | 'CRIT' | 'SYNC' = 'INFO';
-        let msg = 'Đã xác thực gói tin Telemetry.';
+      // Thêm log từ payload thực tế
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+      
+      let type: 'INFO' | 'WARN' | 'CRIT' | 'SYNC' = 'INFO';
+      if (cpu > 90 || ram > 90 || temp > 80) type = 'CRIT';
+      else if (cpu > 75 || ram > 80 || temp > 65) type = 'WARN';
+      else type = 'SYNC';
 
-        if (chosenNode === 'Node-03' && Math.random() > 0.4) {
-          type = 'WARN';
-          msg = 'Áp lực bộ nhớ RAM cao trên container c-8819.';
-        } else if (Math.random() > 0.7) {
-          type = 'SYNC';
-          msg = 'Đã thiết lập đồng thuận nhịp tim nút mạng.';
-        } else if (Math.random() > 0.85) {
-          type = 'CRIT';
-          msg = 'Phát hiện nhiệt độ tăng đột biến trên GPU socket 0.';
-        }
+      const streamLog: TelemetryLogEntry = {
+        id: `${Date.now()}-${Math.random()}`,
+        timeStr,
+        type,
+        node: payload.node_id || 'SRV-NODE',
+        message: `CPU: ${cpu}% | RAM: ${ram}% | Temp: ${temp}°C | In/Out: ${payload.network_in_kbps || 0}/${payload.network_out_kbps || 0} KB/s`
+      };
 
-        const newLog: TelemetryLogEntry = {
-          id: Date.now().toString(),
-          timeStr,
-          type,
-          node: chosenNode,
-          message: msg
-        };
+      setLogs(prev => [streamLog, ...prev.slice(0, 40)]);
+    });
 
-        setLogs(prev => [newLog, ...prev.slice(0, 30)]);
-      }
-    }, samplingRate);
+    // Lắng nghe sự kiện trạng thái máy chủ (như OFFLINE > 90s)
+    const unsubStatus = socketService.onServerStatusChanged((data: any) => {
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      const statusLog: TelemetryLogEntry = {
+        id: `${Date.now()}-status`,
+        timeStr,
+        type: 'CRIT',
+        node: data.node_id || 'SERVER',
+        message: `🚨 [STATUS CHANGED] Server chuyển sang ${data.status}: ${data.reason || 'Mất kết nối Heartbeat (>90s)'}`
+      };
+      setLogs(prev => [statusLog, ...prev.slice(0, 40)]);
+    });
 
-    return () => clearInterval(interval);
-  }, [isStreaming, samplingRate]);
+    return () => {
+      unsubTelemetry();
+      unsubStatus();
+    };
+  }, [isStreaming]);
 
   // Helper to render responsive SVG spark/line charts
   const renderChart = (

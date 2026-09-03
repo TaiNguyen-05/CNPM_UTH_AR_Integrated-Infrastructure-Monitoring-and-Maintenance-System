@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from marshmallow import ValidationError
 from infrastructure.repositories.ar_repositories import TicketRepository
 from services.ar_services import TicketService
@@ -10,6 +10,13 @@ ticket_bp = Blueprint("tickets", __name__, url_prefix="/api/tickets")
 ticket_repo = TicketRepository()
 ticket_service = TicketService(ticket_repo)
 ticket_schema = TicketSchema()
+
+
+def _emit_socket(event_name, payload):
+    socketio = getattr(current_app, 'socketio', None)
+    if socketio:
+        socketio.emit(event_name, payload)
+        socketio.emit("stats_updated", {})
 
 
 @ticket_bp.route("", methods=["GET"])
@@ -130,7 +137,9 @@ def create_ticket():
 
     try:
         new_ticket = ticket_service.create_ticket(validated_data)
-        return success_response(data=new_ticket.to_dict(), message="Tạo mới Phiếu Bảo trì thành công", status_code=201)
+        ticket_dict = new_ticket.to_dict()
+        _emit_socket("ticket_created", ticket_dict)
+        return success_response(data=ticket_dict, message="Tạo mới Phiếu Bảo trì thành công", status_code=201)
     except Exception as e:
         return error_response(message=str(e), status_code=400)
 
@@ -174,7 +183,10 @@ def assign_technician(ticket_id):
 
     try:
         ticket = ticket_service.assign_technician(ticket_id, tech_id, tech_name)
-        return success_response(data=ticket.to_dict(), message="Phân công kỹ thuật viên thành công")
+        ticket_dict = ticket.to_dict()
+        _emit_socket("ticket_updated", ticket_dict)
+        _emit_socket("ticket_assigned", ticket_dict)
+        return success_response(data=ticket_dict, message="Phân công kỹ thuật viên thành công")
     except Exception as e:
         return error_response(message=str(e), status_code=400)
 
@@ -214,7 +226,9 @@ def add_ar_log(ticket_id):
     details = data.get("details", {})
     try:
         ticket = ticket_service.add_ar_log(ticket_id, action, details)
-        return success_response(data=ticket.to_dict(), message="Ghi nhận nhật ký AR thành công")
+        ticket_dict = ticket.to_dict()
+        _emit_socket("ticket_updated", ticket_dict)
+        return success_response(data=ticket_dict, message="Ghi nhận nhật ký AR thành công")
     except Exception as e:
         return error_response(message=str(e), status_code=400)
 
@@ -248,7 +262,10 @@ def resolve_ticket(ticket_id):
     notes = data.get("notes", "Bảo trì và khắc phục sự cố thành công.")
     try:
         ticket = ticket_service.resolve_ticket(ticket_id, notes)
-        return success_response(data=ticket.to_dict(), message="Đã hoàn tất khắc phục phiếu bảo trì")
+        ticket_dict = ticket.to_dict()
+        _emit_socket("ticket_updated", ticket_dict)
+        _emit_socket("ticket_resolved", ticket_dict)
+        return success_response(data=ticket_dict, message="Đã hoàn tất khắc phục phiếu bảo trì")
     except Exception as e:
         return error_response(message=str(e), status_code=400)
 
@@ -271,7 +288,10 @@ def close_ticket(ticket_id):
     """
     try:
         ticket = ticket_service.close_ticket(ticket_id)
-        return success_response(data=ticket.to_dict(), message="Đã đóng phiếu bảo trì thành công")
+        ticket_dict = ticket.to_dict()
+        _emit_socket("ticket_updated", ticket_dict)
+        _emit_socket("ticket_closed", ticket_dict)
+        return success_response(data=ticket_dict, message="Đã đóng phiếu bảo trì thành công")
     except Exception as e:
         return error_response(message=str(e), status_code=400)
 
@@ -295,4 +315,6 @@ def delete_ticket(ticket_id):
     success = ticket_service.delete(ticket_id)
     if not success:
         return error_response(f"Không tìm thấy phiếu bảo trì: {ticket_id}", status_code=404)
+    _emit_socket("ticket_deleted", {"id": ticket_id})
     return success_response(message=f"Đã xóa phiếu bảo trì {ticket_id} thành công")
+
