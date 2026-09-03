@@ -29,6 +29,7 @@ import { SettingsModal } from './components/modals/SettingsModal';
 import { NodeDetailModal } from './components/modals/NodeDetailModal';
 import { QRScannerModal } from './components/modals/QRScannerModal';
 import { arImmsApi } from './services/api';
+import { socketService } from './services/socketService';
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<TabType>('digital-twin');
@@ -118,6 +119,102 @@ export const App: React.FC = () => {
     };
 
     syncBackendData();
+  }, []);
+
+  // Real-time WebSocket Listeners (Socket.IO Streaming & Alert/Status Push)
+  React.useEffect(() => {
+    socketService.connect();
+    socketService.joinRoom('dashboard');
+
+    // 1. Nhận Telemetry Stream 5s/lần
+    const unsubTelemetry = socketService.onTelemetryStream((payload: any) => {
+      const nodeId = payload.node_id;
+      if (!nodeId) return;
+
+      setAssets(prevAssets => prevAssets.map(asset => {
+        if (asset.id.toLowerCase() === nodeId.toLowerCase()) {
+          const cpu = parseFloat(payload.cpu || 0);
+          const ram = parseFloat(payload.ram || 0);
+          const temp = parseFloat(payload.temp || 0);
+          let newStatus = 'Active';
+          if (cpu > 90 || ram > 90 || temp > 80) newStatus = 'Mismatch';
+          else if (cpu > 75 || ram > 80 || temp > 65) newStatus = 'Mismatch';
+          return {
+            ...asset,
+            qrStatus: newStatus
+          };
+        }
+        return asset;
+      }));
+    });
+
+    // 2. Nhận thay đổi trạng thái máy chủ (ví dụ OFFLINE do quá 90s không có Heartbeat)
+    const unsubStatus = socketService.onServerStatusChanged((statusData: any) => {
+      const nodeId = statusData.node_id;
+      if (!nodeId) return;
+
+      setAssets(prevAssets => prevAssets.map(asset => {
+        if (asset.id.toLowerCase() === nodeId.toLowerCase()) {
+          return {
+            ...asset,
+            qrStatus: statusData.status === 'OFFLINE' ? 'Pending' : 'Active'
+          };
+        }
+        return asset;
+      }));
+    });
+
+    // 3. Nhận Cảnh báo mới sinh ra tức thì (Real-time Alert Push)
+    const unsubAlertCreated = socketService.onAlertCreated((alertData: any) => {
+      const newAlertItem: AlertItem = {
+        id: alertData.id,
+        alertCode: `ALT-${alertData.id?.slice(-4).toUpperCase() || 'NEW'}`,
+        severity: alertData.severity === 'CRITICAL' ? 'Critical' : alertData.severity === 'WARNING' ? 'Warning' : 'Info',
+        title: alertData.title || 'Cảnh báo mới từ hệ thống',
+        description: alertData.message || 'Hệ thống tự động phát hiện thông số vượt ngưỡng.',
+        time: 'Vừa xong',
+        loggedTimeUtc: alertData.created_at || new Date().toISOString(),
+        location: `Node ${alertData.server_node_id || alertData.node_id || 'SRV'}`,
+        assignedTo: 'Kỹ thuật viên trực',
+        zone: 'Hàng Máy Chủ (Rack Server)',
+        acknowledged: false,
+        resolved: false,
+        snapshot: {
+          rackTemp: `${alertData.metric_value || 45}°C`,
+          tempRate: '+0.8°C/5m',
+          fanSpeed: '4,500 RPM',
+          fanStatus: 'Vận hành tối đa',
+          powerDraw: '5.2 kW',
+          powerStatus: 'Cảnh báo phụ tải',
+          tempTrend: [40, 42, 45, 48, 52]
+        },
+        maintenanceLogs: []
+      };
+
+      setAlerts(prev => [newAlertItem, ...prev]);
+    });
+
+    // 4. Nhận Cập nhật Cảnh báo (Acknowledge / Resolve)
+    const unsubAlertUpdated = socketService.onAlertUpdated((alertData: any) => {
+      setAlerts(prev => prev.map(a => {
+        if (a.id === alertData.id) {
+          return {
+            ...a,
+            acknowledged: alertData.status !== 'OPEN',
+            resolved: alertData.status === 'RESOLVED'
+          };
+        }
+        return a;
+      }));
+    });
+
+    return () => {
+      unsubTelemetry();
+      unsubStatus();
+      unsubAlertCreated();
+      unsubAlertUpdated();
+      socketService.leaveRoom('dashboard');
+    };
   }, []);
 
   // QR Scanning & Direct Node Target from URL

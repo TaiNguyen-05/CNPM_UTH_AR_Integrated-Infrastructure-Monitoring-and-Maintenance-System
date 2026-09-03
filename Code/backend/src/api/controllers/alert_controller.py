@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from marshmallow import ValidationError
 from infrastructure.repositories.ar_repositories import AlertRepository
 from services.ar_services import AlertService
@@ -10,6 +10,13 @@ alert_bp = Blueprint("alerts", __name__, url_prefix="/api/alerts")
 alert_repo = AlertRepository()
 alert_service = AlertService(alert_repo)
 alert_schema = AlertSchema()
+
+
+def _emit_socket(event_name, payload):
+    socketio = getattr(current_app, 'socketio', None)
+    if socketio:
+        socketio.emit(event_name, payload)
+        socketio.emit("stats_updated", {})
 
 
 @alert_bp.route("", methods=["GET"])
@@ -122,7 +129,9 @@ def create_alert():
 
     try:
         new_alert = alert_service.create_alert(validated_data)
-        return success_response(data=new_alert.to_dict(), message="Tạo mới cảnh báo thành công", status_code=201)
+        alert_dict = new_alert.to_dict()
+        _emit_socket("alert_created", alert_dict)
+        return success_response(data=alert_dict, message="Tạo mới cảnh báo thành công", status_code=201)
     except Exception as e:
         return error_response(message=str(e), status_code=400)
 
@@ -156,7 +165,9 @@ def acknowledge_alert(alert_id):
     user_id = data.get("user_id", "OPERATOR")
     try:
         alert = alert_service.acknowledge_alert(alert_id, user_id)
-        return success_response(data=alert.to_dict(), message="Đã tiếp nhận cảnh báo")
+        alert_dict = alert.to_dict()
+        _emit_socket("alert_updated", alert_dict)
+        return success_response(data=alert_dict, message="Đã tiếp nhận cảnh báo")
     except Exception as e:
         return error_response(message=str(e), status_code=400)
 
@@ -190,7 +201,10 @@ def resolve_alert(alert_id):
     user_id = data.get("user_id", "OPERATOR")
     try:
         alert = alert_service.resolve_alert(alert_id, user_id)
-        return success_response(data=alert.to_dict(), message="Đã giải quyết cảnh báo thành công")
+        alert_dict = alert.to_dict()
+        _emit_socket("alert_resolved", alert_dict)
+        _emit_socket("alert_updated", alert_dict)
+        return success_response(data=alert_dict, message="Đã giải quyết cảnh báo thành công")
     except Exception as e:
         return error_response(message=str(e), status_code=400)
 
@@ -214,4 +228,6 @@ def delete_alert(alert_id):
     success = alert_service.delete(alert_id)
     if not success:
         return error_response(f"Không tìm thấy cảnh báo: {alert_id}", status_code=404)
+    _emit_socket("alert_deleted", {"id": alert_id})
     return success_response(message=f"Đã xóa cảnh báo {alert_id} thành công")
+

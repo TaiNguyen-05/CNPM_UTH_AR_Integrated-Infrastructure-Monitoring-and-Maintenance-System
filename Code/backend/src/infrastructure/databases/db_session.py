@@ -61,10 +61,20 @@ def init_ar_database(app=None):
                 x_coord=12.0,
                 y_coord=24.0,
             )
-            session.add_all([rack_a1, rack_a2])
+            rack_b1 = RackModel(
+                id='rack-b1',
+                name='Rack B1 - AI & GPU Acceleration Cluster',
+                code='RACK-B1',
+                room_name='Server Room 01',
+                total_u=42,
+                power_limit_kw=20.0,
+                x_coord=14.0,
+                y_coord=24.0,
+            )
+            session.add_all([rack_a1, rack_a2, rack_b1])
             session.flush()
 
-            # 2. Seed Server Nodes
+            # 2. Seed Server Nodes (6 Nodes)
             node_01 = ServerNodeModel(
                 id='SRV-NODE-01',
                 rack_id='rack-a1',
@@ -99,10 +109,10 @@ def init_ar_database(app=None):
                 ram_total_gb=64,
                 disk_total_gb=2000,
                 qr_code_payload='ar-imms://node/SRV-NODE-02',
-                status='CRITICAL',
-                metrics_json=json.dumps({"cpu": 94.5, "ram": 89.2, "disk": 78.4, "temp": 79.2, "netIn": 890.0, "netOut": 940.0}),
+                status='HEALTHY',
+                metrics_json=json.dumps({"cpu": 52.5, "ram": 58.2, "disk": 45.4, "temp": 44.2, "netIn": 290.0, "netOut": 340.0}),
                 containers_json=json.dumps([
-                    {"name": "ml-inference-engine", "image": "ar-imms/ml-runner:v3.1", "cpu": "78.4%", "ram": "38GB", "status": "HIGH_LOAD"},
+                    {"name": "ml-inference-engine", "image": "ar-imms/ml-runner:v3.1", "cpu": "18.4%", "ram": "8GB", "status": "RUNNING"},
                     {"name": "stream-processor", "image": "ar-imms/kafka-worker:1.4", "cpu": "16.1%", "ram": "8GB", "status": "RUNNING"}
                 ]),
             )
@@ -119,14 +129,74 @@ def init_ar_database(app=None):
                 ram_total_gb=128,
                 disk_total_gb=8000,
                 qr_code_payload='ar-imms://node/SRV-NODE-03',
-                status='WARNING',
-                metrics_json=json.dumps({"cpu": 78.0, "ram": 74.0, "disk": 82.5, "temp": 64.0, "netIn": 420.0, "netOut": 680.0}),
+                status='HEALTHY',
+                metrics_json=json.dumps({"cpu": 45.0, "ram": 54.0, "disk": 52.5, "temp": 46.0, "netIn": 220.0, "netOut": 380.0}),
                 containers_json=json.dumps([
-                    {"name": "postgres-ha-master", "image": "postgres:16-alpine", "cpu": "65.0%", "ram": "64GB", "status": "RUNNING"},
-                    {"name": "pg-bouncer-pooler", "image": "pgbouncer:latest", "cpu": "13.0%", "ram": "2GB", "status": "RUNNING"}
+                    {"name": "postgres-ha-master", "image": "postgres:16-alpine", "cpu": "35.0%", "ram": "32GB", "status": "RUNNING"},
+                    {"name": "pg-bouncer-pooler", "image": "pgbouncer:latest", "cpu": "8.0%", "ram": "2GB", "status": "RUNNING"}
                 ]),
             )
-            session.add_all([node_01, node_02, node_03])
+            node_04 = ServerNodeModel(
+                id='SRV-NODE-04',
+                rack_id='rack-a2',
+                name='Application Web Gateway',
+                u_start=36,
+                u_height=2,
+                ip_address='192.168.1.104',
+                mac_address='52:54:00:8b:22:14',
+                model='Supermicro 1U TwinPro',
+                cpu_model='AMD EPYC 7302P (16C/32T)',
+                ram_total_gb=32,
+                disk_total_gb=1000,
+                qr_code_payload='ar-imms://node/SRV-NODE-04',
+                status='HEALTHY',
+                metrics_json=json.dumps({"cpu": 32.0, "ram": 44.0, "disk": 41.0, "temp": 39.0, "netIn": 450.0, "netOut": 620.0}),
+                containers_json=json.dumps([
+                    {"name": "nginx-ingress", "image": "ingress-nginx/controller:v1.9", "cpu": "6.2%", "ram": "512MB", "status": "RUNNING"},
+                    {"name": "api-gateway", "image": "envoyproxy/envoy:v1.28", "cpu": "8.4%", "ram": "1GB", "status": "RUNNING"}
+                ]),
+            )
+            node_05 = ServerNodeModel(
+                id='SRV-NODE-05',
+                rack_id='rack-a2',
+                name='Log Aggregator & Pipeline',
+                u_start=20,
+                u_height=3,
+                ip_address='192.168.1.105',
+                mac_address='52:54:00:8b:22:15',
+                model='Dell PowerEdge R640',
+                cpu_model='Intel Xeon Bronze 3204',
+                ram_total_gb=64,
+                disk_total_gb=4000,
+                qr_code_payload='ar-imms://node/SRV-NODE-05',
+                status='HEALTHY',
+                metrics_json=json.dumps({"cpu": 41.5, "ram": 63.0, "disk": 58.0, "temp": 45.0, "netIn": 380.0, "netOut": 210.0}),
+                containers_json=json.dumps([
+                    {"name": "fluentbit-agent", "image": "fluent/fluent-bit:2.2", "cpu": "12.0%", "ram": "2GB", "status": "RUNNING"},
+                    {"name": "loki-ingester", "image": "grafana/loki:2.9", "cpu": "15.5%", "ram": "4GB", "status": "RUNNING"}
+                ]),
+            )
+            node_06 = ServerNodeModel(
+                id='SRV-NODE-06',
+                rack_id='rack-b1',
+                name='Deep Learning & Analytics Node',
+                u_start=30,
+                u_height=4,
+                ip_address='192.168.1.106',
+                mac_address='52:54:00:8b:22:16',
+                model='Gigabyte GPU Chassis / 4x RTX 4090',
+                cpu_model='AMD Threadripper PRO 5995WX',
+                ram_total_gb=128,
+                disk_total_gb=8000,
+                qr_code_payload='ar-imms://node/SRV-NODE-06',
+                status='HEALTHY',
+                metrics_json=json.dumps({"cpu": 58.0, "ram": 76.0, "disk": 65.0, "temp": 58.0, "netIn": 650.0, "netOut": 800.0}),
+                containers_json=json.dumps([
+                    {"name": "pytorch-training", "image": "pytorch/pytorch:2.2-cuda12", "cpu": "42.0%", "ram": "64GB", "status": "RUNNING"},
+                    {"name": "triton-inference", "image": "nvidia/tritonserver:24.01", "cpu": "18.0%", "ram": "16GB", "status": "RUNNING"}
+                ]),
+            )
+            session.add_all([node_01, node_02, node_03, node_04, node_05, node_06])
             session.flush()
 
             # 3. Seed Alerts
