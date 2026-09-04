@@ -1,23 +1,15 @@
-from datetime import datetime
 from typing import Optional
+from datetime import datetime
+from uuid import UUID
 
 from domain.models.base_entity import BaseEntity
 
 
 class UserAccount(BaseEntity):
 
-    VALID_ROLES = {
-        "ADMIN",
-        "OPERATOR",
-        "TECHNICIAN",
-    }
-
-    VALID_STATUSES = {
-        "PENDING_APPROVAL",
-        "APPROVED",
-        "LOCKED",
-        "REJECTED",
-    }
+    # ==========================================================
+    # CONSTRUCTOR
+    # ==========================================================
 
     def __init__(
         self,
@@ -26,48 +18,63 @@ class UserAccount(BaseEntity):
         full_name: str,
         role: str,
         status: str,
+
         phone_number: Optional[str] = None,
         department: Optional[str] = None,
         avatar: Optional[str] = None,
+
         password_hash: Optional[str] = None,
+
         approved_by: Optional[str] = None,
         approved_at: Optional[datetime] = None,
+
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
     ):
+
         super().__init__(
             id=id,
             created_at=created_at,
             updated_at=updated_at,
         )
 
-        if role not in self.VALID_ROLES:
-            raise ValueError(
-                f"Role không hợp lệ: {role}. "
-                f"Cho phép: {self.VALID_ROLES}"
-            )
-
-        if status not in self.VALID_STATUSES:
-            raise ValueError(
-                f"Status không hợp lệ: {status}. "
-                f"Cho phép: {self.VALID_STATUSES}"
-            )
+        # ------------------------------------------------------
+        # BASIC INFORMATION
+        # ------------------------------------------------------
 
         self.email = email
         self.full_name = full_name
+
+        # ------------------------------------------------------
+        # ROLE / STATUS
+        # ------------------------------------------------------
+
         self.role = role
         self.status = status
+
+        # ------------------------------------------------------
+        # OPTIONAL INFORMATION
+        # ------------------------------------------------------
 
         self._phone_number = phone_number
         self._department = department
         self._avatar = avatar
+
+        # ------------------------------------------------------
+        # PASSWORD
+        # ------------------------------------------------------
+
         self._password_hash = password_hash
+
+        # ------------------------------------------------------
+        # APPROVAL
+        # ------------------------------------------------------
 
         self._approved_by = approved_by
         self._approved_at = approved_at
 
     # ==========================================================
-    # PROPERTIES
+    # PHONE NUMBER
     # ==========================================================
 
     @property
@@ -78,6 +85,10 @@ class UserAccount(BaseEntity):
     def phone_number(self, value: Optional[str]):
         self._phone_number = value
 
+    # ==========================================================
+    # DEPARTMENT
+    # ==========================================================
+
     @property
     def department(self) -> Optional[str]:
         return self._department
@@ -85,6 +96,10 @@ class UserAccount(BaseEntity):
     @department.setter
     def department(self, value: Optional[str]):
         self._department = value
+
+    # ==========================================================
+    # AVATAR
+    # ==========================================================
 
     @property
     def avatar(self) -> Optional[str]:
@@ -94,6 +109,10 @@ class UserAccount(BaseEntity):
     def avatar(self, value: Optional[str]):
         self._avatar = value
 
+    # ==========================================================
+    # PASSWORD HASH
+    # ==========================================================
+
     @property
     def password_hash(self) -> Optional[str]:
         return self._password_hash
@@ -102,6 +121,10 @@ class UserAccount(BaseEntity):
     def password_hash(self, value: Optional[str]):
         self._password_hash = value
 
+    # ==========================================================
+    # APPROVED BY
+    # ==========================================================
+
     @property
     def approved_by(self) -> Optional[str]:
         return self._approved_by
@@ -109,6 +132,10 @@ class UserAccount(BaseEntity):
     @approved_by.setter
     def approved_by(self, value: Optional[str]):
         self._approved_by = value
+
+    # ==========================================================
+    # APPROVED AT
+    # ==========================================================
 
     @property
     def approved_at(self) -> Optional[datetime]:
@@ -119,21 +146,37 @@ class UserAccount(BaseEntity):
         self._approved_at = value
 
     # ==========================================================
-    # BUSINESS METHODS
+    # APPROVE ACCOUNT
     # ==========================================================
 
     def approve(self, approver_id: str):
+
         self.status = "APPROVED"
+
         self._approved_by = approver_id
+
         self._approved_at = datetime.now()
 
+    # ==========================================================
+    # LOCK ACCOUNT
+    # ==========================================================
+
     def lock(self):
+
         self.status = "LOCKED"
 
+    # ==========================================================
+    # STATUS CHECK
+    # ==========================================================
+
+    @property
     def is_approved(self) -> bool:
+
         return self.status == "APPROVED"
 
+    @property
     def is_locked(self) -> bool:
+
         return self.status == "LOCKED"
 
     # ==========================================================
@@ -141,8 +184,9 @@ class UserAccount(BaseEntity):
     # ==========================================================
 
     def to_dict(self):
+
         return {
-            "id": self.id,
+            "id": str(self.id),
             "email": self.email,
             "full_name": self.full_name,
             "role": self.role,

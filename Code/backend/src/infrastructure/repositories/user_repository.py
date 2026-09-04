@@ -12,14 +12,20 @@ class UserRepository(
     BaseRepository[UserAccount, UserModel],
     IUserRepository
 ):
+
     def __init__(self):
         super().__init__(UserModel)
 
     # ==========================================================
     # MODEL -> DOMAIN
     # ==========================================================
-    def _to_domain(self, model: UserModel) -> Optional[UserAccount]:
-        if not model:
+
+    def _to_domain(
+        self,
+        model: UserModel
+    ) -> Optional[UserAccount]:
+
+        if model is None:
             return None
 
         return UserAccount(
@@ -28,12 +34,19 @@ class UserRepository(
             full_name=model.full_name,
             role=model.role,
             status=model.status,
+
             phone_number=model.phone_number,
             department=model.department,
             avatar=model.avatar_url,
+
             password_hash=model.password_hash,
-            approved_by=str(model.approved_by)
-            if model.approved_by else None,
+
+            approved_by=(
+                str(model.approved_by)
+                if model.approved_by is not None
+                else None
+            ),
+
             approved_at=model.approved_at,
             created_at=model.created_at,
             updated_at=model.updated_at,
@@ -42,43 +55,78 @@ class UserRepository(
     # ==========================================================
     # DOMAIN -> MODEL
     # ==========================================================
-    def _to_model(self, entity: UserAccount) -> UserModel:
+
+    def _to_model(
+        self,
+        entity: UserAccount
+    ) -> UserModel:
+
+        user_id = entity.id
+
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+
+        approved_by = entity.approved_by
+
+        if isinstance(approved_by, str):
+            approved_by = UUID(approved_by)
+
         return UserModel(
-            id=UUID(entity.id) if isinstance(entity.id, str) else entity.id,
+            id=user_id,
+
             email=entity.email,
+
             password_hash=entity.password_hash,
+
             full_name=entity.full_name,
+
             role=entity.role,
+
             status=entity.status,
+
             avatar_url=entity.avatar,
+
             phone_number=entity.phone_number,
+
             department=entity.department,
-            approved_by=(
-                UUID(entity.approved_by)
-                if entity.approved_by
-                and isinstance(entity.approved_by, str)
-                else entity.approved_by
-            ),
+
+            approved_by=approved_by,
+
             approved_at=entity.approved_at,
+
             created_at=entity.created_at,
+
             updated_at=entity.updated_at,
+
             last_login_at=None,
         )
 
     # ==========================================================
     # FIND USER BY EMAIL
     # ==========================================================
-    def get_by_email(self, email: str) -> Optional[UserAccount]:
+
+    def get_by_email(
+        self,
+        email: str
+    ) -> Optional[UserAccount]:
+
         session = self._get_session()
 
         try:
+            normalized_email = email.strip().lower()
+
             model = (
                 session.query(UserModel)
-                .filter(UserModel.email == email.strip().lower())
+                .filter(
+                    UserModel.email == normalized_email
+                )
                 .first()
             )
 
-            return self._to_domain(model) if model else None
+            if model is None:
+                return None
+
+            return self._to_domain(model)
 
         except Exception:
             session.rollback()
@@ -90,7 +138,11 @@ class UserRepository(
     # ==========================================================
     # LIST PENDING USERS
     # ==========================================================
-    def list_pending(self) -> List[UserAccount]:
+
+    def list_pending(
+        self
+    ) -> List[UserAccount]:
+
         session = self._get_session()
 
         try:
