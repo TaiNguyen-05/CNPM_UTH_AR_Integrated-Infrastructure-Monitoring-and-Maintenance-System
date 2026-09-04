@@ -1,15 +1,23 @@
+from typing import List, Optional
 from datetime import datetime
-from typing import Dict, Any, Optional, List
-from .base_entity import BaseEntity
+
+from domain.models.base_entity import BaseEntity
 
 
 class ServerNode(BaseEntity):
     """
-    Domain Entity đại diện cho máy chủ vật lý trong tủ rack Data Center.
-    Hỗ trợ ánh xạ định danh QR AR để kỹ thuật viên quét thiết bị tại hiện trường.
+    Domain Entity đại diện cho một Server Node.
+
+    ServerNode chứa thông tin phần cứng, vị trí rack,
+    trạng thái hoạt động và thông tin telemetry.
     """
 
-    VALID_STATUSES = {"HEALTHY", "WARNING", "CRITICAL", "OFFLINE"}
+    VALID_STATUSES = {
+        "HEALTHY",
+        "WARNING",
+        "CRITICAL",
+        "OFFLINE",
+    }
 
     def __init__(
         self,
@@ -17,39 +25,48 @@ class ServerNode(BaseEntity):
         rack_id: str,
         name: str,
         u_start: int,
-        u_height: int = 2,
-        ip_address: str = "127.0.0.1",
+        u_height: int,
+        ip_address: str,
         mac_address: Optional[str] = None,
-        model: Optional[str] = "Generic Server",
-        cpu_model: Optional[str] = "Multi-Core CPU",
-        ram_total_gb: int = 32,
-        disk_total_gb: int = 1000,
+        model: Optional[str] = None,
+        cpu_model: Optional[str] = None,
+        ram_total_gb: Optional[int] = None,
+        disk_total_gb: Optional[int] = None,
         qr_code_payload: Optional[str] = None,
         status: str = "HEALTHY",
-        metrics: Optional[Dict[str, float]] = None,
-        containers: Optional[List[Dict[str, Any]]] = None,
+        metrics: Optional[dict] = None,
+        containers: Optional[list] = None,
         last_heartbeat_at: Optional[datetime] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
     ):
-        super().__init__(id=id, created_at=created_at, updated_at=updated_at)
+        super().__init__(
+            id=id,
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+
         self._rack_id = rack_id
         self._name = name
-        self.u_start = u_start
-        self.u_height = u_height
-        self.ip_address = ip_address
+        self._u_start = u_start
+        self._u_height = u_height
+        self._ip_address = ip_address
         self._mac_address = mac_address
         self._model = model
         self._cpu_model = cpu_model
-        self.ram_total_gb = ram_total_gb
-        self.disk_total_gb = disk_total_gb
-        self._qr_code_payload = qr_code_payload or f"ar-imms://node/{id}"
-        self.status = status
-        self._metrics = metrics or {"cpu": 0.0, "ram": 0.0, "disk": 0.0, "temp": 0.0, "netIn": 0.0, "netOut": 0.0}
-        self._containers = containers or []
-        self._last_heartbeat_at = last_heartbeat_at or datetime.utcnow()
+        self._ram_total_gb = ram_total_gb
+        self._disk_total_gb = disk_total_gb
+        self._qr_code_payload = qr_code_payload
+        self._status = status
+        self._metrics = metrics if metrics is not None else {}
+        self._containers = containers if containers is not None else []
+        self._last_heartbeat_at = last_heartbeat_at
 
-    # --- Encapsulation & Validation via Getters & Setters ---
+        self._validate_status()
+
+    # ========================================================
+    # PROPERTIES
+    # ========================================================
 
     @property
     def rack_id(self) -> str:
@@ -57,10 +74,9 @@ class ServerNode(BaseEntity):
 
     @rack_id.setter
     def rack_id(self, value: str):
-        if not value or not str(value).strip():
-            raise ValueError("Mã tủ rack (rack_id) không được để trống")
-        self._rack_id = str(value).strip()
-        self.touch()
+        if not value:
+            raise ValueError("rack_id không được để trống")
+        self._rack_id = value
 
     @property
     def name(self) -> str:
@@ -68,10 +84,9 @@ class ServerNode(BaseEntity):
 
     @name.setter
     def name(self, value: str):
-        if not value or len(str(value).strip()) < 2:
-            raise ValueError("Tên Node phải có ít nhất 2 ký tự")
-        self._name = str(value).strip()
-        self.touch()
+        if not value or not value.strip():
+            raise ValueError("Tên Server Node không được để trống")
+        self._name = value.strip()
 
     @property
     def u_start(self) -> int:
@@ -79,11 +94,9 @@ class ServerNode(BaseEntity):
 
     @u_start.setter
     def u_start(self, value: int):
-        val = int(value)
-        if not (1 <= val <= 48):
-            raise ValueError("Vị trí U slot bắt đầu phải nằm trong khoảng 1 - 48")
-        self._u_start = val
-        self.touch()
+        if value < 1:
+            raise ValueError("u_start phải lớn hơn hoặc bằng 1")
+        self._u_start = value
 
     @property
     def u_height(self) -> int:
@@ -91,11 +104,9 @@ class ServerNode(BaseEntity):
 
     @u_height.setter
     def u_height(self, value: int):
-        val = int(value)
-        if not (1 <= val <= 10):
-            raise ValueError("Chiều cao U-height phải từ 1U đến 10U")
-        self._u_height = val
-        self.touch()
+        if value < 1:
+            raise ValueError("u_height phải lớn hơn hoặc bằng 1")
+        self._u_height = value
 
     @property
     def ip_address(self) -> str:
@@ -103,45 +114,57 @@ class ServerNode(BaseEntity):
 
     @ip_address.setter
     def ip_address(self, value: str):
-        if not value or not str(value).strip():
-            raise ValueError("Địa chỉ IP không được để trống")
-        self._ip_address = str(value).strip()
-        self.touch()
+        if not value or not value.strip():
+            raise ValueError("IP address không được để trống")
+        self._ip_address = value.strip()
 
     @property
-    def ram_total_gb(self) -> int:
+    def mac_address(self) -> Optional[str]:
+        return self._mac_address
+
+    @mac_address.setter
+    def mac_address(self, value: Optional[str]):
+        self._mac_address = value
+
+    @property
+    def model(self) -> Optional[str]:
+        return self._model
+
+    @model.setter
+    def model(self, value: Optional[str]):
+        self._model = value
+
+    @property
+    def cpu_model(self) -> Optional[str]:
+        return self._cpu_model
+
+    @cpu_model.setter
+    def cpu_model(self, value: Optional[str]):
+        self._cpu_model = value
+
+    @property
+    def ram_total_gb(self) -> Optional[int]:
         return self._ram_total_gb
 
     @ram_total_gb.setter
-    def ram_total_gb(self, value: int):
-        val = int(value)
-        if val <= 0:
-            raise ValueError("Dung lượng RAM phải lớn hơn 0 GB")
-        self._ram_total_gb = val
-        self.touch()
+    def ram_total_gb(self, value: Optional[int]):
+        self._ram_total_gb = value
 
     @property
-    def disk_total_gb(self) -> int:
+    def disk_total_gb(self) -> Optional[int]:
         return self._disk_total_gb
 
     @disk_total_gb.setter
-    def disk_total_gb(self, value: int):
-        val = int(value)
-        if val <= 0:
-            raise ValueError("Dung lượng Disk phải lớn hơn 0 GB")
-        self._disk_total_gb = val
-        self.touch()
+    def disk_total_gb(self, value: Optional[int]):
+        self._disk_total_gb = value
 
     @property
-    def qr_code_payload(self) -> str:
+    def qr_code_payload(self) -> Optional[str]:
         return self._qr_code_payload
 
     @qr_code_payload.setter
-    def qr_code_payload(self, value: str):
-        if not value:
-            raise ValueError("QR code payload không được rỗng")
-        self._qr_code_payload = str(value).strip()
-        self.touch()
+    def qr_code_payload(self, value: Optional[str]):
+        self._qr_code_payload = value
 
     @property
     def status(self) -> str:
@@ -149,71 +172,126 @@ class ServerNode(BaseEntity):
 
     @status.setter
     def status(self, value: str):
-        val = str(value).upper().strip()
-        if val not in self.VALID_STATUSES:
-            raise ValueError(f"Trạng thái {value} không hợp lệ. Cho phép: {self.VALID_STATUSES}")
-        self._status = val
-        self.touch()
+        value = value.upper()
+
+        if value not in self.VALID_STATUSES:
+            raise ValueError(
+                f"Status không hợp lệ: {value}. "
+                f"Cho phép: {self.VALID_STATUSES}"
+            )
+
+        self._status = value
 
     @property
-    def metrics(self) -> Dict[str, float]:
+    def metrics(self) -> dict:
         return self._metrics
 
+    @metrics.setter
+    def metrics(self, value: Optional[dict]):
+        self._metrics = value if value is not None else {}
+
     @property
-    def containers(self) -> List[Dict[str, Any]]:
+    def containers(self) -> list:
         return self._containers
 
-    # --- Domain Business Methods ---
+    @containers.setter
+    def containers(self, value: Optional[list]):
+        self._containers = value if value is not None else []
 
-    def update_telemetry(self, cpu: float, ram: float, disk: float, temp: float, net_in: float = 0.0, net_out: float = 0.0):
-        """Cập nhật chỉ số đo lường thời gian thực và tự động đánh giá trạng thái."""
-        self._metrics = {
-            "cpu": round(float(cpu), 1),
-            "ram": round(float(ram), 1),
-            "disk": round(float(disk), 1),
-            "temp": round(float(temp), 1),
-            "netIn": round(float(net_in), 1),
-            "netOut": round(float(net_out), 1),
-        }
-        self._last_heartbeat_at = datetime.utcnow()
+    @property
+    def last_heartbeat_at(self) -> Optional[datetime]:
+        return self._last_heartbeat_at
 
-        # Tự động suy luận trạng thái sức khỏe
-        if cpu >= 90.0 or temp >= 75.0 or ram >= 95.0:
-            self._status = "CRITICAL"
-        elif cpu >= 75.0 or temp >= 65.0 or ram >= 80.0:
-            self._status = "WARNING"
-        else:
-            self._status = "HEALTHY"
-        self.touch()
+    @last_heartbeat_at.setter
+    def last_heartbeat_at(self, value: Optional[datetime]):
+        self._last_heartbeat_at = value
 
-    def set_containers(self, containers_list: List[Dict[str, Any]]):
-        """Cập nhật danh sách workloads / docker containers chạy trên node."""
-        self._containers = containers_list or []
-        self.touch()
+    # ========================================================
+    # VALIDATION
+    # ========================================================
+
+    def _validate_status(self):
+        if self._status not in self.VALID_STATUSES:
+            raise ValueError(
+                f"Status không hợp lệ: {self._status}"
+            )
+
+    # ========================================================
+    # TELEMETRY
+    # ========================================================
+
+    def update_metrics(self, metrics: dict):
+        """
+        Cập nhật thông tin telemetry.
+        """
+
+        if not isinstance(metrics, dict):
+            raise ValueError("metrics phải là dictionary")
+
+        self._metrics = metrics
+
+    def update_containers(self, containers: list):
+        """
+        Cập nhật danh sách container.
+        """
+
+        if not isinstance(containers, list):
+            raise ValueError("containers phải là list")
+
+        self._containers = containers
+
+    def update_heartbeat(
+        self,
+        heartbeat_at: Optional[datetime] = None
+    ):
+        """
+        Cập nhật thời gian heartbeat cuối cùng.
+        """
+
+        self._last_heartbeat_at = (
+            heartbeat_at
+            if heartbeat_at is not None
+            else datetime.now()
+        )
+
+    # ========================================================
+    # STATUS
+    # ========================================================
+
+    def mark_healthy(self):
+        self._status = "HEALTHY"
+
+    def mark_warning(self):
+        self._status = "WARNING"
+
+    def mark_critical(self):
+        self._status = "CRITICAL"
 
     def mark_offline(self):
-        """Chuyển node sang trạng thái ngoại tuyến."""
         self._status = "OFFLINE"
-        self.touch()
 
-    def to_dict(self) -> Dict[str, Any]:
-        data = super().to_dict()
-        data.update({
-            "rack_id": self._rack_id,
-            "name": self._name,
-            "u_start": self._u_start,
-            "u_height": self._u_height,
-            "slot": f"U{self._u_start} - U{self._u_start + self._u_height - 1} ({self._u_height}U)",
-            "ip_address": self._ip_address,
-            "mac_address": self._mac_address,
-            "model": self._model,
-            "cpu_model": self._cpu_model,
-            "ram_total_gb": self._ram_total_gb,
-            "disk_total_gb": self._disk_total_gb,
-            "qr_code_payload": self._qr_code_payload,
-            "status": self._status,
-            "metrics": self._metrics,
-            "containers": self._containers,
-            "last_heartbeat_at": self._last_heartbeat_at.isoformat() if self._last_heartbeat_at else None,
-        })
-        return data
+    # ========================================================
+    # SERIALIZATION
+    # ========================================================
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "rack_id": self.rack_id,
+            "name": self.name,
+            "u_start": self.u_start,
+            "u_height": self.u_height,
+            "ip_address": self.ip_address,
+            "mac_address": self.mac_address,
+            "model": self.model,
+            "cpu_model": self.cpu_model,
+            "ram_total_gb": self.ram_total_gb,
+            "disk_total_gb": self.disk_total_gb,
+            "qr_code_payload": self.qr_code_payload,
+            "status": self.status,
+            "metrics": self.metrics,
+            "containers": self.containers,
+            "last_heartbeat_at": self.last_heartbeat_at,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }

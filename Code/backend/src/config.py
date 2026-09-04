@@ -5,23 +5,47 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Config:
     """Base configuration."""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'a_default_secret_key'
     DEBUG = os.environ.get('DEBUG', 'False').lower() in ['true', '1']
     TESTING = os.environ.get('TESTING', 'False').lower() in ['true', '1']
-    
-    # Priority: POSTGREE_DATABASE_URL (Supabase) -> DATABASE_URI -> default fallback
-    _raw_db_url = os.environ.get('POSTGREE_DATABASE_URL') or os.environ.get('DATABASE_URI') or 'sqlite:///default.db'
-    
-    # SQLAlchemy 2.0 compatibility: replace postgres:// with postgresql:// if present
+
+    # Database configuration
+    # Priority: SUPABASE_DB_URL -> POSTGREE_DATABASE_URL -> DATABASE_URI
+    _raw_db_url = (
+        os.environ.get('SUPABASE_DB_URL')
+        or os.environ.get('POSTGREE_DATABASE_URL')
+        or os.environ.get('DATABASE_URI')
+        or 'sqlite:///default.db'
+    )
+
+    # SQLAlchemy 2.0 compatibility
     if _raw_db_url.startswith('postgres://'):
-        _raw_db_url = _raw_db_url.replace('postgres://', 'postgresql://', 1)
-        
+        _raw_db_url = _raw_db_url.replace(
+            'postgres://',
+            'postgresql://',
+            1
+        )
+
     DATABASE_URI = _raw_db_url
     SQLALCHEMY_DATABASE_URI = _raw_db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CORS_HEADERS = 'Content-Type'
+
+    # JWT configuration
+    JWT_SECRET_KEY = os.environ.get(
+        'JWT_SECRET_KEY',
+        'change-this-secret-in-production'
+    )
+
+    JWT_ACCESS_TOKEN_EXPIRES_MINUTES = int(
+        os.environ.get(
+            'JWT_ACCESS_TOKEN_EXPIRES_MINUTES',
+            '60'
+        )
+    )
 
 
 class DevelopmentConfig(Config):
@@ -43,9 +67,11 @@ class ProductionConfig(Config):
 
 class FactoryConfig:
     """Factory to get configuration based on environment."""
+
     @staticmethod
     def get_config(env: str) -> Type[Config]:
         env_lower = (env or '').lower()
+
         if env_lower == 'development':
             return DevelopmentConfig
         elif env_lower == 'testing':
@@ -58,11 +84,15 @@ class FactoryConfig:
 
 class SwaggerConfig:
     """Swagger documentation configuration."""
+
     template = {
         "swagger": "2.0",
         "info": {
             "title": "AR-IMMS Backend API",
-            "description": "API for AR-Integrated Infrastructure Monitoring and Maintenance System",
+            "description": (
+                "API for AR-Integrated Infrastructure "
+                "Monitoring and Maintenance System"
+            ),
             "version": "1.0.0"
         },
         "basePath": "/",
