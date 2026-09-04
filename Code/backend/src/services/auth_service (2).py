@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -9,16 +8,13 @@ from dotenv import load_dotenv
 from infrastructure.repositories.user_repository import UserRepository
 
 
-# Luôn đọc file .env nằm trong thư mục src
-BASE_DIR = Path(__file__).resolve().parents[1]
-ENV_FILE = BASE_DIR / ".env"
-
-load_dotenv(ENV_FILE, override=True)
+load_dotenv()
 
 
 class AuthService:
-    def __init__(self, repository=None):
-        self.repository = repository or UserRepository()
+
+    def __init__(self):
+        self.user_repository = UserRepository()
 
         self.secret_key = os.environ.get("JWT_SECRET_KEY")
 
@@ -27,14 +23,25 @@ class AuthService:
                 "JWT_SECRET_KEY chưa được cấu hình trong file .env"
             )
 
-        self.expires_minutes = int(
+        expires_minutes = int(
             os.environ.get(
                 "JWT_ACCESS_TOKEN_EXPIRES_MINUTES",
                 "60"
             )
         )
 
-    def verify_password(self, password: str, password_hash: str) -> bool:
+        self.expires_minutes = expires_minutes
+
+    # ==========================================================
+    # VERIFY PASSWORD
+    # ==========================================================
+
+    def verify_password(
+        self,
+        password: str,
+        password_hash: str
+    ) -> bool:
+
         if not password_hash:
             return False
 
@@ -43,21 +50,31 @@ class AuthService:
             password_hash.encode("utf-8")
         )
 
+    # ==========================================================
+    # LOGIN
+    # ==========================================================
+
     def login(self, email: str, password: str):
-        user = self.repository.get_by_email(email)
+
+        user = self.user_repository.get_by_email(email)
 
         if not user:
-            raise ValueError("Email hoặc mật khẩu không đúng.")
+            raise ValueError(
+                "Email hoặc mật khẩu không đúng."
+            )
 
         if not self.verify_password(
             password,
             user.password_hash
         ):
-            raise ValueError("Email hoặc mật khẩu không đúng.")
+            raise ValueError(
+                "Email hoặc mật khẩu không đúng."
+            )
 
         if user.status != "APPROVED":
             raise ValueError(
-                f"Tài khoản chưa được phép đăng nhập. Status: {user.status}"
+                f"Tài khoản chưa được phép đăng nhập. "
+                f"Status: {user.status}"
             )
 
         access_token = self.create_access_token(user)
@@ -69,8 +86,14 @@ class AuthService:
             "user": user.to_dict(),
         }
 
+    # ==========================================================
+    # CREATE JWT ACCESS TOKEN
+    # ==========================================================
+
     def create_access_token(self, user):
+
         now = datetime.now(timezone.utc)
+
         expires_at = now + timedelta(
             minutes=self.expires_minutes
         )
@@ -84,22 +107,38 @@ class AuthService:
             "exp": expires_at,
         }
 
-        return jwt.encode(
+        token = jwt.encode(
             payload,
             self.secret_key,
             algorithm="HS256"
         )
 
+        return token
+
+    # ==========================================================
+    # DECODE JWT
+    # ==========================================================
+
     def decode_access_token(self, token: str):
+
         try:
-            return jwt.decode(
+
+            payload = jwt.decode(
                 token,
                 self.secret_key,
                 algorithms=["HS256"]
             )
 
+            return payload
+
         except jwt.ExpiredSignatureError:
-            raise ValueError("JWT đã hết hạn.")
+
+            raise ValueError(
+                "JWT đã hết hạn."
+            )
 
         except jwt.InvalidTokenError:
-            raise ValueError("JWT không hợp lệ.")
+
+            raise ValueError(
+                "JWT không hợp lệ."
+            )

@@ -1,9 +1,12 @@
 from flask import Blueprint, request
 from marshmallow import ValidationError
+
 from infrastructure.repositories.ar_repositories import UserRepository
 from services.ar_services import UserService
 from api.schemas.ar_schemas import UserSchema
 from api.responses import success_response, error_response
+from api.jwt_guard import jwt_required
+
 
 user_bp = Blueprint("users", __name__, url_prefix="/api/users")
 
@@ -38,13 +41,18 @@ def list_users():
     role = request.args.get("role")
 
     filters = {}
+
     if status:
         filters["status"] = status.upper()
+
     if role:
         filters["role"] = role.upper()
 
     users = user_service.list_all(filters if filters else None)
-    return success_response(data=[u.to_dict() for u in users])
+
+    return success_response(
+        data=[u.to_dict() for u in users]
+    )
 
 
 @user_bp.route("/<user_id>", methods=["GET"])
@@ -66,8 +74,13 @@ def get_user(user_id):
         description: Không tìm thấy
     """
     user = user_service.get_by_id(user_id) or user_service.get_by_email(user_id)
+
     if not user:
-        return error_response(f"Không tìm thấy người dùng: {user_id}", status_code=404)
+        return error_response(
+            f"Không tìm thấy người dùng: {user_id}",
+            status_code=404
+        )
+
     return success_response(data=user.to_dict())
 
 
@@ -111,19 +124,35 @@ def create_user():
         description: Đăng ký thành công
     """
     data = request.get_json() or {}
+
     try:
         validated_data = user_schema.load(data)
+
     except ValidationError as err:
-        return error_response(message="Dữ liệu không hợp lệ", errors=err.messages, status_code=400)
+        return error_response(
+            message="Dữ liệu không hợp lệ",
+            errors=err.messages,
+            status_code=400
+        )
 
     try:
         new_user = user_service.create_user(validated_data)
-        return success_response(data=new_user.to_dict(), message="Đăng ký tài khoản thành công", status_code=201)
+
+        return success_response(
+            data=new_user.to_dict(),
+            message="Đăng ký tài khoản thành công",
+            status_code=201
+        )
+
     except Exception as e:
-        return error_response(message=str(e), status_code=400)
+        return error_response(
+            message=str(e),
+            status_code=400
+        )
 
 
 @user_bp.route("/<user_id>/approve", methods=["POST"])
+@jwt_required
 def approve_user(user_id):
     """
     Admin phê duyệt tài khoản kỹ thuật viên
@@ -149,15 +178,29 @@ def approve_user(user_id):
         description: Phê duyệt thành công
     """
     data = request.get_json() or {}
+
     approver_id = data.get("approver_id", "ADMIN")
+
     try:
-        user = user_service.approve_user(user_id, approver_id)
-        return success_response(data=user.to_dict(), message=f"Đã phê duyệt tài khoản {user.full_name}")
+        user = user_service.approve_user(
+            user_id,
+            approver_id
+        )
+
+        return success_response(
+            data=user.to_dict(),
+            message=f"Đã phê duyệt tài khoản {user.full_name}"
+        )
+
     except Exception as e:
-        return error_response(message=str(e), status_code=400)
+        return error_response(
+            message=str(e),
+            status_code=400
+        )
 
 
 @user_bp.route("/<user_id>/lock", methods=["POST"])
+@jwt_required
 def lock_user(user_id):
     """
     Khóa tài khoản người dùng
@@ -175,12 +218,21 @@ def lock_user(user_id):
     """
     try:
         user = user_service.lock_user(user_id)
-        return success_response(data=user.to_dict(), message=f"Đã khóa tài khoản {user.full_name}")
+
+        return success_response(
+            data=user.to_dict(),
+            message=f"Đã khóa tài khoản {user.full_name}"
+        )
+
     except Exception as e:
-        return error_response(message=str(e), status_code=400)
+        return error_response(
+            message=str(e),
+            status_code=400
+        )
 
 
 @user_bp.route("/<user_id>", methods=["DELETE"])
+@jwt_required
 def delete_user(user_id):
     """
     Xóa tài khoản người dùng
@@ -197,6 +249,13 @@ def delete_user(user_id):
         description: Xóa thành công
     """
     success = user_service.delete(user_id)
+
     if not success:
-        return error_response(f"Không tìm thấy người dùng: {user_id}", status_code=404)
-    return success_response(message=f"Đã xóa tài khoản {user_id} thành công")
+        return error_response(
+            f"Không tìm thấy người dùng: {user_id}",
+            status_code=404
+        )
+
+    return success_response(
+        message=f"Đã xóa tài khoản {user_id} thành công"
+    )
