@@ -24,3 +24,15 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Android Build & Gradle Caches
+**/build/
+**/.gradle/
+**/local.properties
+**/captures/
+**/.cxx/
+**/*.apk
+**/*.aab
+*.iml
+.kotlin/
+**/bin/

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>AR-IMMS 3D Digital Twin</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0A0E1A;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      color: #FFFFFF;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* 3D Viewport Controls & HUD Overlay */
+    .overlay-ui {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .badge-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chip {
+      background: rgba(19, 27, 46, 0.85);
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #00E5FF;
+      backdrop-filter: blur(8px);
+      pointer-events: auto;
+    }
+    .chip.danger {
+      border-color: rgba(255, 23, 68, 0.6);
+      color: #FF1744;
+      background: rgba(255, 23, 68, 0.15);
+    }
+    /* Camera Presets Bar */
+    .presets-bar {
+      position: absolute;
+      bottom: 16px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      pointer-events: auto;
+      padding-bottom: 4px;
+    }
+    .btn-preset {
+      background: rgba(24, 34, 56, 0.9);
+      border: 1px solid #263859;
+      color: #94A3B8;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.2s;
+    }
+    .btn-preset:active, .btn-preset.active {
+      border-color: #00E5FF;
+      color: #00E5FF;
+      background: rgba(0, 229, 255, 0.2);
+    }
+    /* Holographic Selected Node Card */
+    .holo-card {
+      position: absolute;
+      top: 50px;
+      left: 12px;
+      right: 12px;
+      background: rgba(19, 27, 46, 0.92);
+      border: 1.5px solid #00E5FF;
+      border-radius: 14px;
+      padding: 12px 14px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 229, 255, 0.25);
+      display: none;
+      pointer-events: auto;
+      animation: fadeIn 0.3s ease;
+    }
+    .holo-card.critical {
+      border-color: #FF1744;
+      box-shadow: 0 8px 32px rgba(255, 23, 68, 0.3);
+    }
+    .holo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .holo-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    .holo-tag {
+      font-size: 10px;
+      color: #00E5FF;
+      background: rgba(0, 229, 255, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .holo-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .metric-box {
+      background: rgba(10, 14, 26, 0.6);
+      border-radius: 6px;
+      padding: 4px 6px;
+      text-align: center;
+    }
+    .metric-box .label {
+      font-size: 9px;
+      color: #94A3B8;
+    }
+    .metric-box .val {
+      font-size: 11px;
+      font-weight: 700;
+      color: #00E5FF;
+    }
+    .holo-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .holo-btn {
+      flex: 1;
+      padding: 6px 0;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+    }
+    .holo-btn.primary {
+      background: #00E5FF;
+      color: #0A0E1A;
+    }
+    .holo-btn.secondary {
+      background: #1C2742;
+      border: 1px solid #263859;
+      color: #FFFFFF;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Heatmap legend */
+    .heatmap-toggle {
+      background: rgba(24, 34, 56, 0.9);
+      border: 1px solid #FFD600;
+      color: #FFD600;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div class="overlay-ui">
+    <div class="badge-bar">
+      <div class="chip">● THREE.JS 3D TWIN ENGINE</div>
+      <button class="heatmap-toggle" id="btn-heatmap" onclick="toggleHeatmap()">🔥 HEATMAP 3D</button>
+    </div>
+  </div>
+
+  <!-- Holographic Node Details Popover -->
+  <div class="holo-card" id="holo-card">
+    <div class="holo-header">
+      <div>
+        <div class="holo-title" id="holo-node-name">SRV-AI-GPU-01</div>
+        <div style="font-size: 10px; color: #94A3B8;" id="holo-node-sub">Rack R-02 • U24 (4U) • 192.168.10.105</div>
+      </div>
+      <div class="holo-tag" id="holo-node-tag">AR-NODE-05</div>
+    </div>
+    <div class="holo-metrics">
+      <div class="metric-box">
+        <div class="label">CPU</div>
+        <div class="val" id="holo-cpu">91.5%</div>
+      </div>
+      <div class="metric-box">
+        <div class="label">RAM</div>
+        <div class="val" id="holo-ram">86.2%</div>
+      </div>
+      <div class="metric-box">
+        <div class="label">TEMP</div>
+        <div class="val" style="color: #FF1744;" id="holo-temp">83.5°C</div>
+      </div>
+      <div class="metric-box">
+        <div class="label">QUẠT</div>
+        <div class="val" id="holo-fan">8800 RPM</div>
+      </div>
+    </div>
+    <div class="holo-actions">
+      <button class="holo-btn secondary" onclick="closeHoloCard()">ĐÓNG</button>
+      <button class="holo-btn primary" onclick="openNativeNodeDetail()">XEM CHI TIẾT & ĐIỀU KHIỂN</button>
+    </div>
+  </div>
+
+  <!-- Camera Presets -->
+  <div class="presets-bar">
+    <button class="btn-preset active" onclick="setCameraView('overview', this)">🌐 Toàn cảnh Phòng máy</button>
+    <button class="btn-preset" onclick="setCameraView('rack1', this)">🖥️ Tủ R-01 (Core)</button>
+    <button class="btn-preset" onclick="setCameraView('rack2', this)">🤖 Tủ R-02 (Storage/AI)</button>
+    <button class="btn-preset" onclick="setCameraView('srv05', this)">🚨 Sự cố SRV-05</button>
+  </div>
+
+  <script>
+    let scene, camera, renderer, controls, raycaster, mouse;
+    let serverMeshes = [];
+    let isHeatmapMode = false;
+    let selectedNodeId = null;
+
+    // Node Data Registry
+    const nodesData = {
+      "srv-01": { id: "srv-01", name: "SRV-EDGE-01 (API Gateway)", rack: "R-01", u: 12, height: 1, tag: "AR-NODE-01", ip: "192.168.10.101", cpu: 28.5, ram: 42.0, temp: 38.2, fan: 4200, status: "HEALTHY" },
+      "srv-02": { id: "srv-02", name: "SRV-DB-01 (Postgres Primary)", rack: "R-01", u: 14, height: 2, tag: "AR-NODE-02", ip: "192.168.10.102", cpu: 68.4, ram: 88.5, temp: 54.8, fan: 6100, status: "WARNING" },
+      "srv-03": { id: "srv-03", name: "SRV-WORKER-01 (Queue Broker)", rack: "R-01", u: 18, height: 1, tag: "AR-NODE-03", ip: "192.168.10.103", cpu: 34.0, ram: 48.2, temp: 41.5, fan: 4500, status: "HEALTHY" },
+      "srv-04": { id: "srv-04", name: "SRV-STORAGE-01 (MinIO S3)", rack: "R-02", u: 10, height: 2, tag: "AR-NODE-04", ip: "192.168.10.104", cpu: 22.1, ram: 35.4, temp: 36.9, fan: 3900, status: "HEALTHY" },
+      "srv-05": { id: "srv-05", name: "SRV-AI-GPU-01 (Inference Node)", rack: "R-02", u: 24, height: 4, tag: "AR-NODE-05", ip: "192.168.10.105", cpu: 91.5, ram: 86.2, temp: 83.5, fan: 8800, status: "CRITICAL" }
+    };
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0A0E1A);
+      scene.fog = new THREE.FogExp2(0x0A0E1A, 0.035);
+
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      camera.position.set(0, 5, 8.5);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 - 0.02; // Don't go below floor
+      controls.minDistance = 2;
+      controls.maxDistance = 16;
+      controls.target.set(0, 1.8, 0);
+
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      setupLighting();
+      createEnvironment();
+      createRacks();
+
+      window.addEventListener('resize', onWindowResize);
+      window.addEventListener('pointerdown', onPointerDown);
+
+      animate();
+    }
+
+    function setupLighting() {
+      const ambientLight = new THREE.AmbientLight(0x1F2D4A, 1.8);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0x00E5FF, 1.2);
+      dirLight.position.set(5, 10, 7);
+      scene.add(dirLight);
+
+      const bluePoint = new THREE.PointLight(0x00B4D8, 2, 12);
+      bluePoint.position.set(-3, 4, 2);
+      scene.add(bluePoint);
+
+      const warnPoint = new THREE.PointLight(0xFF1744, 2.5, 8);
+      warnPoint.position.set(2.5, 2.5, 0);
+      scene.add(warnPoint);
+    }
+
+    function createEnvironment() {
+      // Cyber Neon Floor Grid
+      const gridHelper = new THREE.GridHelper(24, 24, 0x00E5FF, 0x182238);
+      gridHelper.position.y = 0;
+      scene.add(gridHelper);
+
+      // Floor Plane with subtle reflection
+      const floorGeo = new THREE.PlaneGeometry(30, 30);
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: 0x070B14,
+        roughness: 0.8,
+        metalness: 0.2
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      scene.add(floor);
+
+      // Ceiling Cable Trays
+      const trayGeo = new THREE.BoxGeometry(10, 0.1, 0.6);
+      const trayMat = new THREE.MeshStandardMaterial({ color: 0x1F2D4A, metalness: 0.8, roughness: 0.4 });
+      const tray = new THREE.Mesh(trayGeo, trayMat);
+      tray.position.set(0, 3.8, 0);
+      scene.add(tray);
+    }
+
+    function createRacks() {
+      const rack1 = buildRackCabinet("rack-01", "Rack R-01 (Core)", -1.8, 0);
+      const rack2 = buildRackCabinet("rack-02", "Rack R-02 (AI / Storage)", 1.8, 0);
+      scene.add(rack1);
+      scene.add(rack2);
+
+      // Populate Servers in Rack 1
+      addServerToRack(rack1, nodesData["srv-01"], -1.8, 12, 1);
+      addServerToRack(rack1, nodesData["srv-02"], -1.8, 14, 2);
+      addServerToRack(rack1, nodesData["srv-03"], -1.8, 18, 1);
+
+      // Populate Servers in Rack 2
+      addServerToRack(rack2, nodesData["srv-04"], 1.8, 10, 2);
+      addServerToRack(rack2, nodesData["srv-05"], 1.8, 24, 4);
+    }
+
+    function buildRackCabinet(rackId, name, xPos, zPos) {
+      const rackGroup = new THREE.Group();
+      rackGroup.position.set(xPos, 0, zPos);
+
+      const height = 3.6;
+      const width = 1.2;
+      const depth = 1.4;
+
+      // 42U Outer Frame Pillars
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x131B2E,
+        metalness: 0.85,
+        roughness: 0.25
+      });
+
+      // Frame Box
+      const frameGeo = new THREE.BoxGeometry(width, height, depth);
+      const frameMesh = new THREE.Mesh(frameGeo, new THREE.MeshStandardMaterial({
+        color: 0x0A0F1D,
+        roughness: 0.9,
+        transparent: true,
+        opacity: 0.6
+      }));
+      frameMesh.position.y = height / 2;
+      rackGroup.add(frameMesh);
+
+      // Vertical Pillar Rails
+      const pillarGeo = new THREE.BoxGeometry(0.06, height, 0.06);
+      const p1 = new THREE.Mesh(pillarGeo, frameMat);
+      p1.position.set(-width/2 + 0.03, height/2, -depth/2 + 0.03);
+      const p2 = new THREE.Mesh(pillarGeo, frameMat);
+      p2.position.set(width/2 - 0.03, height/2, -depth/2 + 0.03);
+      const p3 = new THREE.Mesh(pillarGeo, frameMat);
+      p3.position.set(-width/2 + 0.03, height/2, depth/2 - 0.03);
+      const p4 = new THREE.Mesh(pillarGeo, frameMat);
+      p4.position.set(width/2 - 0.03, height/2, depth/2 - 0.03);
+      rackGroup.add(p1, p2, p3, p4);
+
+      // Top Rack Name Plate
+      const topPlateGeo = new THREE.BoxGeometry(width * 0.9, 0.18, 0.05);
+      const topPlateMat = new THREE.MeshStandardMaterial({ color: 0x00E5FF, emissive: 0x004050 });
+      const topPlate = new THREE.Mesh(topPlateGeo, topPlateMat);
+      topPlate.position.set(0, height - 0.1, depth/2 - 0.02);
+      rackGroup.add(topPlate);
+
+      return rackGroup;
+    }
+
+    function addServerToRack(rackGroup, nodeData, rackX, uPosition, uHeight) {
+      const uUnitHeight = 3.6 / 42; // Height per 1U
+      const serverHeight = uUnitHeight * uHeight * 0.92;
+      const serverWidth = 1.05;
+      const serverDepth = 1.25;
+
+      const yPos = (uPosition * uUnitHeight) + (serverHeight / 2);
+
+      const serverGeo = new THREE.BoxGeometry(serverWidth, serverHeight, serverDepth);
+      
+      const statusColor = getStatusColor(nodeData.status);
+      const serverMat = new THREE.MeshStandardMaterial({
+        color: 0x182238,
+        metalness: 0.6,
+        roughness: 0.35,
+        emissive: statusColor,
+        emissiveIntensity: nodeData.status === "CRITICAL" ? 0.35 : 0.08
+      });
+
+      const serverMesh = new THREE.Mesh(serverGeo, serverMat);
+      serverMesh.position.set(0, yPos, 0);
+      serverMesh.userData = { nodeId: nodeData.id, initialY: yPos, rackX: rackX };
+
+      // Front Faceplate with LED status beacon
+      const ledGeo = new THREE.BoxGeometry(0.06, 0.06, 0.02);
+      const ledMat = new THREE.MeshBasicMaterial({ color: statusColor });
+      const ledMesh = new THREE.Mesh(ledGeo, ledMat);
+      ledMesh.position.set(serverWidth / 2 - 0.1, 0, serverDepth / 2 + 0.01);
+      serverMesh.add(ledMesh);
+
+      rackGroup.add(serverMesh);
+      serverMeshes.push(serverMesh);
+    }
+
+    function getStatusColor(status) {
+      switch(status) {
+        case "CRITICAL": return 0xFF1744;
+        case "WARNING": return 0xFFD600;
+        case "HEALTHY": return 0x00E676;
+        default: return 0x00E5FF;
+      }
+    }
+
+    function onPointerDown(event) {
+      // Calculate mouse position in normalized device coordinates
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(serverMeshes);
+
+      if (intersects.length > 0) {
+        const hitServer = intersects[0].object;
+        const nodeId = hitServer.userData.nodeId;
+        selectServerNode(nodeId, hitServer);
+      }
+    }
+
+    function selectServerNode(nodeId, mesh) {
+      selectedNodeId = nodeId;
+      const data = nodesData[nodeId];
+      if (!data) return;
+
+      // Animate Camera to focus on the selected node
+      const targetPos = new THREE.Vector3();
+      mesh.getWorldPosition(targetPos);
+
+      const camTarget = new THREE.Vector3(targetPos.x, targetPos.y + 0.2, targetPos.z + 1.8);
+      animateCameraTo(camTarget, targetPos);
+
+      // Populate Holographic Card
+      document.getElementById('holo-node-name').innerText = data.name;
+      document.getElementById('holo-node-sub').innerText = `Rack ${data.rack} • U${data.u} (${data.height}U) • ${data.ip}`;
+      document.getElementById('holo-node-tag').innerText = data.tag;
+      document.getElementById('holo-cpu').innerText = `${data.cpu}%`;
+      document.getElementById('holo-ram').innerText = `${data.ram}%`;
+      document.getElementById('holo-temp').innerText = `${data.temp}°C`;
+      document.getElementById('holo-temp').style.color = data.temp > 75 ? '#FF1744' : (data.temp > 50 ? '#FFD600' : '#00E676');
+      document.getElementById('holo-fan').innerText = `${data.fan} RPM`;
+
+      const holoCard = document.getElementById('holo-card');
+      holoCard.className = `holo-card ${data.status === "CRITICAL" ? "critical" : ""}`;
+      holoCard.style.display = 'block';
+
+      // Notify Android Native Kotlin Interface if available
+      if (window.AndroidBridge && window.AndroidBridge.onNodeSelected) {
+        window.AndroidBridge.onNodeSelected(nodeId);
+      }
+    }
+
+    function closeHoloCard() {
+      document.getElementById('holo-card').style.display = 'none';
+      selectedNodeId = null;
+    }
+
+    function openNativeNodeDetail() {
+      if (selectedNodeId && window.AndroidBridge && window.AndroidBridge.openNodeDetail) {
+        window.AndroidBridge.openNodeDetail(selectedNodeId);
+      }
+    }
+
+    function toggleHeatmap() {
+      isHeatmapMode = !isHeatmapMode;
+      const btn = document.getElementById('btn-heatmap');
+      btn.style.background = isHeatmapMode ? '#FFD600' : 'rgba(24, 34, 56, 0.9)';
+      btn.style.color = isHeatmapMode ? '#0A0E1A' : '#FFD600';
+
+      serverMeshes.forEach(mesh => {
+        const data = nodesData[mesh.userData.nodeId];
+        if (!data) return;
+
+        if (isHeatmapMode) {
+          // Heatmap gradient color based on temperature
+          let heatColor = 0x00E5FF; // Cool
+          if (data.temp >= 75) heatColor = 0xFF1744; // Extreme Hot
+          else if (data.temp >= 55) heatColor = 0xFF9100; // Warm
+          else if (data.temp >= 45) heatColor = 0xFFD600; // Mild
+
+          mesh.material.color.setHex(heatColor);
+          mesh.material.emissive.setHex(heatColor);
+          mesh.material.emissiveIntensity = 0.5;
+        } else {
+          const statusColor = getStatusColor(data.status);
+          mesh.material.color.setHex(0x182238);
+          mesh.material.emissive.setHex(statusColor);
+          mesh.material.emissiveIntensity = data.status === "CRITICAL" ? 0.35 : 0.08;
+        }
+      });
+    }
+
+    function setCameraView(preset, btn) {
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      switch(preset) {
+        case 'overview':
+          animateCameraTo(new THREE.Vector3(0, 4.5, 7.5), new THREE.Vector3(0, 1.8, 0));
+          closeHoloCard();
+          break;
+        case 'rack1':
+          animateCameraTo(new THREE.Vector3(-1.8, 2.5, 3.2), new THREE.Vector3(-1.8, 1.8, 0));
+          closeHoloCard();
+          break;
+        case 'rack2':
+          animateCameraTo(new THREE.Vector3(1.8, 2.5, 3.2), new THREE.Vector3(1.8, 1.8, 0));
+          closeHoloCard();
+          break;
+        case 'srv05':
+          const srv05Mesh = serverMeshes.find(m => m.userData.nodeId === "srv-05");
+          if (srv05Mesh) selectServerNode("srv-05", srv05Mesh);
+          break;
+      }
+    }
+
+    function animateCameraTo(targetCamPos, targetControlsTarget) {
+      const startPos = camera.position.clone();
+      const startTarget = controls.target.clone();
+      let progress = 0;
+
+      function step() {
+        progress += 0.05;
+        camera.position.lerpVectors(startPos, targetCamPos, progress);
+        controls.target.lerpVectors(startTarget, targetControlsTarget, progress);
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+      step();
+    }
+
+    // Callable from Native Kotlin via evaluateJavascript
+    window.updateNodeTelemetry = function(nodeId, cpu, temp, status) {
+      if (nodesData[nodeId]) {
+        nodesData[nodeId].cpu = cpu;
+        nodesData[nodeId].temp = temp;
+        nodesData[nodeId].status = status;
+
+        if (selectedNodeId === nodeId) {
+          document.getElementById('holo-cpu').innerText = `${cpu}%`;
+          document.getElementById('holo-temp').innerText = `${temp}°C`;
+        }
+      }
+    };
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+
+      // Pulsing Critical Node Emissive Effect
+      const time = Date.now() * 0.004;
+      serverMeshes.forEach(mesh => {
+        const data = nodesData[mesh.userData.nodeId];
+        if (data && data.status === "CRITICAL" && !isHeatmapMode) {
+          mesh.material.emissiveIntensity = 0.3 + 0.3 * Math.sin(time);
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
