@@ -302,30 +302,37 @@ export const App: React.FC = () => {
     if (!terminalInput.trim()) return;
 
     const cmd = terminalInput.trim().toLowerCase();
-    const newLogs = [...terminalLogs, { text: `guest@nexus:~$ ${cmd}`, type: 'cmd' as const }];
+    const newLogs = [...terminalLogs, { text: `quan_tri@nexus:~$ ${cmd}`, type: 'cmd' as const }];
 
-    if (cmd === 'help') {
-      newLogs.push({ text: "Commands: status, scan_qr, launch_ar, digital_twin, boost_fan, clear, compile", type: 'info' });
-    } else if (cmd === 'status') {
-      newLogs.push({ text: `[SYSTEM] Racks: ${racks.length} | Nodes: ${assets.length} | Active Alerts: ${alerts.filter(a => !a.resolved).length}`, type: 'success' });
-    } else if (cmd === 'scan_qr' || cmd === 'qr') {
+    if (cmd === 'help' || cmd === 'trogiup' || cmd === 'tro giup' || cmd === 'lenh') {
+      newLogs.push({ text: "Các lệnh khả dụng: status, scan_qr, launch_ar, digital_twin, boost_fan, reboot, compile, clear", type: 'info' });
+    } else if (cmd === 'status' || cmd === 'trangthai' || cmd === 'trang thai') {
+      newLogs.push({ text: `[HỆ THỐNG] Tủ Rack: ${racks.length} | Thiết bị (Nodes): ${assets.length} | Cảnh báo chưa xử lý: ${alerts.filter(a => !a.resolved).length}`, type: 'success' });
+    } else if (cmd === 'scan_qr' || cmd === 'qr' || cmd === 'quet_qr') {
       setIsQRScannerModalOpen(true);
-      newLogs.push({ text: "[ACTION] Launching AR QR scanner hardware interface...", type: 'info' });
-    } else if (cmd === 'launch_ar' || cmd === 'ar') {
+      newLogs.push({ text: "[HÀNH ĐỘNG] Đang mở giao diện quét mã QR thiết bị AR...", type: 'info' });
+    } else if (cmd === 'launch_ar' || cmd === 'ar' || cmd === 'kinh_ar') {
       setArTargetAlert(null);
       setIsARModalOpen(true);
-      newLogs.push({ text: "[ACTION] Initializing WebXR Optical spatial engine...", type: 'success' });
-    } else if (cmd === 'boost_fan') {
+      newLogs.push({ text: "[HÀNH ĐỘNG] Đang khởi chạy không gian thực tế tăng cường WebXR...", type: 'success' });
+    } else if (cmd === 'digital_twin' || cmd === 'twin' || cmd === '3d') {
+      const archEl = document.getElementById('architecture');
+      if (archEl) archEl.scrollIntoView({ behavior: 'smooth' });
+      newLogs.push({ text: "[HÀNH ĐỘNG] Đang kích hoạt giao diện Bản sao số 3D WebGL...", type: 'success' });
+    } else if (cmd === 'boost_fan' || cmd === 'fan' || cmd === 'quat') {
       handleFanBoost('RACK-A1');
-      newLogs.push({ text: "[IPMI] Fan boost 100% (6,200 RPM) dispatched to Rack A1", type: 'success' });
-    } else if (cmd === 'clear') {
+      newLogs.push({ text: "[IPMI] Đã tăng tốc độ quạt lên 100% (6,200 RPM) cho Tủ Rack Alpha 01", type: 'success' });
+    } else if (cmd === 'reboot' || cmd === 'reset' || cmd === 'khoi_dong') {
+      handleRackReboot('RACK-A2');
+      newLogs.push({ text: "[IPMI] Đang gửi tín hiệu khởi động lại an toàn cho Tủ Rack Alpha 02...", type: 'warn' });
+    } else if (cmd === 'clear' || cmd === 'cls' || cmd === 'xoa') {
       setTerminalLogs([]);
       setTerminalInput('');
       return;
-    } else if (cmd === 'compile') {
-      newLogs.push({ text: "[OK] Enclave micro space compilation completed in 1.1ms", type: 'success' });
+    } else if (cmd === 'compile' || cmd === 'build') {
+      newLogs.push({ text: "[OK] Quá trình biên dịch không gian Sandbox hoàn tất trong 1.1ms", type: 'success' });
     } else {
-      newLogs.push({ text: `Command not found: '${cmd}'. Type 'help' for available overrides.`, type: 'warn' });
+      newLogs.push({ text: `Lệnh không hợp lệ: '${cmd}'. Gõ 'help' để xem danh sách lệnh điều khiển.`, type: 'warn' });
     }
 
     setTerminalLogs(newLogs.slice(-20));
