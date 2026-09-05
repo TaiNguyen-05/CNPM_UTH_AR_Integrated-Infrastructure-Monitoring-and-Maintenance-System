@@ -32,7 +32,8 @@ import { ManagePoliciesModal } from './components/modals/ManagePoliciesModal';
 import { SupportModal } from './components/modals/SupportModal';
 import { SettingsModal } from './components/modals/SettingsModal';
 import { NodeDetailModal } from './components/modals/NodeDetailModal';
-import { QRScannerModal } from './components/modals/QRScannerModal';
+import { RackModal } from './components/modals/RackModal';
+import { EditUserModal } from './components/modals/EditUserModal';
 import { AuthView } from './components/AuthView';
 import { arImmsApi } from './services/api';
 import { socketService } from './services/socketService';
@@ -58,10 +59,14 @@ export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserItem | null>(INITIAL_USERS[0]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
-  // Modals state
+  // Modals & CRUD State
   const [isARModalOpen, setIsARModalOpen] = useState<boolean>(false);
-  const [isQRScannerModalOpen, setIsQRScannerModalOpen] = useState<boolean>(false);
   const [isNewAssetModalOpen, setIsNewAssetModalOpen] = useState<boolean>(false);
+  const [assetToEdit, setAssetToEdit] = useState<AssetItem | null>(null);
+  const [isRackModalOpen, setIsRackModalOpen] = useState<boolean>(false);
+  const [rackToEdit, setRackToEdit] = useState<Rack | null>(null);
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState<boolean>(false);
+  const [userToEdit, setUserToEdit] = useState<UserItem | null>(null);
   const [isPrintLabelModalOpen, setIsPrintLabelModalOpen] = useState<boolean>(false);
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = useState<boolean>(false);
   const [isInviteUserModalOpen, setIsInviteUserModalOpen] = useState<boolean>(false);
@@ -305,12 +310,18 @@ export const App: React.FC = () => {
     const newLogs = [...terminalLogs, { text: `quan_tri@nexus:~$ ${cmd}`, type: 'cmd' as const }];
 
     if (cmd === 'help' || cmd === 'trogiup' || cmd === 'tro giup' || cmd === 'lenh') {
-      newLogs.push({ text: "Các lệnh khả dụng: status, scan_qr, launch_ar, digital_twin, boost_fan, reboot, compile, clear", type: 'info' });
+      newLogs.push({ text: "Các lệnh khả dụng: status, racks, assets, users, launch_ar, digital_twin, boost_fan, reboot, compile, clear", type: 'info' });
     } else if (cmd === 'status' || cmd === 'trangthai' || cmd === 'trang thai') {
-      newLogs.push({ text: `[HỆ THỐNG] Tủ Rack: ${racks.length} | Thiết bị (Nodes): ${assets.length} | Cảnh báo chưa xử lý: ${alerts.filter(a => !a.resolved).length}`, type: 'success' });
-    } else if (cmd === 'scan_qr' || cmd === 'qr' || cmd === 'quet_qr') {
-      setIsQRScannerModalOpen(true);
-      newLogs.push({ text: "[HÀNH ĐỘNG] Đang mở giao diện quét mã QR thiết bị AR...", type: 'info' });
+      newLogs.push({ text: `[HỆ THỐNG] Tủ Rack: ${racks.length} | Thiết bị (Nodes): ${assets.length} | Người dùng: ${users.length} | Cảnh báo chưa xử lý: ${alerts.filter(a => !a.resolved).length}`, type: 'success' });
+    } else if (cmd === 'racks' || cmd === 'tu_rack') {
+      setActiveViewSection('assets');
+      newLogs.push({ text: `[HÀNH ĐỘNG] Đang mở danh mục quản lý ${racks.length} tủ Rack máy chủ...`, type: 'info' });
+    } else if (cmd === 'assets' || cmd === 'thiet_bi') {
+      setActiveViewSection('assets');
+      newLogs.push({ text: `[HÀNH ĐỘNG] Đang hiển thị ${assets.length} thiết bị phần cứng và mã AR...`, type: 'info' });
+    } else if (cmd === 'users' || cmd === 'rbac' || cmd === 'nguoi_dung') {
+      setActiveViewSection('users');
+      newLogs.push({ text: `[HÀNH ĐỘNG] Đang mở phân hệ Quản lý & Phân quyền người dùng RBAC (${users.length} tài khoản)...`, type: 'info' });
     } else if (cmd === 'launch_ar' || cmd === 'ar' || cmd === 'kinh_ar') {
       setArTargetAlert(null);
       setIsARModalOpen(true);
@@ -346,7 +357,7 @@ export const App: React.FC = () => {
           ...r,
           coolingStatus: 'Tối đa 100%',
           fanSpeedRpm: 6200,
-          temperature: Math.max(22, r.temperature - 3.5)
+          temperature: Math.max(22, (r.temperature || 28) - 3.5)
         };
       }
       return r;
@@ -368,6 +379,185 @@ export const App: React.FC = () => {
         return r;
       }));
     }, 2500);
+  };
+
+  // --- CRUD HANDLERS: RACKS ---
+  const handleSaveRack = (savedRack: Rack) => {
+    setRacks(prev => {
+      const exists = prev.some(r => r.id === savedRack.id);
+      if (exists) {
+        return prev.map(r => r.id === savedRack.id ? savedRack : r);
+      }
+      return [...prev, savedRack];
+    });
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: rackToEdit ? 'Chỉnh Sửa Tủ Rack' : 'Tạo Tủ Rack Mới',
+        target: savedRack.name,
+        ipAddress: '192.168.1.100',
+        status: 'Success'
+      },
+      ...prev
+    ]);
+  };
+
+  const handleDeleteRack = (rackId: string) => {
+    setRacks(prev => prev.filter(r => r.id !== rackId));
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: 'Xóa Tủ Rack',
+        target: rackId,
+        ipAddress: '192.168.1.100',
+        status: 'Warning'
+      },
+      ...prev
+    ]);
+  };
+
+  // --- CRUD HANDLERS: ASSETS / DEVICES ---
+  const handleSaveAsset = (savedAsset: AssetItem) => {
+    setAssets(prev => {
+      const exists = prev.some(a => a.id === savedAsset.id);
+      if (exists) {
+        return prev.map(a => a.id === savedAsset.id ? savedAsset : a);
+      }
+      return [savedAsset, ...prev];
+    });
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: assetToEdit ? 'Chỉnh Sửa Thiết Bị' : 'Đăng Ký Thiết Bị Mới',
+        target: savedAsset.name,
+        ipAddress: '192.168.1.100',
+        status: 'Success'
+      },
+      ...prev
+    ]);
+  };
+
+  const handleDeleteAsset = (assetId: string) => {
+    setAssets(prev => prev.filter(a => a.id !== assetId));
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: 'Xóa Thiết Bị',
+        target: assetId,
+        ipAddress: '192.168.1.100',
+        status: 'Warning'
+      },
+      ...prev
+    ]);
+  };
+
+  // --- CRUD HANDLERS: USERS & RBAC ---
+  const handleSaveUser = (savedUser: UserItem) => {
+    setUsers(prev => {
+      const exists = prev.some(u => u.id === savedUser.id);
+      if (exists) {
+        return prev.map(u => u.id === savedUser.id ? savedUser : u);
+      }
+      return [...prev, savedUser];
+    });
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: userToEdit ? 'Cập Nhật Quyền Người Dùng' : 'Thêm Người Dùng Mới',
+        target: savedUser.email,
+        ipAddress: '192.168.1.100',
+        status: 'Success'
+      },
+      ...prev
+    ]);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: 'Xóa Tài Khoản Người Dùng',
+        target: userId,
+        ipAddress: '192.168.1.100',
+        status: 'Critical'
+      },
+      ...prev
+    ]);
+  };
+
+  const handleUpdateUserRole = (userId: string, newRole: 'Admin' | 'Technician' | 'Viewer') => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: `Thay Đổi Vai Trò Người Dùng -> ${newRole}`,
+        target: userId,
+        ipAddress: '192.168.1.100',
+        status: 'Success'
+      },
+      ...prev
+    ]);
+  };
+
+  const handleApproveUser = (userId: string) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: 'Active' } : u));
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: 'Phê Duyệt Tài Khoản',
+        target: userId,
+        ipAddress: '192.168.1.100',
+        status: 'Success'
+      },
+      ...prev
+    ]);
+  };
+
+  const handleDenyUser = (userId: string) => {
+    setUsers(prev => prev.filter(u => u.id !== userId));
+  };
+
+  const handleToggleLockUser = (userId: string) => {
+    setUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        const nextStatus = u.status === 'Locked' ? 'Active' : 'Locked';
+        return { ...u, status: nextStatus };
+      }
+      return u;
+    }));
   };
 
   const handleAcknowledgeAlert = (id: string) => {
@@ -918,21 +1108,23 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* QR Code AR Scanner Trigger */}
+              {/* AR Marker & QR Hardware Trigger */}
               <div className="mt-6 flex gap-4">
                 <button
-                  onClick={() => setIsQRScannerModalOpen(true)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 border border-[#38bdf8] bg-[#38bdf8]/10 px-4 py-3 font-mono text-xs uppercase font-bold text-[#38bdf8] hover:bg-[#38bdf8] hover:text-[#080b0e] transition-all"
+                  onClick={() => {
+                    setSelectedNodeDetail(assets[0]);
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-2 border border-[#38bdf8] bg-[#38bdf8]/10 px-4 py-3 font-mono text-xs uppercase font-bold text-[#38bdf8] hover:bg-[#38bdf8] hover:text-[#080b0e] transition-all cursor-pointer"
                 >
                   <QrCode className="w-4 h-4" />
-                  Quét Mã QR Thiết Bị
+                  Xem Mã QR & Chỉ Số AR
                 </button>
                 <button
                   onClick={() => {
                     setSelectedPrintAsset(assets[0]);
                     setIsPrintLabelModalOpen(true);
                   }}
-                  className="flex-1 inline-flex items-center justify-center gap-2 border border-[#222c37] bg-[#11161b] px-4 py-3 font-mono text-xs uppercase text-slate-300 hover:border-slate-400 hover:text-white transition-all"
+                  className="flex-1 inline-flex items-center justify-center gap-2 border border-[#222c37] bg-[#11161b] px-4 py-3 font-mono text-xs uppercase text-slate-300 hover:border-slate-400 hover:text-white transition-all cursor-pointer"
                 >
                   <ExternalLink className="w-4 h-4" />
                   In Tem Nhãn QR
@@ -956,7 +1148,7 @@ export const App: React.FC = () => {
                     setArTargetAlert(null);
                     setIsARModalOpen(true);
                   }}
-                  className="bg-white px-8 py-4 font-mono text-xs font-bold uppercase tracking-widest text-[#080b0e] transition-colors hover:bg-[#f59e0b]"
+                  className="bg-white px-8 py-4 font-mono text-xs font-bold uppercase tracking-widest text-[#080b0e] transition-colors hover:bg-[#f59e0b] cursor-pointer"
                 >
                   Mở Lớp Phủ Thực Tế Ảo (AR)
                 </button>
@@ -976,7 +1168,7 @@ export const App: React.FC = () => {
               <span className="text-xs uppercase tracking-widest text-[#ffb03a] font-mono">
                 Trung Tâm Chỉ Huy // Vận Hành
               </span>
-              <h2 className="text-3xl font-bold tracking-tight text-white mt-1">
+              <h2 className="text-3xl font-bold tracking-tight text-white mt-1 font-mono">
                 Giám Sát & Quản Trị Hệ Thống Trực Tiếp
               </h2>
             </div>
@@ -985,7 +1177,7 @@ export const App: React.FC = () => {
             <div className="flex flex-wrap gap-2 font-mono text-xs">
               <button
                 onClick={() => setActiveViewSection('twin')}
-                className={`px-3 py-1.5 border transition-all ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer ${
                   activeViewSection === 'twin'
                     ? 'border-[#38bdf8] bg-[#38bdf8]/10 text-[#38bdf8]'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -995,7 +1187,7 @@ export const App: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveViewSection('alerts')}
-                className={`px-3 py-1.5 border transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeViewSection === 'alerts'
                     ? 'border-red-500 bg-red-500/10 text-red-400'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -1006,17 +1198,29 @@ export const App: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveViewSection('assets')}
-                className={`px-3 py-1.5 border transition-all ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeViewSection === 'assets'
                     ? 'border-[#ffb03a] bg-[#ffb03a]/10 text-[#ffb03a]'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
                 }`}
               >
-                Danh Mục Thiết Bị ({assets.length})
+                <Server className="w-3.5 h-3.5" />
+                Quản Trị Rack & Thiết Bị ({assets.length})
+              </button>
+              <button
+                onClick={() => setActiveViewSection('users')}
+                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeViewSection === 'users'
+                    ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
+                    : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
+                }`}
+              >
+                <UsersIcon className="w-3.5 h-3.5" />
+                Người Dùng & RBAC ({users.length})
               </button>
               <button
                 onClick={() => setActiveViewSection('audit')}
-                className={`px-3 py-1.5 border transition-all ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer ${
                   activeViewSection === 'audit'
                     ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -1060,12 +1264,53 @@ export const App: React.FC = () => {
             {activeViewSection === 'assets' && (
               <AssetsView
                 assets={assets}
-                onOpenNewAsset={() => setIsNewAssetModalOpen(true)}
-                onPrintLabel={(asset) => {
+                racks={racks}
+                onOpenNewAsset={() => {
+                  setAssetToEdit(null);
+                  setIsNewAssetModalOpen(true);
+                }}
+                onEditAsset={(asset) => {
+                  setAssetToEdit(asset);
+                  setIsNewAssetModalOpen(true);
+                }}
+                onDeleteAsset={handleDeleteAsset}
+                onOpenNewRack={() => {
+                  setRackToEdit(null);
+                  setIsRackModalOpen(true);
+                }}
+                onEditRack={(rack) => {
+                  setRackToEdit(rack);
+                  setIsRackModalOpen(true);
+                }}
+                onDeleteRack={handleDeleteRack}
+                onOpenPrintModal={(asset) => {
                   setSelectedPrintAsset(asset);
                   setIsPrintLabelModalOpen(true);
                 }}
                 onSelectAsset={(asset) => setSelectedNodeDetail(asset)}
+                onOpenNodeDetail={(asset) => setSelectedNodeDetail(asset)}
+              />
+            )}
+
+            {activeViewSection === 'users' && (
+              <UsersView
+                users={users}
+                onApproveUser={handleApproveUser}
+                onDenyUser={handleDenyUser}
+                onToggleLockUser={handleToggleLockUser}
+                onInviteUser={() => {
+                  setUserToEdit(null);
+                  setIsEditUserModalOpen(true);
+                }}
+                onEditUser={(user) => {
+                  setUserToEdit(user);
+                  setIsEditUserModalOpen(true);
+                }}
+                onDeleteUser={handleDeleteUser}
+                onUpdateUserRole={handleUpdateUserRole}
+                onManagePolicies={() => setIsManagePoliciesModalOpen(true)}
+                searchQuery=""
+                onSearchChange={() => {}}
               />
             )}
 
@@ -1184,54 +1429,69 @@ export const App: React.FC = () => {
         />
       )}
 
-      {isQRScannerModalOpen && (
-        <QRScannerModal
-          isOpen={isQRScannerModalOpen}
-          onClose={() => setIsQRScannerModalOpen(false)}
-          onScanSuccess={(qrGuid) => {
-            setIsQRScannerModalOpen(false);
-            const foundAsset = assets.find(a => a.guid === qrGuid || a.id.toLowerCase() === qrGuid.toLowerCase());
-            if (foundAsset) {
-              setSelectedNodeDetail(foundAsset);
-            } else {
-              alert(`Scanned QR: ${qrGuid} (No matched asset)`);
-            }
+      {isNewAssetModalOpen && (
+        <NewAssetModal
+          assetToEdit={assetToEdit}
+          onClose={() => {
+            setIsNewAssetModalOpen(false);
+            setAssetToEdit(null);
+          }}
+          onSave={(newAsset) => {
+            handleSaveAsset(newAsset);
+            setIsNewAssetModalOpen(false);
+            setAssetToEdit(null);
           }}
         />
       )}
 
-      {isNewAssetModalOpen && (
-        <NewAssetModal
-          isOpen={isNewAssetModalOpen}
-          onClose={() => setIsNewAssetModalOpen(false)}
-          onAddAsset={(newAsset) => {
-            setAssets(prev => [newAsset, ...prev]);
-            setIsNewAssetModalOpen(false);
+      {isRackModalOpen && (
+        <RackModal
+          rackToEdit={rackToEdit}
+          onClose={() => {
+            setIsRackModalOpen(false);
+            setRackToEdit(null);
+          }}
+          onSave={(savedRack) => {
+            handleSaveRack(savedRack);
+            setIsRackModalOpen(false);
+            setRackToEdit(null);
+          }}
+        />
+      )}
+
+      {isEditUserModalOpen && (
+        <EditUserModal
+          userToEdit={userToEdit}
+          onClose={() => {
+            setIsEditUserModalOpen(false);
+            setUserToEdit(null);
+          }}
+          onSave={(savedUser) => {
+            handleSaveUser(savedUser);
+            setIsEditUserModalOpen(false);
+            setUserToEdit(null);
           }}
         />
       )}
 
       {isPrintLabelModalOpen && selectedPrintAsset && (
         <PrintLabelModal
-          isOpen={isPrintLabelModalOpen}
+          asset={selectedPrintAsset}
           onClose={() => {
             setIsPrintLabelModalOpen(false);
             setSelectedPrintAsset(null);
           }}
-          asset={selectedPrintAsset}
         />
       )}
 
       {isCreateTicketModalOpen && (
         <CreateTicketModal
-          isOpen={isCreateTicketModalOpen}
+          alert={arTargetAlert || alerts[0]}
           onClose={() => {
             setIsCreateTicketModalOpen(false);
             setArTargetAlert(null);
           }}
-          targetAlert={arTargetAlert}
-          users={users}
-          onCreateTicket={(ticketData) => {
+          onAssignTicket={(alertId, assignee, notes) => {
             setIsCreateTicketModalOpen(false);
             setArTargetAlert(null);
           }}
@@ -1240,10 +1500,9 @@ export const App: React.FC = () => {
 
       {isInviteUserModalOpen && (
         <InviteUserModal
-          isOpen={isInviteUserModalOpen}
           onClose={() => setIsInviteUserModalOpen(false)}
-          onInviteUser={(newUser) => {
-            setUsers(prev => [...prev, newUser]);
+          onInvite={(newUser) => {
+            handleSaveUser(newUser);
             setIsInviteUserModalOpen(false);
           }}
         />
@@ -1251,21 +1510,18 @@ export const App: React.FC = () => {
 
       {isManagePoliciesModalOpen && (
         <ManagePoliciesModal
-          isOpen={isManagePoliciesModalOpen}
           onClose={() => setIsManagePoliciesModalOpen(false)}
         />
       )}
 
       {isSupportModalOpen && (
         <SupportModal
-          isOpen={isSupportModalOpen}
           onClose={() => setIsSupportModalOpen(false)}
         />
       )}
 
       {isSettingsModalOpen && (
         <SettingsModal
-          isOpen={isSettingsModalOpen}
           onClose={() => setIsSettingsModalOpen(false)}
         />
       )}
@@ -1295,7 +1551,7 @@ export const App: React.FC = () => {
               setIsAuthModalOpen(false);
             }}
             onRegisterUser={(newUser) => {
-              setUsers(prev => [...prev, newUser]);
+              handleSaveUser(newUser);
               setCurrentUser(newUser);
               setIsAuthModalOpen(false);
             }}

@@ -1,44 +1,60 @@
-import React, { useState } from 'react';
-import { X, Server, QrCode, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Server, QrCode, Plus, Check } from 'lucide-react';
 import { AssetItem } from '../../types';
 
 interface NewAssetModalProps {
+  assetToEdit?: AssetItem | null;
   onClose: () => void;
   onSave: (asset: AssetItem) => void;
 }
 
-export const NewAssetModal: React.FC<NewAssetModalProps> = ({ onClose, onSave }) => {
-  const [name, setName] = useState('');
-  const [model, setModel] = useState('');
-  const [rack, setRack] = useState('Rack A1');
-  const [uPosition, setUPosition] = useState('U05-06');
-  const [manufacturer, setManufacturer] = useState('Dell Technologies');
-  const [serialNumber, setSerialNumber] = useState('');
-  const [powerDraw, setPowerDraw] = useState('420W');
-  const [ipAddress, setIpAddress] = useState('10.0.1.55');
+export const NewAssetModal: React.FC<NewAssetModalProps> = ({ assetToEdit, onClose, onSave }) => {
+  const [name, setName] = useState(assetToEdit?.name || '');
+  const [model, setModel] = useState(assetToEdit?.model || '');
+  const [rack, setRack] = useState(assetToEdit?.rack || 'Rack A1');
+  const [uPosition, setUPosition] = useState(assetToEdit?.uPosition?.replace(/.*,\s*/, '') || 'U05-06');
+  const [manufacturer, setManufacturer] = useState(assetToEdit?.manufacturer || 'Dell Technologies');
+  const [serialNumber, setSerialNumber] = useState(assetToEdit?.serialNumber || '');
+  const [powerDraw, setPowerDraw] = useState(assetToEdit?.powerDraw || '420W');
+  const [ipAddress, setIpAddress] = useState(assetToEdit?.networkInterfaces?.[0]?.replace(/.*:\s*/, '') || '10.0.1.55');
+  const [qrStatus, setQrStatus] = useState<'Active' | 'Mismatch' | 'Pending'>(assetToEdit?.qrStatus || 'Active');
+
+  useEffect(() => {
+    if (assetToEdit) {
+      setName(assetToEdit.name);
+      setModel(assetToEdit.model);
+      setRack(assetToEdit.rack);
+      setUPosition(assetToEdit.uPosition?.replace(/.*,\s*/, '') || 'U05-06');
+      setManufacturer(assetToEdit.manufacturer);
+      setSerialNumber(assetToEdit.serialNumber);
+      setPowerDraw(assetToEdit.powerDraw);
+      setIpAddress(assetToEdit.networkInterfaces?.[0]?.replace(/.*:\s*/, '') || '10.0.1.55');
+      setQrStatus(assetToEdit.qrStatus);
+    }
+  }, [assetToEdit]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !model) return;
 
-    const randomGuid = `${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 6)}`;
+    const randomGuid = assetToEdit?.guid || `${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 6)}`;
     
-    const newAsset: AssetItem = {
-      id: `asset-${Date.now()}`,
+    const savedAsset: AssetItem = {
+      id: assetToEdit ? assetToEdit.id : `asset-${Date.now()}`,
       name,
       model,
       rack,
       uPosition: `${rack}, ${uPosition}`,
-      qrStatus: 'Active',
+      qrStatus,
       guid: randomGuid,
       manufacturer,
       serialNumber: serialNumber || `SN-${Math.floor(100000 + Math.random() * 900000)}`,
-      installDate: new Date().toISOString().slice(0, 10),
-      powerDraw: `${powerDraw} (Trung bình)`,
+      installDate: assetToEdit?.installDate || new Date().toISOString().slice(0, 10),
+      powerDraw: powerDraw.includes('W') ? powerDraw : `${powerDraw}W (Trung bình)`,
       networkInterfaces: [`eth0: ${ipAddress}`, 'eth1: 10.0.2.55']
     };
 
-    onSave(newAsset);
+    onSave(savedAsset);
     onClose();
   };
 
@@ -48,7 +64,9 @@ export const NewAssetModal: React.FC<NewAssetModalProps> = ({ onClose, onSave })
         <div className="px-6 py-4 bg-[#11161b] border-b border-[#222c37] flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Server className="w-5 h-5 text-[#38bdf8]" />
-            <h3 className="font-bold text-base text-white tracking-wide">Đăng Ký Tài Sản Phần Cứng Mới</h3>
+            <h3 className="font-bold text-base text-white tracking-wide">
+              {assetToEdit ? `Chỉnh Sửa Thiết Bị: ${assetToEdit.name}` : 'Đăng Ký Tài Sản Phần Cứng Mới'}
+            </h3>
           </div>
           <button 
             onClick={onClose}
@@ -156,8 +174,8 @@ export const NewAssetModal: React.FC<NewAssetModalProps> = ({ onClose, onSave })
               type="submit"
               className="px-5 py-2 bg-[#38bdf8] text-[#080b0e] font-bold text-xs rounded-lg hover:bg-[#7dd3fc] flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              Tạo Mã AR & Đăng Ký
+              {assetToEdit ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              {assetToEdit ? 'Lưu Thay Đổi Thiết Bị' : 'Tạo Mã AR & Đăng Ký'}
             </button>
           </div>
         </form>
