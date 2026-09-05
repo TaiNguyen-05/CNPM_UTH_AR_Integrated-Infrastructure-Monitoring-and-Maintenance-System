@@ -72,7 +72,7 @@ export default function ARView({ technician, onLogout }) {
 
       {/* Khu vực thao tác nghiệp vụ xử lý tại chỗ & giả lập quét mã nhanh */}
       <ScrollView style={styles.actionPanel}>
-        <Text style={styles.sectionTitle}>1. Giả lập quét mã QR/ArUco (<1s):</Text>
+        <Text style={styles.sectionTitle}>1. Giả lập quét mã QR/ArUco (dưới 1s):</Text>
         <View style={styles.scanButtonsRow}>
           <TouchableOpacity style={styles.scanBtn} onPress={() => handleScanQRCode('SRV-A01')}>
             <Text style={styles.scanBtnText}>Quét Server A01</Text>
