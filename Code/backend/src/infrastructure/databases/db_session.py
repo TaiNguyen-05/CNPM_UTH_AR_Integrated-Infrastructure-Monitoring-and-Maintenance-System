@@ -33,8 +33,13 @@ try:
 
         test_engine = create_engine(
             DB_URL,
+            pool_size=10,
+            max_overflow=20,
+            pool_timeout=10,
+            pool_recycle=300,
+            pool_pre_ping=True,
             connect_args={
-                'connect_timeout': 3
+                'connect_timeout': 5
             }
         )
 
@@ -44,7 +49,7 @@ try:
 
         engine = test_engine
 
-        print("[DB] PostgreSQL/Supabase connection successful!")
+        print("[DB] PostgreSQL/Supabase connection pool initialized (pool_size=10, pre_ping=True)!")
 
     else:
 

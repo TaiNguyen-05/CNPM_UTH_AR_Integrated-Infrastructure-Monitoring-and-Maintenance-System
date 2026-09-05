@@ -17,6 +17,15 @@ export interface Rack {
   name: string;
   status: 'healthy' | 'warning' | 'critical';
   units: RackUnit[];
+  zone?: string;
+  location?: string;
+  temperature?: number;
+  powerDrawKw?: number;
+  coolingStatus?: string;
+  fanSpeedRpm?: number;
+  networkBandwidthGbps?: number;
+  nodesCount?: number;
+  activeAlertsCount?: number;
 }
 
 export interface TelemetryLogEntry {

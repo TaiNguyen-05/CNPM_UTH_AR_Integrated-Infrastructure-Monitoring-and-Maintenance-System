@@ -105,6 +105,22 @@ class SocketService {
     };
   }
 
+  public onTelemetry(callback: (data: any) => void): () => void {
+    return this.onTelemetryStream(callback);
+  }
+
+  public offTelemetry(callback: (data: any) => void): void {
+    this.socket?.off('telemetry_stream', callback);
+  }
+
+  public onAlert(callback: (data: any) => void): () => void {
+    return this.onAlertCreated(callback);
+  }
+
+  public offAlert(callback: (data: any) => void): void {
+    this.socket?.off('alert_created', callback);
+  }
+
   public onStatsUpdated(callback: (data: any) => void): () => void {
     if (!this.socket) this.connect();
     this.socket?.on('stats_updated', callback);

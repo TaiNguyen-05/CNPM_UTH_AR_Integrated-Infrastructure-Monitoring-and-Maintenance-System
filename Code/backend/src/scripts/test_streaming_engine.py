@@ -27,6 +27,17 @@ def run_tests():
     app.testing = True
     client = app.test_client()
 
+    # Clean previous open alerts on SRV-NODE-01 for clean test run
+    session = db_session()
+    try:
+        session.query(AlertModel).filter(
+            AlertModel.server_node_id == "SRV-NODE-01",
+            AlertModel.status == "OPEN"
+        ).update({"status": "RESOLVED"})
+        session.commit()
+    finally:
+        session.close()
+
     # Test 1: Health Check Endpoint
     print("\n[Test 1] Testing /api/health Endpoint...")
     res = client.get('/api/health')

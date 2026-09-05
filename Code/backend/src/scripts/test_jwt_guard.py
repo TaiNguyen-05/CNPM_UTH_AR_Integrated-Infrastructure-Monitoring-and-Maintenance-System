@@ -13,7 +13,7 @@ from infrastructure.repositories.user_repository import UserRepository
 
 BASE_URL = "http://127.0.0.1:9999"
 EMAIL = "admin@ar-imms.dc"
-PASSWORD = "Admin@123456"
+PASSWORD = "123456"
 ADMIN_ID = "11111111-1111-1111-1111-111111111111"
 
 

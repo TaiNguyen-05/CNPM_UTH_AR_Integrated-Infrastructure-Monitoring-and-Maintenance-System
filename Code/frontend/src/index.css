@@ -1,55 +1,144 @@
 @import "tailwindcss";
 
 @layer base {
-  body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  html {
+    scroll-behavior: smooth;
   }
-  code, pre, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+
+  body {
+    margin: 0;
+    overflow-x: hidden;
+    background-color: #080b0e;
+    color: #e2e8f0;
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  .font-sans {
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  .font-mono {
+    font-family: "JetBrains Mono", monospace;
   }
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080b0e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #222c37;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Micro Workspace Protocol Special Effects */
+.terminal-grid {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(34, 44, 55, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(34, 44, 55, 0.15) 1px, transparent 1px);
+}
+
+.ambient-lamp {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 176, 58, 0.08) 0%, rgba(56, 189, 248, 0.02) 45%, transparent 70%);
+}
+
+.keycap-glow {
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
+}
+
+.keycap-glow:hover {
+  box-shadow: 0 0 45px rgba(255, 176, 58, 0.25), inset 0 0 20px rgba(255, 176, 58, 0.1);
+}
+
+.code-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.code-reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cursor-blink::after {
+  content: "|";
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  from,
+  to {
+    color: transparent;
+  }
+  50% {
+    color: #38bdf8;
+  }
+}
+
+.isometric-card {
+  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.isometric-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(255, 176, 58, 0.3);
+}
+
+.particle {
+  position: absolute;
+  border-radius: 9999px;
+  background: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.65), 0 0 18px rgba(0, 240, 255, 0.35);
+  pointer-events: none;
+  animation-name: driftDown;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes driftDown {
+  0% {
+    transform: translateY(-10vh) translateX(0) scale(0.85);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  88% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(115vh) translateX(24px) scale(1.05);
+    opacity: 0;
+  }
+}
+
+/* Custom laser animation */
 @keyframes scan-laser {
   0% { top: 0.5rem; opacity: 0.8; }
   50% { top: calc(100% - 0.5rem - 2px); opacity: 1; }
   100% { top: 0.5rem; opacity: 0.8; }
 }
 
-@keyframes pulse-crit {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.4); }
-  50% { box-shadow: 0 0 0 4px rgba(186, 26, 26, 0); }
-}
-
-@keyframes pulse-warn {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(202, 138, 4, 0.4); }
-  50% { box-shadow: 0 0 0 4px rgba(202, 138, 4, 0); }
-}
-
 .animate-scan {
   animation: scan-laser 2.2s ease-in-out infinite;
+}
+
+@keyframes pulse-crit {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
 }
 
 .pulse-critical {
   animation: pulse-crit 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-
-.pulse-warning {
-  animation: pulse-warn 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #c2c6d6;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #727785;
-}
-

@@ -7,79 +7,9 @@ from sqlalchemy import (
     Text,
     ForeignKey,
 )
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.dialects.postgresql import ENUM, JSONB
 from sqlalchemy.orm import relationship
 
 from infrastructure.databases.base import Base
-
-
-# ============================================================
-# ENUMS
-# ============================================================
-
-UserRoleEnum = ENUM(
-    "ADMIN",
-    "OPERATOR",
-    "TECHNICIAN",
-    name="user_role_enum",
-    create_type=False
-)
-
-UserStatusEnum = ENUM(
-    "PENDING_APPROVAL",
-    "APPROVED",
-    "LOCKED",
-    "REJECTED",
-    name="user_status_enum",
-    create_type=False
-)
-
-NodeStatusEnum = ENUM(
-    "HEALTHY",
-    "WARNING",
-    "CRITICAL",
-    "OFFLINE",
-    name="node_status_enum",
-    create_type=False
-)
-
-AlertSeverityEnum = ENUM(
-    "INFO",
-    "WARNING",
-    "CRITICAL",
-    name="alert_severity_enum",
-    create_type=False
-)
-
-AlertStatusEnum = ENUM(
-    "OPEN",
-    "ACKNOWLEDGED",
-    "RESOLVED",
-    "DISMISSED",
-    name="alert_status_enum",
-    create_type=False
-)
-
-TicketPriorityEnum = ENUM(
-    "LOW",
-    "MEDIUM",
-    "HIGH",
-    "CRITICAL",
-    name="ticket_priority_enum",
-    create_type=False
-)
-
-TicketStatusEnum = ENUM(
-    "CREATED",
-    "ASSIGNED",
-    "IN_PROGRESS",
-    "PENDING_PARTS",
-    "RESOLVED",
-    "CLOSED",
-    name="ticket_status_enum",
-    create_type=False
-)
 
 
 # ============================================================
@@ -90,14 +20,8 @@ class RackModel(Base):
     __tablename__ = "racks"
 
     id = Column(
-        PG_UUID(as_uuid=True),
+        String(50),
         primary_key=True
-    )
-
-    room_id = Column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("rooms.id"),
-        nullable=False
     )
 
     name = Column(
@@ -111,9 +35,20 @@ class RackModel(Base):
         nullable=False
     )
 
-    u_height = Column(
+    room_name = Column(
+        String(100),
+        nullable=True
+    )
+
+    total_u = Column(
         Integer,
-        nullable=False
+        nullable=True,
+        default=42
+    )
+
+    power_limit_kw = Column(
+        Float,
+        nullable=True
     )
 
     x_coord = Column(
@@ -127,8 +62,13 @@ class RackModel(Base):
     )
 
     created_at = Column(
-        DateTime(timezone=True),
-        nullable=False
+        DateTime,
+        nullable=True
+    )
+
+    updated_at = Column(
+        DateTime,
+        nullable=True
     )
 
     nodes = relationship(
@@ -150,7 +90,7 @@ class ServerNodeModel(Base):
     )
 
     rack_id = Column(
-        PG_UUID(as_uuid=True),
+        String(50),
         ForeignKey("racks.id", ondelete="CASCADE"),
         nullable=False
     )
@@ -167,7 +107,8 @@ class ServerNodeModel(Base):
 
     u_height = Column(
         Integer,
-        nullable=False
+        nullable=True,
+        default=1
     )
 
     ip_address = Column(
@@ -206,23 +147,34 @@ class ServerNodeModel(Base):
     )
 
     status = Column(
-        NodeStatusEnum,
-        nullable=False
+        String(50),
+        nullable=True,
+        default="HEALTHY"
+    )
+
+    metrics_json = Column(
+        Text,
+        nullable=True
+    )
+
+    containers_json = Column(
+        Text,
+        nullable=True
     )
 
     last_heartbeat_at = Column(
-        DateTime(timezone=True),
+        DateTime,
         nullable=True
     )
 
     created_at = Column(
-        DateTime(timezone=True),
-        nullable=False
+        DateTime,
+        nullable=True
     )
 
     updated_at = Column(
-        DateTime(timezone=True),
-        nullable=False
+        DateTime,
+        nullable=True
     )
 
     rack = relationship(
@@ -260,8 +212,9 @@ class AlertModel(Base):
     )
 
     severity = Column(
-        AlertSeverityEnum,
-        nullable=False
+        String(50),
+        nullable=True,
+        default="INFO"
     )
 
     title = Column(
@@ -275,7 +228,7 @@ class AlertModel(Base):
     )
 
     metric_name = Column(
-        String(255),
+        String(100),
         nullable=True
     )
 
@@ -290,32 +243,38 @@ class AlertModel(Base):
     )
 
     status = Column(
-        AlertStatusEnum,
-        nullable=False
-    )
-
-    triggered_at = Column(
-        DateTime(timezone=True),
-        nullable=False
-    )
-
-    acknowledged_at = Column(
-        DateTime(timezone=True),
-        nullable=True
+        String(50),
+        nullable=True,
+        default="OPEN"
     )
 
     acknowledged_by = Column(
-        PG_UUID(as_uuid=True),
+        String(50),
         nullable=True
     )
 
-    resolved_at = Column(
-        DateTime(timezone=True),
+    acknowledged_at = Column(
+        DateTime,
         nullable=True
     )
 
     resolved_by = Column(
-        PG_UUID(as_uuid=True),
+        String(50),
+        nullable=True
+    )
+
+    resolved_at = Column(
+        DateTime,
+        nullable=True
+    )
+
+    created_at = Column(
+        DateTime,
+        nullable=True
+    )
+
+    updated_at = Column(
+        DateTime,
         nullable=True
     )
 
@@ -337,15 +296,15 @@ class MaintenanceTicketModel(Base):
         primary_key=True
     )
 
-    alert_id = Column(
-        String(50),
-        nullable=True
-    )
-
     server_node_id = Column(
         String(50),
         ForeignKey("server_nodes.id", ondelete="CASCADE"),
         nullable=False
+    )
+
+    alert_id = Column(
+        String(50),
+        nullable=True
     )
 
     title = Column(
@@ -359,22 +318,29 @@ class MaintenanceTicketModel(Base):
     )
 
     priority = Column(
-        TicketPriorityEnum,
-        nullable=False
+        String(50),
+        nullable=True,
+        default="MEDIUM"
     )
 
     status = Column(
-        TicketStatusEnum,
-        nullable=False
+        String(50),
+        nullable=True,
+        default="CREATED"
     )
 
     assigned_technician_id = Column(
-        PG_UUID(as_uuid=True),
+        String(50),
+        nullable=True
+    )
+
+    assigned_technician_name = Column(
+        String(255),
         nullable=True
     )
 
     created_by = Column(
-        PG_UUID(as_uuid=True),
+        String(50),
         nullable=True
     )
 
@@ -383,34 +349,93 @@ class MaintenanceTicketModel(Base):
         nullable=True
     )
 
-    ar_session_log = Column(
-        JSONB,
+    ar_session_log_json = Column(
+        Text,
         nullable=True
     )
 
-    created_at = Column(
-        DateTime(timezone=True),
-        nullable=False
-    )
-
     started_at = Column(
-        DateTime(timezone=True),
+        DateTime,
         nullable=True
     )
 
     resolved_at = Column(
-        DateTime(timezone=True),
+        DateTime,
         nullable=True
     )
 
     closed_at = Column(
-        DateTime(timezone=True),
+        DateTime,
+        nullable=True
+    )
+
+    created_at = Column(
+        DateTime,
+        nullable=True
+    )
+
+    updated_at = Column(
+        DateTime,
         nullable=True
     )
 
     server_node = relationship(
         "ServerNodeModel",
         back_populates="tickets"
+    )
+
+
+# ============================================================
+# METRIC LOG MODEL (TIME-SERIES)
+# ============================================================
+
+class MetricLogModel(Base):
+    __tablename__ = "metrics"
+
+    id = Column(
+        String(50),
+        primary_key=True
+    )
+
+    server_node_id = Column(
+        String(50),
+        ForeignKey("server_nodes.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    cpu = Column(
+        Float,
+        nullable=True
+    )
+
+    ram = Column(
+        Float,
+        nullable=True
+    )
+
+    disk = Column(
+        Float,
+        nullable=True
+    )
+
+    temp = Column(
+        Float,
+        nullable=True
+    )
+
+    network_in_kbps = Column(
+        Float,
+        nullable=True
+    )
+
+    network_out_kbps = Column(
+        Float,
+        nullable=True
+    )
+
+    timestamp = Column(
+        DateTime,
+        nullable=False
     )
 
 
@@ -422,7 +447,7 @@ class UserModel(Base):
     __tablename__ = "users"
 
     id = Column(
-        PG_UUID(as_uuid=True),
+        String(50),
         primary_key=True
     )
 
@@ -434,7 +459,7 @@ class UserModel(Base):
 
     password_hash = Column(
         String(255),
-        nullable=False
+        nullable=True
     )
 
     full_name = Column(
@@ -443,16 +468,18 @@ class UserModel(Base):
     )
 
     role = Column(
-        UserRoleEnum,
-        nullable=False
+        String(50),
+        nullable=True,
+        default="VIEWER"
     )
 
     status = Column(
-        UserStatusEnum,
-        nullable=False
+        String(50),
+        nullable=True,
+        default="PENDING_APPROVAL"
     )
 
-    avatar_url = Column(
+    avatar = Column(
         String(255),
         nullable=True
     )
@@ -468,26 +495,21 @@ class UserModel(Base):
     )
 
     approved_by = Column(
-        PG_UUID(as_uuid=True),
+        String(50),
         nullable=True
     )
 
     approved_at = Column(
-        DateTime(timezone=True),
-        nullable=True
-    )
-
-    last_login_at = Column(
-        DateTime(timezone=True),
+        DateTime,
         nullable=True
     )
 
     created_at = Column(
-        DateTime(timezone=True),
-        nullable=False
+        DateTime,
+        nullable=True
     )
 
     updated_at = Column(
-        DateTime(timezone=True),
-        nullable=False
+        DateTime,
+        nullable=True
     )

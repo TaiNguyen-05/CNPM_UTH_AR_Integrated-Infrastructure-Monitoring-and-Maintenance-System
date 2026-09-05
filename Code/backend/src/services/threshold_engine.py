@@ -36,23 +36,75 @@ class ThresholdEngine:
     }
 
     @classmethod
+    def get_rules(cls) -> Dict[str, Dict[str, Any]]:
+        """Trả về cấu hình các ngưỡng cảnh báo hiện hành."""
+        return {
+            metric: {
+                "metric_name": rule.metric_name,
+                "warning_val": rule.warning_val,
+                "critical_val": rule.critical_val,
+                "unit": rule.unit
+            }
+            for metric, rule in cls.RULES.items()
+        }
+
+    @classmethod
+    def update_rule(cls, metric_name: str, warning_val: Optional[float] = None, critical_val: Optional[float] = None, unit: Optional[str] = None) -> bool:
+        """Cập nhật động ngưỡng cảnh báo tại runtime."""
+        if metric_name not in cls.RULES:
+            if warning_val is not None and critical_val is not None:
+                cls.RULES[metric_name] = ThresholdRule(metric_name, warning_val, critical_val, unit or "%")
+                return True
+            return False
+        
+        rule = cls.RULES[metric_name]
+        if warning_val is not None:
+            rule.warning_val = float(warning_val)
+        if critical_val is not None:
+            rule.critical_val = float(critical_val)
+        if unit is not None:
+            rule.unit = unit
+        return True
+
+    @classmethod
+    def set_rules(cls, rules_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Cập nhật hàng loạt cấu hình ngưỡng từ API."""
+        updated = {}
+        for metric, conf in rules_dict.items():
+            if isinstance(conf, dict):
+                w = conf.get("warning_val", conf.get("warning"))
+                c = conf.get("critical_val", conf.get("critical"))
+                u = conf.get("unit")
+                if w is not None or c is not None:
+                    cls.update_rule(metric, w, c, u)
+                    updated[metric] = cls.RULES[metric]
+        return cls.get_rules()
+
+    @classmethod
     def evaluate_node_telemetry(
         cls, 
         node_id: str, 
         telemetry: Dict[str, Any],
-        socketio=None
+        socketio=None,
+        session=None,
+        node=None
     ) -> Dict[str, Any]:
         """
         Đánh giá toàn bộ các chỉ số của node, ghi nhận Alert và tự động sinh Ticket nếu CRITICAL.
-        Hỗ trợ cơ chế chống spam (De-duplication).
+        Hỗ trợ cơ chế chống spam (De-duplication). Tối ưu hóa hiệu năng tái sử dụng DB Session.
         """
-        session = db_session()
+        own_session = False
+        if session is None:
+            session = db_session()
+            own_session = True
+
         created_alerts = []
         created_tickets = []
         highest_severity = "HEALTHY"
 
         try:
-            node = session.query(ServerNodeModel).filter(ServerNodeModel.id == node_id).first()
+            if node is None:
+                node = session.query(ServerNodeModel).filter(ServerNodeModel.id == node_id).first()
             if not node:
                 return {"error": f"Node {node_id} not found"}
 
@@ -211,7 +263,8 @@ class ThresholdEngine:
             print(f"[ThresholdEngine] Lỗi xử lý telemetry cho {node_id}: {e}")
             return {"error": str(e)}
         finally:
-            session.close()
+            if own_session:
+                session.close()
 
     @classmethod
     def _create_auto_ticket(

@@ -1,7 +1,11 @@
 """
-AR-IMMS Telemetry Collector Agent & Data Center Simulator
+AR-IMMS Telemetry Collector Agent & Data Center Simulator (Enhanced v2.1)
 Thu thập số liệu CPU, RAM, Disk, Network I/O, Nhiệt độ và Docker Containers
 Gửi định kỳ 5s/lần lên Flask Backend Ingestion Endpoint.
+
+Tính năng nâng cấp:
+1. Bảo mật: Gửi kèm Header X-Agent-Key xác thực với Backend (NFR Security).
+2. Offline Buffer & Retry (UC-AGT-03): Tự động lưu 30 mẫu gần nhất khi rớt mạng và gửi bù ngay khi kết nối lại.
 """
 
 import sys
@@ -10,6 +14,7 @@ import math
 import random
 import argparse
 import requests
+from collections import deque
 from datetime import datetime
 
 # Thử import psutil và docker nếu có
@@ -22,6 +27,40 @@ try:
     import docker
 except ImportError:
     docker = None
+
+
+class OfflineBuffer:
+    """Hàng đợi FIFO lưu trữ tạm thời các gói Telemetry khi mất kết nối mạng (UC-AGT-03)."""
+
+    def __init__(self, max_size: int = 30):
+        self.max_size = max_size
+        self.buffer = deque(maxlen=max_size)
+
+    def enqueue(self, payload: dict):
+        """Thêm gói tin vào buffer (tự động loại bỏ mẫu cũ nhất nếu đầy)."""
+        self.buffer.append(payload)
+
+    def is_empty(self) -> bool:
+        return len(self.buffer) == 0
+
+    def size(self) -> int:
+        return len(self.buffer)
+
+    def flush(self, endpoint: str, headers: dict) -> int:
+        """Gửi bù các gói tin đã tích lũy khi kết nối mạng được phục hồi."""
+        sent_count = 0
+        while self.buffer:
+            payload = self.buffer[0]
+            try:
+                resp = requests.post(endpoint, json=payload, headers=headers, timeout=3)
+                if resp.status_code == 200:
+                    self.buffer.popleft()
+                    sent_count += 1
+                else:
+                    break
+            except Exception:
+                break
+        return sent_count
 
 
 class RealCollector:
@@ -106,52 +145,36 @@ class RealCollector:
             "ram": ram_pct,
             "disk": disk_pct,
             "temp": temp_val,
-            "network_in_kbps": max(net_in_kbps, 0.0),
-            "network_out_kbps": max(net_out_kbps, 0.0),
+            "network_in_kbps": net_in_kbps,
+            "network_out_kbps": net_out_kbps,
             "containers": containers_list
         }
 
 
 class ClusterSimulator:
-    """Giả lập toàn bộ cụm 6 Server Nodes trong Mini Data Center."""
+    """Giả lập cụm máy chủ gồm 6 nodes với các kịch bản bình thường hoặc lỗi."""
 
     NODES = [
-        {"id": "SRV-NODE-01", "name": "Primary Compute Node 01", "base_cpu": 35.0, "base_ram": 55.0, "base_temp": 42.0, "rack": "rack-a1"},
-        {"id": "SRV-NODE-02", "name": "Storage & DB Replica 01", "base_cpu": 45.0, "base_ram": 70.0, "base_temp": 48.0, "rack": "rack-a1"},
-        {"id": "SRV-NODE-03", "name": "AR Vision Processor Node", "base_cpu": 50.0, "base_ram": 60.0, "base_temp": 52.0, "rack": "rack-a1"},
-        {"id": "SRV-NODE-04", "name": "Application Web Gateway", "base_cpu": 30.0, "base_ram": 45.0, "base_temp": 40.0, "rack": "rack-a2"},
-        {"id": "SRV-NODE-05", "name": "Log Aggregator & Pipeline", "base_cpu": 40.0, "base_ram": 65.0, "base_temp": 46.0, "rack": "rack-a2"},
-        {"id": "SRV-NODE-06", "name": "Deep Learning & Analytics Node", "base_cpu": 60.0, "base_ram": 80.0, "base_temp": 62.0, "rack": "rack-b1"},
+        {"id": "SRV-NODE-01", "name": "Compute Node Alpha-01", "base_cpu": 35.0, "base_ram": 55.0, "base_temp": 42.0},
+        {"id": "SRV-NODE-02", "name": "Compute Node Alpha-02", "base_cpu": 48.0, "base_ram": 60.0, "base_temp": 46.0},
+        {"id": "SRV-NODE-03", "name": "Storage Database Master", "base_cpu": 62.0, "base_ram": 78.0, "base_temp": 52.0},
+        {"id": "SRV-NODE-04", "name": "AI Inference GPU Node", "base_cpu": 70.0, "base_ram": 82.0, "base_temp": 64.0},
+        {"id": "SRV-NODE-05", "name": "Edge Gateway AR Proxy", "base_cpu": 28.0, "base_ram": 42.0, "base_temp": 39.0},
+        {"id": "SRV-NODE-06", "name": "Backup Replication Target", "base_cpu": 22.0, "base_ram": 50.0, "base_temp": 38.0}
     ]
 
     CONTAINER_TEMPLATES = {
         "SRV-NODE-01": [
-            {"name": "k8s-control-plane", "image": "k8s.gcr.io/kube-apiserver:v1.28", "status": "RUNNING"},
-            {"name": "etcd-cluster-01", "image": "quay.io/coreos/etcd:v3.5", "status": "RUNNING"},
-            {"name": "coredns-worker", "image": "coredns/coredns:1.10", "status": "RUNNING"},
-        ],
-        "SRV-NODE-02": [
-            {"name": "postgres-primary", "image": "postgres:16-alpine", "status": "RUNNING"},
-            {"name": "pg-pooler", "image": "pgbouncer:1.21", "status": "RUNNING"},
-            {"name": "redis-cache-cluster", "image": "redis:7.2-alpine", "status": "RUNNING"},
+            {"name": "auth-service-pod", "image": "ar-imms/auth:v2.1", "status": "RUNNING"},
+            {"name": "api-gateway-envoy", "image": "envoyproxy/envoy:v1.28", "status": "RUNNING"}
         ],
         "SRV-NODE-03": [
-            {"name": "ar-spatial-anchor-api", "image": "ar-imms/spatial-engine:v2", "status": "RUNNING"},
-            {"name": "webrtc-streamer", "image": "ar-imms/webrtc:latest", "status": "RUNNING"},
-            {"name": "qr-marker-resolver", "image": "ar-imms/marker-cv:v1.4", "status": "RUNNING"},
+            {"name": "postgres-primary", "image": "postgres:16-alpine", "status": "RUNNING"},
+            {"name": "redis-cluster-cache", "image": "redis:7.2", "status": "RUNNING"}
         ],
         "SRV-NODE-04": [
-            {"name": "nginx-ingress-controller", "image": "ingress-nginx/controller:v1.9", "status": "RUNNING"},
-            {"name": "api-gateway-envoy", "image": "envoyproxy/envoy:v1.28", "status": "RUNNING"},
-        ],
-        "SRV-NODE-05": [
-            {"name": "fluentbit-collector", "image": "fluent/fluent-bit:2.2", "status": "RUNNING"},
-            {"name": "opentelemetry-collector", "image": "otel/opentelemetry-collector:0.90", "status": "RUNNING"},
-            {"name": "loki-ingester", "image": "grafana/loki:2.9", "status": "RUNNING"},
-        ],
-        "SRV-NODE-06": [
-            {"name": "pytorch-distributed-worker", "image": "pytorch/pytorch:2.2-cuda12", "status": "RUNNING"},
-            {"name": "tensorrt-llm-service", "image": "nvidia/tritonserver:24.01", "status": "RUNNING"},
+            {"name": "pytorch-inference-onnx", "image": "nvcr.io/pytorch:23.10", "status": "RUNNING"},
+            {"name": "yolo-ar-vision-pipeline", "image": "ar-imms/vision:v3", "status": "RUNNING"}
         ]
     }
 
@@ -166,17 +189,13 @@ class ClusterSimulator:
         for node in self.NODES:
             node_id = node["id"]
 
-            # Kịch bản 4: Giả lập mất kết nối (node_failure) trên SRV-NODE-02
+            # Kịch bản 4: Node Failure (SRV-NODE-02 ngừng gửi metric)
             if self.scenario == "node_failure" and node_id == "SRV-NODE-02" and self.tick >= 3:
-                # Ngừng gửi gói tin của node này để kiểm tra Watchdog > 90s
                 continue
 
-            # Biến thiên tự nhiên theo sóng Sin và ngẫu nhiên
-            sin_wave = math.sin(self.tick * 0.2 + hash(node_id) % 10) * 8.0
-            noise = random.uniform(-3.0, 3.0)
-
-            cpu = max(5.0, min(99.0, node["base_cpu"] + sin_wave + noise))
-            ram = max(10.0, min(99.0, node["base_ram"] + (sin_wave * 0.4) + random.uniform(-1.0, 2.0)))
+            # Dao động thông số tự nhiên theo hàm sin và nhiễu ngẫu nhiên
+            cpu = max(5.0, min(100.0, node["base_cpu"] + (math.sin(self.tick * 0.4) * 8.0) + random.uniform(-3.0, 3.0)))
+            ram = max(10.0, min(100.0, node["base_ram"] + (math.cos(self.tick * 0.2) * 3.0) + random.uniform(-1.0, 1.0)))
             disk = 52.0 + (hash(node_id) % 25)
             temp = max(30.0, min(95.0, node["base_temp"] + (cpu * 0.25) + random.uniform(-1.5, 1.5)))
             net_in = max(20.0, 150.0 + (cpu * 8.0) + random.uniform(-30.0, 50.0))
@@ -220,25 +239,33 @@ class ClusterSimulator:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AR-IMMS Telemetry Collector Agent & Simulator")
+    parser = argparse.ArgumentParser(description="AR-IMMS Telemetry Collector Agent & Simulator (Enhanced)")
     parser.add_argument("--mode", choices=["real", "simulate"], default="simulate", help="Chế độ thu thập: real (máy thật) hoặc simulate (giả lập 6 nodes)")
     parser.add_argument("--server", default="http://localhost:9999", help="Địa chỉ Flask Backend server (mặc định: http://localhost:9999)")
+    parser.add_argument("--agent-key", default="ar-imms-agent-secret-token", help="Secret Key xác thực Agent (NFR Security)")
     parser.add_argument("--interval", type=int, default=5, help="Chu kỳ gửi metric (giây, mặc định 5s)")
     parser.add_argument("--scenario", choices=["normal", "spike_cpu", "spike_ram", "node_failure"], default="normal", help="Kịch bản giả lập kiểm thử sự cố")
     parser.add_argument("--node-id", default="SRV-NODE-01", help="Node ID khi chạy chế độ real (mặc định: SRV-NODE-01)")
     args = parser.parse_args()
 
     endpoint = f"{args.server.rstrip('/')}/api/telemetry/ingest"
+    headers = {
+        "Content-Type": "application/json",
+        "X-Agent-Key": args.agent_key
+    }
+    offline_buffer = OfflineBuffer(max_size=30)
 
     print("==================================================================")
-    print("📡 AR-IMMS TELEMETRY COLLECTOR AGENT")
-    print(f"🔧 Chế độ:    {args.mode.upper()}")
-    print(f"🎯 Máy chủ:   {endpoint}")
-    print(f"⏱️ Chu kỳ:    {args.interval} giây/lần")
+    print("📡 AR-IMMS TELEMETRY COLLECTOR AGENT (ENHANCED)")
+    print(f"🔧 Chế độ:      {args.mode.upper()}")
+    print(f"🎯 Máy chủ:     {endpoint}")
+    print(f"🔐 Agent Key:   {args.agent_key[:4]}**** (Đã bật xác thực X-Agent-Key)")
+    print(f"📦 Buffer Size: Max 30 mẫu (Tự động gửi bù khi có mạng)")
+    print(f"⏱️ Chu kỳ:      {args.interval} giây/lần")
     if args.mode == "simulate":
-        print(f"🎬 Kịch bản:  {args.scenario.upper()}")
+        print(f"🎬 Kịch bản:    {args.scenario.upper()}")
     else:
-        print(f"🖥️ Node ID:   {args.node_id}")
+        print(f"🖥️ Node ID:     {args.node_id}")
     print("==================================================================")
 
     if args.mode == "real":
@@ -246,11 +273,21 @@ def main():
         while True:
             try:
                 payload = collector.collect()
-                resp = requests.post(endpoint, json=payload, timeout=4)
-                status_symbol = "✅" if resp.status_code == 200 else "⚠️"
+                resp = requests.post(endpoint, json=payload, headers=headers, timeout=4)
+                if resp.status_code == 200:
+                    status_symbol = "✅"
+                    # Gửi bù các mẫu đã tích lũy nếu có
+                    if not offline_buffer.is_empty():
+                        flushed = offline_buffer.flush(endpoint, headers)
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚀 [Buffer] Đã gửi bù thành công {flushed} mẫu telemetry tích lũy!")
+                else:
+                    status_symbol = "⚠️"
+                    offline_buffer.enqueue(payload)
+
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] {status_symbol} Node: {payload['node_id']} | CPU: {payload['cpu']}% | RAM: {payload['ram']}% | Temp: {payload['temp']}°C | HTTP {resp.status_code}")
             except Exception as e:
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Lỗi kết nối tới Server: {e}")
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Rớt mạng: Không thể kết nối Server ({e}). Đang lưu vào Buffer ({offline_buffer.size() + 1}/30)...")
+                offline_buffer.enqueue(payload)
             time.sleep(args.interval)
 
     else:  # simulate mode
@@ -260,12 +297,20 @@ def main():
                 payloads = simulator.generate_all()
                 for payload in payloads:
                     try:
-                        resp = requests.post(endpoint, json=payload, timeout=3)
-                        eval_res = resp.json().get("evaluation", {})
-                        eval_status = eval_res.get("node_status", "UNKNOWN")
-                        print(f"[{datetime.now().strftime('%H:%M:%S')}] 📊 {payload['node_id']} [{eval_status}] | CPU: {payload['cpu']:>4.1f}% | RAM: {payload['ram']:>4.1f}% | Temp: {payload['temp']:>4.1f}°C | Disk: {payload['disk']}%")
+                        resp = requests.post(endpoint, json=payload, headers=headers, timeout=3)
+                        if resp.status_code == 200:
+                            if not offline_buffer.is_empty():
+                                flushed = offline_buffer.flush(endpoint, headers)
+                                print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚀 [Buffer] Đã gửi bù thành công {flushed} mẫu telemetry tích lũy!")
+                            eval_res = resp.json().get("evaluation", {})
+                            eval_status = eval_res.get("node_status", "UNKNOWN")
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] 📊 {payload['node_id']} [{eval_status}] | CPU: {payload['cpu']:>4.1f}% | RAM: {payload['ram']:>4.1f}% | Temp: {payload['temp']:>4.1f}°C | Disk: {payload['disk']}%")
+                        else:
+                            offline_buffer.enqueue(payload)
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ HTTP {resp.status_code} - Lưu vào Buffer ({offline_buffer.size()}/30)")
                     except Exception as inner_e:
-                        print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Không thể gửi metric cho {payload['node_id']}: {inner_e}")
+                        offline_buffer.enqueue(payload)
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Rớt mạng {payload['node_id']}: Lưu vào Buffer ({offline_buffer.size()}/30)")
                 print("-" * 65)
             except Exception as e:
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Lỗi vòng lặp Simulator: {e}")

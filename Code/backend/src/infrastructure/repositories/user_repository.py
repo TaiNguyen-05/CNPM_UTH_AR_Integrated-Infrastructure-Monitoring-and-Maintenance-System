@@ -1,5 +1,4 @@
 from typing import Optional, List
-from uuid import UUID
 
 from domain.models.user import UserAccount
 from domain.models.interfaces import IUserRepository
@@ -37,7 +36,7 @@ class UserRepository(
 
             phone_number=model.phone_number,
             department=model.department,
-            avatar=model.avatar_url,
+            avatar=model.avatar,
 
             password_hash=model.password_hash,
 
@@ -61,15 +60,8 @@ class UserRepository(
         entity: UserAccount
     ) -> UserModel:
 
-        user_id = entity.id
-
-        if isinstance(user_id, str):
-            user_id = UUID(user_id)
-
-        approved_by = entity.approved_by
-
-        if isinstance(approved_by, str):
-            approved_by = UUID(approved_by)
+        user_id = str(entity.id) if entity.id else None
+        approved_by = str(entity.approved_by) if entity.approved_by else None
 
         return UserModel(
             id=user_id,
@@ -84,7 +76,7 @@ class UserRepository(
 
             status=entity.status,
 
-            avatar_url=entity.avatar,
+            avatar=entity.avatar,
 
             phone_number=entity.phone_number,
 
@@ -97,8 +89,6 @@ class UserRepository(
             created_at=entity.created_at,
 
             updated_at=entity.updated_at,
-
-            last_login_at=None,
         )
 
     # ==========================================================

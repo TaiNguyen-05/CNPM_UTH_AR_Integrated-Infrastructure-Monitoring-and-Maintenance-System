@@ -13,7 +13,8 @@ import {
   Code,
   Shield,
   Eye,
-  Check
+  Check,
+  Activity
 } from 'lucide-react';
 import { AuditLogItem } from '../types';
 
@@ -74,22 +75,27 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-[1600px] mx-auto flex flex-col gap-6">
+    <div className="p-4 md:p-6 max-w-[1600px] mx-auto flex flex-col gap-6 text-slate-100">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-[#191c1e] tracking-tight">Nhật Ký Kiểm Toán & Hệ Thống</h1>
-          <p className="text-xs text-[#727785] mt-0.5">Lưu vết hoạt động bất biến và lịch sử bảo mật toàn hệ thống.</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white tracking-tight">Nhật Ký Kiểm Toán & Hệ Thống</h1>
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+              Audit Trail
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-0.5">Lưu vết hoạt động bất biến, nhật ký truy cập và lịch sử bảo mật toàn hệ thống.</p>
         </div>
 
         {/* Filters & Export */}
         <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
-          <div className="flex items-center bg-white rounded-lg px-3 py-2 border border-[#c2c6d6] hover:border-[#0058be] transition-colors shadow-xs">
-            <Filter className="w-4 h-4 text-[#727785] mr-2 shrink-0" />
+          <div className="flex items-center bg-slate-900/90 rounded-xl px-3 py-2 border border-slate-700/80 hover:border-sky-500 transition-colors shadow-inner">
+            <Filter className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
             <select
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
-              className="bg-transparent border-none focus:outline-none text-xs font-semibold text-[#191c1e] cursor-pointer outline-none"
+              className="bg-transparent border-none focus:outline-none text-xs font-semibold text-slate-200 cursor-pointer outline-none"
             >
               <option value="All Actions">Tất cả hành động</option>
               <option value="Alert">Cảnh báo (Alerts)</option>
@@ -99,130 +105,92 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
             </select>
           </div>
 
-          <div className="flex items-center bg-white rounded-lg px-3 py-2 border border-[#c2c6d6] hover:border-[#0058be] transition-colors shadow-xs">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent border-none focus:outline-none text-xs font-semibold text-[#191c1e] cursor-pointer outline-none"
-            >
-              <option value="All Statuses">Tất cả trạng thái</option>
-              <option value="Success">Thành công (Success)</option>
-              <option value="Critical">Nghiêm trọng (Critical)</option>
-              <option value="Warning">Cảnh báo (Warning)</option>
-            </select>
-          </div>
-
           <button
             onClick={handleExportCSV}
-            className="bg-[#0058be] text-white px-4 py-2 rounded-full text-xs font-bold flex items-center justify-center gap-2 hover:bg-[#2170e4] transition-colors shadow-xs cursor-pointer active:scale-95"
+            className="bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             {downloadSuccess ? (
               <>
-                <Check className="w-4 h-4" />
-                Đã Xuất File!
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-300">Đã Xuất CSV!</span>
               </>
             ) : (
               <>
-                <Download className="w-4 h-4" />
-                Xuất CSV
+                <Download className="w-4 h-4 text-slate-400" />
+                <span>Xuất Báo Cáo CSV</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* Main Audit Table */}
-      <div className="bg-white rounded-xl border border-[#c2c6d6] shadow-xs overflow-hidden flex flex-col min-h-[500px]">
-        <div className="px-4 py-3.5 border-b border-[#c2c6d6] flex justify-between items-center bg-[#f8fafc]">
-          <h2 className="text-sm font-bold text-[#191c1e]">Lịch Sử Sự Kiện & Bảo Mật</h2>
-          <span className="text-xs font-bold bg-[#d0e1fb] text-[#004395] px-2.5 py-0.5 rounded-full">
-            {filteredLogs.length} Sự kiện
+      {/* Audit Log Table Container */}
+      <div className="glass-card rounded-2xl overflow-hidden flex flex-col">
+        <div className="px-5 py-3.5 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
+          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <Activity className="w-4 h-4 text-sky-400" />
+            Bản Ghi Sự Kiện Bảo Mật
+          </h2>
+          <span className="text-xs font-mono font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30 px-2.5 py-0.5 rounded-md">
+            {filteredLogs.length} Records
           </span>
         </div>
 
-        <div className="overflow-x-auto flex-1 p-2">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-white z-10 border-b border-[#c2c6d6] shadow-2xs">
-              <tr>
-                <th className="p-3 text-xs font-bold text-[#424754]">Thời Gian</th>
-                <th className="p-3 text-xs font-bold text-[#424754]">Người Thực Hiện / Tác Tử</th>
-                <th className="p-3 text-xs font-bold text-[#424754]">Hành Động</th>
-                <th className="p-3 text-xs font-bold text-[#424754]">Mục Tiêu</th>
-                <th className="p-3 text-xs font-bold text-[#424754]">Địa Chỉ IP</th>
-                <th className="p-3 text-xs font-bold text-[#424754]">Trạng Thái</th>
-                <th className="p-3 text-xs font-bold text-[#424754] text-right">Chi Tiết Payload</th>
+        <div className="overflow-x-auto p-2">
+          <table className="w-full text-left border-collapse font-mono text-xs">
+            <thead>
+              <tr className="border-b border-slate-800 text-[11px] font-bold text-slate-400 font-sans">
+                <th className="p-3">Thời Gian (UTC+7)</th>
+                <th className="p-3">Người Dùng Thực Hiện</th>
+                <th className="p-3">Hành Động / Sự Kiện</th>
+                <th className="p-3">Mục Tiêu (Target)</th>
+                <th className="p-3">Địa Chỉ IP</th>
+                <th className="p-3">Trạng Thái</th>
+                <th className="p-3 text-right">Raw JSON</th>
               </tr>
             </thead>
-            <tbody className="text-xs divide-y divide-[#c2c6d6]/60">
+            <tbody className="divide-y divide-slate-800/60">
               {filteredLogs.map((log) => {
                 const isSuccess = log.status === 'Success';
-                const isCrit = log.status === 'Critical';
+                const isWarning = log.status === 'Warning';
+                const isSystem = log.userType === 'system';
 
                 return (
-                  <tr key={log.id} className="hover:bg-[#f2f4f6] transition-colors">
-                    {/* Timestamp */}
-                    <td className="p-3 font-mono text-[#424754] whitespace-nowrap">{log.timestamp}</td>
-
-                    {/* Actor */}
-                    <td className="p-3 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {log.userType === 'system' ? (
-                          <div className="w-6 h-6 rounded-full bg-[#1e293b] text-white flex items-center justify-center">
+                  <tr key={log.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="p-3 text-slate-400 text-[11px] whitespace-nowrap">{log.timestamp}</td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-2 font-sans">
+                        {isSystem ? (
+                          <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px]">
                             <Bot className="w-3.5 h-3.5" />
                           </div>
-                        ) : log.userType === 'unknown' ? (
-                          <div className="w-6 h-6 rounded-full bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center font-bold text-[10px]">
-                            ?
-                          </div>
                         ) : (
-                          <div className="w-6 h-6 rounded-full bg-[#d0e1fb] text-[#004395] flex items-center justify-center font-bold text-[10px]">
+                          <div className="w-6 h-6 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center text-[10px] font-bold">
                             {log.initials || 'U'}
                           </div>
                         )}
-                        <span className="font-semibold text-[#191c1e]">{log.user}</span>
+                        <span className="font-bold text-slate-200 text-xs">{log.user}</span>
                       </div>
                     </td>
-
-                    {/* Action */}
-                    <td className="p-3 font-semibold text-[#191c1e]">{log.action}</td>
-
-                    {/* Target */}
-                    <td className="p-3 font-mono text-[#0058be]">
-                      {log.target ? (
-                        <span className="bg-[#f0f4f9] px-1.5 py-0.5 rounded border border-[#c2c6d6]">
-                          {log.target}
-                        </span>
-                      ) : (
-                        <span className="text-[#727785] italic">--</span>
-                      )}
-                    </td>
-
-                    {/* IP */}
-                    <td className="p-3 font-mono text-[#727785]">{log.ipAddress}</td>
-
-                    {/* Status */}
+                    <td className="p-3 text-slate-200 font-sans font-medium">{log.action}</td>
+                    <td className="p-3 text-sky-400">{log.target || '—'}</td>
+                    <td className="p-3 text-slate-400 text-[11px]">{log.ipAddress}</td>
                     <td className="p-3">
-                      {isSuccess ? (
-                        <span className="inline-flex items-center gap-1 text-[#006947] bg-[#6ffbbe]/40 px-2 py-0.5 rounded text-[11px] font-bold">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Thành công
-                        </span>
-                      ) : isCrit ? (
-                        <span className="inline-flex items-center gap-1 text-[#93000a] bg-[#ffdad6] px-2 py-0.5 rounded text-[11px] font-bold">
-                          <AlertCircle className="w-3.5 h-3.5" /> Nghiêm trọng
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-yellow-800 bg-yellow-100 px-2 py-0.5 rounded text-[11px] font-bold">
-                          Cảnh báo
-                        </span>
-                      )}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-sans font-bold ${
+                        isSuccess 
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                          : isWarning 
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                      }`}>
+                        {log.status}
+                      </span>
                     </td>
-
-                    {/* Payload inspect */}
                     <td className="p-3 text-right">
                       <button
                         onClick={() => setSelectedLogForJson(log)}
-                        className="p-1 rounded text-[#424754] hover:text-[#0058be] hover:bg-[#d8e2ff] transition-colors cursor-pointer"
-                        title="Xem Dữ Liệu JSON"
+                        className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-sky-500/20 transition-colors"
+                        title="Xem chi tiết JSON payload"
                       >
                         <Code className="w-4 h-4" />
                       </button>
@@ -233,55 +201,27 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
             </tbody>
           </table>
         </div>
-
-        {/* Pagination Bar */}
-        <div className="p-3 border-t border-[#c2c6d6] bg-[#f8fafc] flex justify-between items-center text-xs text-[#424754]">
-          <span>Hiển thị 1 đến {filteredLogs.length} trên tổng {filteredLogs.length} bản ghi</span>
-          <div className="flex items-center gap-1">
-            <button 
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              className="p-1.5 rounded border border-[#c2c6d6] hover:bg-white disabled:opacity-40"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="px-2 font-bold text-[#191c1e]">Trang {currentPage} / 1</span>
-            <button 
-              disabled={true}
-              className="p-1.5 rounded border border-[#c2c6d6] hover:bg-white disabled:opacity-40"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* JSON Inspection Modal */}
+      {/* JSON Payload Modal */}
       {selectedLogForJson && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-[#c2c6d6] shadow-xl p-6 max-w-lg w-full animate-in fade-in">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-bold text-[#191c1e]">Payload Nhật Ký Bất Biến</h3>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-card rounded-2xl max-w-lg w-full p-5 border border-slate-700 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
+              <span className="text-sm font-bold text-white flex items-center gap-2">
+                <Code className="w-4 h-4 text-sky-400" />
+                Raw Event Payload
+              </span>
               <button 
                 onClick={() => setSelectedLogForJson(null)}
-                className="text-[#727785] hover:text-[#191c1e] text-xs font-bold cursor-pointer"
+                className="text-slate-400 hover:text-white"
               >
-                Đóng
+                ✕
               </button>
             </div>
-
-            <div className="bg-[#1e293b] p-4 rounded-lg overflow-x-auto text-xs font-mono text-[#f8fafc] max-h-72">
-              <pre>{JSON.stringify(selectedLogForJson, null, 2)}</pre>
-            </div>
-
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={() => setSelectedLogForJson(null)}
-                className="px-4 py-2 bg-[#0058be] text-white rounded-lg text-xs font-bold hover:bg-[#2170e4] cursor-pointer"
-              >
-                Hoàn Tất
-              </button>
-            </div>
+            <pre className="bg-[#060911] p-4 rounded-xl border border-slate-800 text-[11px] text-sky-300 font-mono overflow-x-auto max-h-80">
+              {JSON.stringify(selectedLogForJson, null, 2)}
+            </pre>
           </div>
         </div>
       )}

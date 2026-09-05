@@ -1,6 +1,5 @@
 import json
 from typing import List, Optional
-from uuid import UUID
 
 from domain.models.server_node import ServerNode
 from domain.models.rack import Rack
@@ -25,6 +24,7 @@ from infrastructure.models.ar_models import (
 )
 
 from .base_repository import BaseRepository
+from .user_repository import UserRepository
 
 
 # ============================================================
@@ -48,12 +48,26 @@ class NodeRepository(
         if not model:
             return None
 
+        metrics = None
+        if model.metrics_json:
+            try:
+                metrics = json.loads(model.metrics_json)
+            except Exception:
+                metrics = None
+
+        containers = None
+        if model.containers_json:
+            try:
+                containers = json.loads(model.containers_json)
+            except Exception:
+                containers = None
+
         return ServerNode(
             id=str(model.id),
             rack_id=str(model.rack_id),
             name=model.name,
             u_start=model.u_start,
-            u_height=model.u_height,
+            u_height=model.u_height or 1,
             ip_address=model.ip_address,
             mac_address=model.mac_address,
             model=model.model,
@@ -61,9 +75,9 @@ class NodeRepository(
             ram_total_gb=model.ram_total_gb or 32,
             disk_total_gb=model.disk_total_gb or 1000,
             qr_code_payload=model.qr_code_payload,
-            status=str(model.status),
-            metrics=None,
-            containers=None,
+            status=str(model.status) if model.status else "HEALTHY",
+            metrics=metrics,
+            containers=containers,
             last_heartbeat_at=model.last_heartbeat_at,
             created_at=model.created_at,
             updated_at=model.updated_at,
@@ -74,21 +88,31 @@ class NodeRepository(
         entity: ServerNode
     ) -> ServerNodeModel:
 
+        metrics_str = None
+        if entity.metrics:
+            metrics_str = json.dumps(entity.metrics)
+
+        containers_str = None
+        if entity.containers:
+            containers_str = json.dumps(entity.containers)
+
         return ServerNodeModel(
-            id=entity.id,
-            rack_id=UUID(str(entity.rack_id)),
+            id=str(entity.id),
+            rack_id=str(entity.rack_id),
             name=entity.name,
             u_start=entity.u_start,
             u_height=entity.u_height,
             ip_address=entity.ip_address,
-            mac_address=entity._mac_address,
-            model=entity._model,
-            cpu_model=entity._cpu_model,
+            mac_address=entity._mac_address if hasattr(entity, '_mac_address') else None,
+            model=entity._model if hasattr(entity, '_model') else None,
+            cpu_model=entity._cpu_model if hasattr(entity, '_cpu_model') else None,
             ram_total_gb=entity.ram_total_gb,
             disk_total_gb=entity.disk_total_gb,
             qr_code_payload=entity.qr_code_payload,
             status=entity.status,
-            last_heartbeat_at=entity._last_heartbeat_at,
+            metrics_json=metrics_str,
+            containers_json=containers_str,
+            last_heartbeat_at=entity._last_heartbeat_at if hasattr(entity, '_last_heartbeat_at') else None,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )
@@ -125,7 +149,7 @@ class NodeRepository(
             models = (
                 session.query(ServerNodeModel)
                 .filter(
-                    ServerNodeModel.rack_id == UUID(str(rack_id))
+                    ServerNodeModel.rack_id == str(rack_id)
                 )
                 .all()
             )
@@ -147,26 +171,7 @@ class RackRepository(
     BaseRepository[Rack, RackModel],
     IRackRepository
 ):
-    """
-    Repository cho Rack.
-
-    Lưu ý:
-    Database racks hiện tại có 8 cột:
-        id
-        room_id
-        name
-        code
-        u_height
-        x_coord
-        y_coord
-        created_at
-
-    Không có:
-        room_name
-        total_u
-        power_limit_kw
-        updated_at
-    """
+    """Repository cho Rack."""
 
     def __init__(self):
         super().__init__(RackModel)
@@ -183,24 +188,13 @@ class RackRepository(
             id=str(model.id),
             name=model.name,
             code=model.code,
-
-            # Domain Rack cũ vẫn yêu cầu room_name.
-            # Database hiện tại lưu room_id nên tạm thời
-            # không lấy room_name trực tiếp từ RackModel.
-            room_name="Server Room 01",
-
-            # Domain cũ dùng total_u.
-            # Schema mới dùng u_height.
-            total_u=model.u_height,
-
-            # Database hiện tại không có power_limit_kw.
-            power_limit_kw=10.0,
-
+            room_name=model.room_name or "Server Room 01",
+            total_u=model.total_u or 42,
+            power_limit_kw=model.power_limit_kw or 10.0,
             x_coord=model.x_coord or 0.0,
             y_coord=model.y_coord or 0.0,
-
             created_at=model.created_at,
-            updated_at=model.created_at,
+            updated_at=model.updated_at or model.created_at,
         )
 
     def _to_model(
@@ -208,19 +202,17 @@ class RackRepository(
         entity: Rack
     ) -> RackModel:
 
-        """
-        Chuyển Domain Rack -> Database Model.
-
-        Database yêu cầu room_id nhưng Domain Rack hiện tại
-        chưa có room_id.
-
-        Vì vậy phần WRITE Rack sẽ được hoàn thiện sau khi
-        Domain Rack được đồng bộ với schema mới.
-        """
-
-        raise NotImplementedError(
-            "Rack WRITE chưa được bật: "
-            "Domain Rack cần bổ sung room_id để khớp database."
+        return RackModel(
+            id=str(entity.id),
+            name=entity.name,
+            code=entity.code,
+            room_name=entity._room_name if hasattr(entity, '_room_name') else "Server Room 01",
+            total_u=entity.total_u,
+            power_limit_kw=entity.power_limit_kw,
+            x_coord=entity._x_coord if hasattr(entity, '_x_coord') else 0.0,
+            y_coord=entity._y_coord if hasattr(entity, '_y_coord') else 0.0,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
         )
 
     def get_by_code(
@@ -271,11 +263,11 @@ class AlertRepository(
             server_node_id=str(model.server_node_id),
             title=model.title,
             message=model.message,
-            severity=str(model.severity),
+            severity=str(model.severity) if model.severity else "INFO",
             metric_name=model.metric_name,
             metric_value=model.metric_value,
             threshold_value=model.threshold_value,
-            status=str(model.status),
+            status=str(model.status) if model.status else "OPEN",
 
             acknowledged_by=(
                 str(model.acknowledged_by)
@@ -293,10 +285,8 @@ class AlertRepository(
 
             resolved_at=model.resolved_at,
 
-            # Database dùng triggered_at.
-            # Domain dùng created_at / updated_at.
-            created_at=model.triggered_at,
-            updated_at=model.triggered_at,
+            created_at=model.created_at,
+            updated_at=model.updated_at or model.created_at,
         )
 
     def _to_model(
@@ -305,33 +295,34 @@ class AlertRepository(
     ) -> AlertModel:
 
         return AlertModel(
-            id=entity.id,
-            server_node_id=entity.server_node_id,
+            id=str(entity.id),
+            server_node_id=str(entity.server_node_id),
             title=entity.title,
             message=entity.message,
             severity=entity.severity,
-            metric_name=entity._metric_name,
-            metric_value=entity._metric_value,
-            threshold_value=entity._threshold_value,
+            metric_name=entity._metric_name if hasattr(entity, '_metric_name') else None,
+            metric_value=entity._metric_value if hasattr(entity, '_metric_value') else None,
+            threshold_value=entity._threshold_value if hasattr(entity, '_threshold_value') else None,
             status=entity.status,
 
             acknowledged_by=(
-                UUID(str(entity._acknowledged_by))
-                if entity._acknowledged_by
+                str(entity._acknowledged_by)
+                if hasattr(entity, '_acknowledged_by') and entity._acknowledged_by
                 else None
             ),
 
-            acknowledged_at=entity._acknowledged_at,
+            acknowledged_at=entity._acknowledged_at if hasattr(entity, '_acknowledged_at') else None,
 
             resolved_by=(
-                UUID(str(entity._resolved_by))
-                if entity._resolved_by
+                str(entity._resolved_by)
+                if hasattr(entity, '_resolved_by') and entity._resolved_by
                 else None
             ),
 
-            resolved_at=entity._resolved_at,
+            resolved_at=entity._resolved_at if hasattr(entity, '_resolved_at') else None,
 
-            triggered_at=entity.created_at,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
         )
 
     def list_active(self) -> List[Alert]:
@@ -368,7 +359,7 @@ class AlertRepository(
             models = (
                 session.query(AlertModel)
                 .filter(
-                    AlertModel.server_node_id == node_id
+                    AlertModel.server_node_id == str(node_id)
                 )
                 .all()
             )
@@ -403,6 +394,13 @@ class TicketRepository(
         if not model:
             return None
 
+        ar_logs = []
+        if model.ar_session_log_json:
+            try:
+                ar_logs = json.loads(model.ar_session_log_json)
+            except Exception:
+                ar_logs = []
+
         return MaintenanceTicket(
             id=str(model.id),
             server_node_id=str(model.server_node_id),
@@ -410,8 +408,8 @@ class TicketRepository(
             title=model.title,
             description=model.description or "",
 
-            priority=str(model.priority),
-            status=str(model.status),
+            priority=str(model.priority) if model.priority else "MEDIUM",
+            status=str(model.status) if model.status else "CREATED",
 
             alert_id=(
                 str(model.alert_id)
@@ -425,8 +423,7 @@ class TicketRepository(
                 else None
             ),
 
-            # Database không có assigned_technician_name
-            assigned_technician_name=None,
+            assigned_technician_name=model.assigned_technician_name,
 
             created_by=(
                 str(model.created_by)
@@ -436,16 +433,14 @@ class TicketRepository(
 
             resolution_notes=model.resolution_notes,
 
-            # Database dùng ar_session_log JSONB
-            ar_session_logs=model.ar_session_log or [],
+            ar_session_logs=ar_logs,
 
             created_at=model.created_at,
             started_at=model.started_at,
             resolved_at=model.resolved_at,
             closed_at=model.closed_at,
 
-            # Database không có updated_at
-            updated_at=model.created_at,
+            updated_at=model.updated_at or model.created_at,
         )
 
     def _to_model(
@@ -453,44 +448,59 @@ class TicketRepository(
         entity: MaintenanceTicket
     ) -> MaintenanceTicketModel:
 
+        ar_logs_str = None
+        if hasattr(entity, '_ar_session_logs') and entity._ar_session_logs:
+            try:
+                ar_logs_str = json.dumps(entity._ar_session_logs)
+            except Exception:
+                ar_logs_str = str(entity._ar_session_logs)
+
         return MaintenanceTicketModel(
-            id=entity.id,
+            id=str(entity.id),
 
-            server_node_id=entity.server_node_id,
+            server_node_id=str(entity.server_node_id),
 
-            alert_id=entity._alert_id,
+            alert_id=str(entity._alert_id) if hasattr(entity, '_alert_id') and entity._alert_id else None,
 
             title=entity.title,
 
-            description=entity._description,
+            description=entity._description if hasattr(entity, '_description') else None,
 
             priority=entity.priority,
 
             status=entity.status,
 
             assigned_technician_id=(
-                UUID(str(entity._assigned_technician_id))
-                if entity._assigned_technician_id
+                str(entity._assigned_technician_id)
+                if hasattr(entity, '_assigned_technician_id') and entity._assigned_technician_id
+                else None
+            ),
+
+            assigned_technician_name=(
+                entity._assigned_technician_name
+                if hasattr(entity, '_assigned_technician_name')
                 else None
             ),
 
             created_by=(
-                UUID(str(entity._created_by))
-                if entity._created_by
+                str(entity._created_by)
+                if hasattr(entity, '_created_by') and entity._created_by
                 else None
             ),
 
-            resolution_notes=entity._resolution_notes,
+            resolution_notes=entity._resolution_notes if hasattr(entity, '_resolution_notes') else None,
 
-            ar_session_log=entity._ar_session_logs,
+            ar_session_log_json=ar_logs_str,
 
             created_at=entity.created_at,
 
-            started_at=entity._started_at,
+            started_at=entity._started_at if hasattr(entity, '_started_at') else None,
 
-            resolved_at=entity._resolved_at,
+            resolved_at=entity._resolved_at if hasattr(entity, '_resolved_at') else None,
 
-            closed_at=entity._closed_at,
+            closed_at=entity._closed_at if hasattr(entity, '_closed_at') else None,
+
+            updated_at=entity.updated_at,
         )
 
     def list_by_technician(
@@ -505,7 +515,7 @@ class TicketRepository(
                 session.query(MaintenanceTicketModel)
                 .filter(
                     MaintenanceTicketModel.assigned_technician_id
-                    == UUID(str(technician_id))
+                    == str(technician_id)
                 )
                 .all()
             )
@@ -531,124 +541,6 @@ class TicketRepository(
                 .filter(
                     MaintenanceTicketModel.status
                     == status.upper()
-                )
-                .all()
-            )
-
-            return [
-                self._to_domain(model)
-                for model in models
-            ]
-
-        finally:
-            session.close()
-
-
-# ============================================================
-# USER REPOSITORY
-# ============================================================
-
-class UserRepository(
-    BaseRepository[UserAccount, UserModel],
-    IUserRepository
-):
-    """Repository cho UserAccount."""
-
-    def __init__(self):
-        super().__init__(UserModel)
-
-    def _to_domain(
-        self,
-        model: UserModel
-    ) -> Optional[UserAccount]:
-
-        if not model:
-            return None
-
-        return UserAccount(
-            id=str(model.id),
-            email=model.email,
-            full_name=model.full_name,
-            role=str(model.role),
-            status=str(model.status),
-
-            phone_number=model.phone_number,
-            department=model.department,
-
-            avatar=model.avatar_url,
-
-            password_hash=model.password_hash,
-
-            approved_by=(
-                str(model.approved_by)
-                if model.approved_by
-                else None
-            ),
-
-            approved_at=model.approved_at,
-            created_at=model.created_at,
-            updated_at=model.updated_at,
-        )
-
-    def _to_model(
-        self,
-        entity: UserAccount
-    ) -> UserModel:
-
-        return UserModel(
-            id=UUID(str(entity.id)),
-            email=entity.email,
-            password_hash=entity._password_hash or "",
-            full_name=entity.full_name,
-
-            role=entity.role,
-            status=entity.status,
-
-            avatar_url=entity._avatar,
-            phone_number=entity._phone_number,
-            department=entity._department,
-
-            approved_by=(
-                UUID(str(entity._approved_by))
-                if entity._approved_by
-                else None
-            ),
-
-            approved_at=entity._approved_at,
-        )
-
-    def get_by_email(
-        self,
-        email: str
-    ) -> Optional[UserAccount]:
-
-        session = self._get_session()
-
-        try:
-            model = (
-                session.query(UserModel)
-                .filter(
-                    UserModel.email
-                    == email.strip().lower()
-                )
-                .first()
-            )
-
-            return self._to_domain(model) if model else None
-
-        finally:
-            session.close()
-
-    def list_pending(self) -> List[UserAccount]:
-
-        session = self._get_session()
-
-        try:
-            models = (
-                session.query(UserModel)
-                .filter(
-                    UserModel.status
-                    == "PENDING_APPROVAL"
                 )
                 .all()
             )

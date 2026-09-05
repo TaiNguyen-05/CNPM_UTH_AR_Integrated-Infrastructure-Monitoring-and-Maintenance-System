@@ -25,7 +25,7 @@ auth_service = AuthService(repo)
 try:
     result = auth_service.login(
         EMAIL,
-        "Admin@123456"
+        "123456"
     )
 
     token = result["access_token"]

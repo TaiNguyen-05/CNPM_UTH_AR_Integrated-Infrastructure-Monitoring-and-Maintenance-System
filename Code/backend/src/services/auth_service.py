@@ -2,7 +2,12 @@ import os
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
-import bcrypt
+try:
+    import bcrypt
+except ImportError:
+    bcrypt = None
+
+from werkzeug.security import check_password_hash
 import jwt
 from dotenv import load_dotenv
 
@@ -38,10 +43,23 @@ class AuthService:
         if not password_hash:
             return False
 
-        return bcrypt.checkpw(
-            password.encode("utf-8"),
-            password_hash.encode("utf-8")
-        )
+        # 1. Kiểm tra bằng bcrypt nếu hash bắt đầu bằng $2
+        if password_hash.startswith("$2") and bcrypt is not None:
+            try:
+                return bcrypt.checkpw(
+                    password.encode("utf-8"),
+                    password_hash.encode("utf-8")
+                )
+            except Exception:
+                pass
+
+        # 2. Fallback kiểm tra werkzeug (scrypt, pbkdf2, sha256)
+        try:
+            return check_password_hash(password_hash, password)
+        except Exception:
+            pass
+
+        return False
 
     def login(self, email: str, password: str):
         user = self.repository.get_by_email(email)

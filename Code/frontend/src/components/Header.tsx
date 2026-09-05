@@ -11,7 +11,16 @@ import {
   Layers,
   Shield,
   Activity,
-  LogOut
+  LogOut,
+  HelpCircle,
+  Cpu,
+  Sparkles,
+  Terminal,
+  Box,
+  QrCode,
+  Users,
+  FileText,
+  Camera
 } from 'lucide-react';
 import { TabType, AlertItem, UserItem } from '../types';
 import { MOCK_AVATAR_ADMIN } from '../data/mockData';
@@ -53,204 +62,189 @@ export const Header: React.FC<HeaderProps> = ({
   const userInitials = currentUser?.initials || 'SJ';
   const userAvatar = currentUser?.avatarUrl || (currentUser?.role === 'Admin' ? MOCK_AVATAR_ADMIN : undefined);
 
+  const navLinks = [
+    { id: 'digital-twin' as TabType, label: '3D Twin // Floor' },
+    { id: 'telemetry' as TabType, label: 'Console // Stream' },
+    { id: 'assets-qr' as TabType, label: 'Hardware // AR' },
+    { id: 'alerts' as TabType, label: 'Incidents // Alerts', badge: unreadAlerts.length > 0 ? unreadAlerts.length : null },
+    { id: 'users' as TabType, label: 'Enclave // RBAC' },
+    { id: 'audit-logs' as TabType, label: 'Logs // Audit' },
+  ];
+
   return (
-    <header className="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-4 md:px-6 h-16 bg-[#f7f9fb] border-b border-[#c2c6d6] shadow-xs">
-      <div className="flex items-center gap-3">
-        {/* Mobile menu toggle */}
-        <button 
-          onClick={onMobileMenuToggle}
-          className="md:hidden text-[#0058be] cursor-pointer p-2 rounded-full hover:bg-[#e0e3e5] transition-colors active:scale-95"
-          aria-label="Toggle Menu"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-
-        <div className="flex items-center gap-2">
-          <div className="text-xl font-bold text-[#0058be] tracking-tight">AR-IMMS</div>
-          <div className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#d8e2ff] text-[#004395]">
-            v1.0-PROD
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 md:gap-4">
-        {/* Search on Right (Desktop) */}
-        <div className="hidden md:flex items-center bg-[#ffffff] rounded-full px-3.5 py-1.5 border border-[#c2c6d6] focus-within:border-[#0058be] focus-within:ring-2 focus-within:ring-[#0058be]/20 transition-all shadow-xs w-64 lg:w-72">
-          <Search className="w-4 h-4 text-[#727785] mr-2 shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={
-              currentTab === 'telemetry' 
-                ? 'Tìm kiếm node, thông số đo...' 
-                : currentTab === 'users' 
-                ? 'Tìm người dùng, vai trò...' 
-                : currentTab === 'audit-logs'
-                ? 'Tìm nhật ký, địa chỉ IP...'
-                : 'Tìm kiếm tài sản, tủ rack...'
-            }
-            className="bg-transparent border-none focus:outline-none text-sm w-full text-[#191c1e] placeholder:text-[#727785] p-0"
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => onSearchChange('')}
-              className="text-[#727785] hover:text-[#191c1e]"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Quick Action Button */}
-        <button
-          onClick={onOpenNewAsset}
-          title="Thêm tài sản mới"
-          className="text-[#424754] hover:text-[#0058be] hover:bg-[#e0e3e5] p-2 rounded-full transition-colors cursor-pointer active:scale-95 relative"
-        >
-          <PlusSquare className="w-5 h-5" />
-        </button>
-
-        {/* Settings button */}
-        <button
-          onClick={onOpenSettings}
-          title="Cấu hình hệ thống"
-          className="text-[#424754] hover:text-[#0058be] hover:bg-[#e0e3e5] p-2 rounded-full transition-colors cursor-pointer active:scale-95"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
-
-        {/* Notifications button with badge */}
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            title="Thông báo & Cảnh báo hoạt động"
-            className="text-[#424754] hover:text-[#0058be] hover:bg-[#e0e3e5] p-2 rounded-full transition-colors cursor-pointer active:scale-95 relative"
+    <header className="fixed top-0 left-0 w-full z-50 flex items-center h-16 bg-[#080b0e]/90 backdrop-blur-xl border-b border-[#222c37] transition-all duration-300">
+      <div className="w-full max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between">
+        {/* Brand Logo & Ping indicator */}
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onMobileMenuToggle}
+            className="lg:hidden text-slate-400 hover:text-white cursor-pointer p-1.5 rounded-lg border border-[#222c37] bg-[#11161b]"
+            aria-label="Toggle Menu"
           >
-            <Bell className="w-5 h-5" />
-            {unreadAlerts.length > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#ba1a1a] rounded-full ring-2 ring-[#f7f9fb] animate-pulse" />
-            )}
+            <Menu className="w-4 h-4" />
           </button>
 
-          {/* Notifications Dropdown */}
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl border border-[#c2c6d6] shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="p-3 bg-[#f2f4f6] border-b border-[#c2c6d6] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-[#0058be]" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#191c1e]">Cảnh báo đang mở ({unreadAlerts.length})</span>
+          <a 
+            onClick={() => onSelectTab('digital-twin')}
+            className="flex items-center gap-2.5 font-mono text-sm sm:text-base font-bold tracking-wider text-white cursor-pointer group select-none"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00f0ff] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00f0ff]" />
+            </span>
+            <span className="text-white group-hover:text-[#00f0ff] transition-colors">
+              CORE // AR-IMMS
+            </span>
+          </a>
+        </div>
+
+        {/* Center Cyber Navigation Links (Desktop) */}
+        <nav className="hidden lg:flex items-center gap-6 font-mono text-xs uppercase tracking-widest text-slate-400">
+          {navLinks.map((link) => {
+            const isActive = currentTab === link.id;
+            return (
+              <button
+                key={link.id}
+                onClick={() => onSelectTab(link.id)}
+                className={`transition-colors cursor-pointer relative py-1 flex items-center gap-1.5 ${
+                  isActive 
+                    ? 'text-[#00f0ff] font-bold border-b border-[#00f0ff]' 
+                    : 'hover:text-slate-200'
+                }`}
+              >
+                <span>{link.label}</span>
+                {link.badge && (
+                  <span className="h-4 px-1 rounded-sm bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[9px] font-mono flex items-center justify-center">
+                    {link.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Right Actions */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* LNKS // SECURE Badge */}
+          <span className="hidden sm:inline-block border border-[#222c37] bg-[#11161b] px-2.5 py-1 font-mono text-[10px] text-[#ffb03a] tracking-wider">
+            LNKS // SECURE
+          </span>
+
+          {/* Quick Action: New Asset */}
+          <button
+            onClick={onOpenNewAsset}
+            title="Thêm thiết bị mới"
+            className="border border-[#222c37] bg-[#11161b] hover:border-[#38bdf8] text-slate-300 hover:text-white p-2 transition-all cursor-pointer"
+          >
+            <PlusSquare className="w-4 h-4" />
+          </button>
+
+          {/* Notifications Popover */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(prev => !prev)}
+              title="Cảnh báo hệ thống"
+              className="relative border border-[#222c37] bg-[#11161b] hover:border-[#ffb03a] text-slate-300 hover:text-white p-2 transition-all cursor-pointer"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadAlerts.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-[#080b0e] border border-[#222c37] shadow-2xl p-4 z-50 font-mono text-xs">
+                <div className="flex justify-between items-center pb-2.5 border-b border-[#222c37] text-slate-300">
+                  <span className="font-bold uppercase text-[#00f0ff]">INCIDENT LOGS</span>
+                  <button onClick={() => setShowNotifications(false)} className="text-slate-500 hover:text-white">✕</button>
                 </div>
+
+                <div className="mt-2.5 max-h-64 overflow-y-auto space-y-2 pr-1">
+                  {unreadAlerts.length === 0 ? (
+                    <div className="py-6 text-center text-slate-500 text-[11px]">
+                      [ OK ] All systems nominal. 0 pending alerts.
+                    </div>
+                  ) : (
+                    unreadAlerts.map(alert => (
+                      <div 
+                        key={alert.id}
+                        onClick={() => {
+                          setShowNotifications(false);
+                          onSelectTab('alerts');
+                        }}
+                        className="p-2.5 border border-[#222c37] bg-[#11161b] hover:border-[#ffb03a] transition-colors cursor-pointer"
+                      >
+                        <div className="flex justify-between text-[10px] text-[#ffb03a] mb-1">
+                          <span>{alert.alertCode}</span>
+                          <span>{alert.time}</span>
+                        </div>
+                        <div className="text-white font-sans font-bold text-xs">{alert.title}</div>
+                        <div className="text-slate-400 text-[10px]">{alert.location}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* User Profile Pill */}
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(prev => !prev)}
+              className="flex items-center gap-2 border border-[#222c37] bg-[#11161b] hover:border-[#38bdf8] px-2.5 py-1.5 transition-all cursor-pointer font-mono text-xs"
+            >
+              <div className="w-5 h-5 bg-[#38bdf8] text-[#080b0e] font-bold text-[10px] flex items-center justify-center font-mono">
+                {userInitials}
+              </div>
+              <span className="hidden md:inline-block text-slate-200 text-[11px] truncate max-w-[90px]">{userName}</span>
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-3 w-56 bg-[#080b0e] border border-[#222c37] shadow-2xl p-2 z-50 font-mono text-xs">
+                <div className="px-3 py-2 border-b border-[#222c37] mb-1">
+                  <div className="text-white font-bold">{userName}</div>
+                  <div className="text-[10px] text-slate-400 truncate">{userEmail}</div>
+                  <div className="text-[9px] text-[#00f0ff] uppercase mt-1">Role: {userRole}</div>
+                </div>
+
                 <button
                   onClick={() => {
-                    setShowNotifications(false);
-                    onSelectTab('alerts');
+                    setShowProfileMenu(false);
+                    onOpenSettings();
                   }}
-                  className="text-xs text-[#0058be] hover:underline font-semibold cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-slate-300 hover:text-white hover:bg-[#161d24] transition-colors text-left"
                 >
-                  Xem tất cả
+                  <Settings className="w-3.5 h-3.5" />
+                  System Config
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    onOpenSupport();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-slate-300 hover:text-white hover:bg-[#161d24] transition-colors text-left"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  Documentation
+                </button>
+
+                <div className="my-1 border-t border-[#222c37]" />
+
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    onSignOut();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-rose-400 hover:bg-rose-950/40 transition-colors text-left"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Terminate Session
                 </button>
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-[#e0e3e5]">
-                {unreadAlerts.length === 0 ? (
-                  <div className="p-6 text-center text-[#727785] text-sm">
-                    <CheckCircle className="w-8 h-8 text-[#00855b] mx-auto mb-2 opacity-80" />
-                    Tất cả hệ thống hoạt động bình thường. Không có cảnh báo chưa xử lý.
-                  </div>
-                ) : (
-                  unreadAlerts.map((alert) => (
-                    <div 
-                      key={alert.id}
-                      onClick={() => {
-                        setShowNotifications(false);
-                        onSelectTab('alerts');
-                      }}
-                      className="p-3 hover:bg-[#f2f4f6] cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
-                          alert.severity === 'Critical' 
-                            ? 'bg-[#ffdad6] text-[#93000a]' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {alert.alertCode} • {alert.severity === 'Critical' ? 'Nghiêm trọng' : 'Cảnh báo'}
-                        </span>
-                        <span className="text-[11px] text-[#727785] font-mono">{alert.time}</span>
-                      </div>
-                      <h4 className="text-xs font-bold text-[#191c1e]">{alert.title}</h4>
-                      <p className="text-xs text-[#424754] line-clamp-1 mt-0.5">{alert.description}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Profile Avatar & Dropdown */}
-        <div className="relative ml-1">
-          <button 
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="w-8 h-8 rounded-full overflow-hidden border border-[#c2c6d6] hover:ring-2 hover:ring-[#0058be] transition-all cursor-pointer flex items-center justify-center bg-[#0058be] text-white font-bold text-xs flex-shrink-0"
-          >
-            {userAvatar ? (
-              <img 
-                src={userAvatar} 
-                alt={`${userName} profile photo`} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span>{userInitials}</span>
             )}
-          </button>
-
-          {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-[#c2c6d6] shadow-xl z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
-              <div className="p-3 border-b border-[#e0e3e5] bg-[#f8fafc]">
-                <div className="font-bold text-sm text-[#191c1e] truncate">{userName}</div>
-                <div className="text-xs text-[#727785] truncate">{userEmail}</div>
-                <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded ${
-                  userRole === 'Admin' ? 'bg-[#d0e1fb] text-[#004395]' :
-                  userRole === 'Technician' ? 'bg-[#e0f5ea] text-[#00855b]' :
-                  'bg-[#f2f4f6] text-[#424754]'
-                }`}>
-                  {userRole} ({userRole === 'Admin' ? 'Toàn quyền CRUD' : userRole === 'Technician' ? 'Vận hành AR/Node' : 'Chỉ xem Telemetry'})
-                </span>
-              </div>
-
-              <div className="py-1 text-sm">
-                <button 
-                  onClick={() => { setShowProfileMenu(false); onSelectTab('users'); }}
-                  className="w-full px-3 py-2 text-left hover:bg-[#f2f4f6] flex items-center gap-2 text-[#424754] cursor-pointer text-xs font-semibold"
-                >
-                  <Shield className="w-4 h-4 text-[#0058be]" />
-                  Quản lý quyền & Tài khoản
-                </button>
-                <button 
-                  onClick={() => { setShowProfileMenu(false); onSelectTab('telemetry'); }}
-                  className="w-full px-3 py-2 text-left hover:bg-[#f2f4f6] flex items-center gap-2 text-[#424754] cursor-pointer text-xs font-semibold"
-                >
-                  <Activity className="w-4 h-4 text-[#00855b]" />
-                  Chỉ số Telemetry thời gian thực
-                </button>
-                <button 
-                  onClick={() => { setShowProfileMenu(false); onOpenSettings(); }}
-                  className="w-full px-3 py-2 text-left hover:bg-[#f2f4f6] flex items-center gap-2 text-[#424754] cursor-pointer text-xs font-semibold"
-                >
-                  <Settings className="w-4 h-4 text-[#727785]" />
-                  Cấu hình hệ thống & Cảnh báo
-                </button>
-                <div className="border-t border-[#e0e3e5] my-1" />
-                <button 
-                  onClick={() => { setShowProfileMenu(false); onSignOut(); }}
-                  className="w-full px-3 py-2 text-left hover:bg-[#ffdad6]/50 flex items-center gap-2 text-[#ba1a1a] cursor-pointer text-xs font-bold"
-                >
-                  <LogOut className="w-4 h-4 text-[#ba1a1a]" />
-                  Đăng Xuất Phiên Làm Việc
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </header>
