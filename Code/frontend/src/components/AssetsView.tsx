@@ -296,19 +296,21 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
               {/* QR Code Container with Frame */}
               <div 
                 onClick={() => onOpenNodeDetail && onOpenNodeDetail(selectedAsset)}
-                className="relative p-3 bg-white rounded-xl shadow-2xl mb-4 group cursor-pointer z-10 hover:scale-105 transition-transform"
+                className="relative p-3 bg-[#11161b] border border-[#222c37] rounded-xl shadow-2xl mb-4 group cursor-pointer z-10 hover:border-[#38bdf8]/60 hover:scale-105 transition-all"
                 title="Nhấn để xem chỉ số & chi tiết máy chủ"
               >
                 {/* Laser Scanning Animation */}
                 <div className="absolute top-0 left-0 w-full h-[2px] bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,1)] animate-scan z-20" />
                 
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-                    typeof window !== 'undefined' ? `${window.location.origin}/?node=${selectedAsset.id}` : `http://localhost:9999/?node=${selectedAsset.id}`
-                  )}&margin=10`}
-                  alt={`Mã QR ${selectedAsset.name}`}
-                  className="w-44 h-44 object-contain rounded-lg"
-                />
+                <div className="bg-white p-2 rounded-lg">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
+                      typeof window !== 'undefined' ? `${window.location.origin}/?node=${selectedAsset.id}` : `http://localhost:9999/?node=${selectedAsset.id}`
+                    )}&margin=10`}
+                    alt={`Mã QR ${selectedAsset.name}`}
+                    className="w-40 h-40 object-contain rounded"
+                  />
+                </div>
 
                 {/* AR Corner Target Markers */}
                 <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-sky-500" />

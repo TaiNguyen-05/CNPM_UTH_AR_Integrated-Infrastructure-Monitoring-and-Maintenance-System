@@ -163,7 +163,7 @@ export const TelemetryView: React.FC = () => {
                 y1={y} 
                 x2={width - padding} 
                 y2={y} 
-                stroke="#e0e3e5" 
+                stroke="#222c37" 
                 strokeDasharray="3,3" 
               />
             );
@@ -171,39 +171,39 @@ export const TelemetryView: React.FC = () => {
 
           {/* Area fill for Node-03 if warning */}
           {activeNodes['Node-03'] && showWarningZone && (
-            <path d={makeArea(data.node3)} fill="rgba(186, 26, 26, 0.12)" />
+            <path d={makeArea(data.node3)} fill="rgba(244, 63, 94, 0.15)" />
           )}
 
-          {/* Node 1 Line (Blue) */}
+          {/* Node 1 Line (Cyan) */}
           {activeNodes['Node-01'] && (
             <path
               d={makePath(data.node1)}
               fill="none"
-              stroke="#0058be"
+              stroke="#38bdf8"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           )}
 
-          {/* Node 2 Line (Green) */}
+          {/* Node 2 Line (Emerald) */}
           {activeNodes['Node-02'] && (
             <path
               d={makePath(data.node2)}
               fill="none"
-              stroke="#00855b"
+              stroke="#10b981"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           )}
 
-          {/* Node 3 Line (Red or Dashed) */}
+          {/* Node 3 Line (Rose/Amber) */}
           {activeNodes['Node-03'] && (
             <path
               d={makePath(data.node3)}
               fill="none"
-              stroke={showWarningZone ? "#ba1a1a" : "#727785"}
+              stroke={showWarningZone ? "#f43f5e" : "#64748b"}
               strokeWidth={showWarningZone ? "2.5" : "2"}
               strokeDasharray={showWarningZone ? undefined : "4,4"}
               strokeLinecap="round"
@@ -216,39 +216,41 @@ export const TelemetryView: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-[1600px] mx-auto flex flex-col gap-6">
+    <div className="p-2 md:p-4 max-w-[1600px] mx-auto flex flex-col gap-6 text-slate-200">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#191c1e] tracking-tight">Luồng Đo Từ Xa (Telemetry Stream)</h1>
-          <p className="text-xs text-[#727785] mt-0.5">Giám sát thời gian thực các node máy chủ trong cụm trung tâm.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight font-mono">Luồng Đo Từ Xa (Telemetry Stream)</h1>
+          <p className="text-xs text-slate-400 mt-0.5 font-light">Giám sát thời gian thực các node máy chủ trong cụm trung tâm qua WebSocket.</p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setFilterModalOpen(true)}
-            className="px-4 py-2 bg-white border border-[#c2c6d6] rounded-full text-xs font-bold text-[#191c1e] hover:bg-[#f2f4f6] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="px-4 py-2 bg-[#161d24] border border-[#222c37] text-slate-300 hover:text-white hover:border-[#38bdf8] text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Filter className="w-3.5 h-3.5 text-[#727785]" />
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
             Bộ lọc
           </button>
 
           <button
             onClick={() => setIsStreaming(!isStreaming)}
             className={`
-              px-4 py-2 rounded-full text-xs font-bold text-white transition-all shadow-xs flex items-center gap-2 cursor-pointer
-              ${isStreaming ? 'bg-[#0058be] hover:bg-[#2170e4]' : 'bg-[#727785] hover:bg-[#505f76]'}
+              px-4 py-2 text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer border
+              ${isStreaming 
+                ? 'bg-[#38bdf8]/10 border-[#38bdf8] text-[#38bdf8] hover:bg-[#38bdf8] hover:text-[#080b0e]' 
+                : 'bg-[#161d24] border-[#222c37] text-slate-400 hover:text-white'}
             `}
           >
             {isStreaming ? (
               <>
-                <span className="w-2 h-2 rounded-full bg-[#6ffbbe] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#38bdf8] animate-pulse" />
                 Luồng Trực Tiếp
               </>
             ) : (
               <>
                 <Play className="w-3.5 h-3.5" />
-                Đã Tạm Dừng (Bấm để Tiếp Tục)
+                Đã Tạm Dừng
               </>
             )}
           </button>
@@ -260,11 +262,11 @@ export const TelemetryView: React.FC = () => {
         {/* Main Charts Area (Spans 9 cols) */}
         <div className="lg:col-span-9 flex flex-col gap-5">
           {/* CPU Utilization Chart Card */}
-          <div className="bg-white rounded-xl border border-[#c2c6d6] shadow-xs p-4 flex flex-col">
+          <div className="bg-[#0f141a] border border-[#222c37] p-4 flex flex-col">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-xs font-bold text-[#191c1e] uppercase tracking-wider">Hiệu Suất Sử Dụng CPU</h3>
-              <div className="flex items-center gap-1.5 text-xs text-[#00855b] font-medium">
-                <span className="w-2 h-2 rounded-full bg-[#00855b]" />
+              <h3 className="text-xs font-bold text-white font-mono uppercase tracking-wider">Hiệu Suất Sử Dụng CPU</h3>
+              <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span className="font-mono">Ổn định (TB: 38%)</span>
               </div>
             </div>
@@ -272,11 +274,11 @@ export const TelemetryView: React.FC = () => {
           </div>
 
           {/* RAM Usage Chart Card */}
-          <div className="bg-white rounded-xl border border-[#c2c6d6] shadow-xs p-4 flex flex-col">
+          <div className="bg-[#0f141a] border border-[#222c37] p-4 flex flex-col">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-xs font-bold text-[#191c1e] uppercase tracking-wider">Phân Bổ Bộ Nhớ RAM</h3>
-              <div className="flex items-center gap-1.5 text-xs text-[#ba1a1a] font-medium">
-                <span className="w-2 h-2 rounded-full bg-[#ba1a1a] pulse-critical" />
+              <h3 className="text-xs font-bold text-white font-mono uppercase tracking-wider">Phân Bổ Bộ Nhớ RAM</h3>
+              <div className="flex items-center gap-1.5 text-xs text-rose-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
                 <span className="font-mono font-bold">Cảnh báo: Node-03 (95%)</span>
               </div>
             </div>
@@ -284,11 +286,11 @@ export const TelemetryView: React.FC = () => {
           </div>
 
           {/* Thermal Chart Card */}
-          <div className="bg-white rounded-xl border border-[#c2c6d6] shadow-xs p-4 flex flex-col">
+          <div className="bg-[#0f141a] border border-[#222c37] p-4 flex flex-col">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-xs font-bold text-[#191c1e] uppercase tracking-wider">Tải Nhiệt Độ (°C)</h3>
-              <div className="flex items-center gap-1.5 text-xs text-[#00855b] font-medium">
-                <span className="w-2 h-2 rounded-full bg-[#00855b]" />
+              <h3 className="text-xs font-bold text-white font-mono uppercase tracking-wider">Tải Nhiệt Độ (°C)</h3>
+              <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span className="font-mono">Bình thường (TB: 54°C)</span>
               </div>
             </div>
@@ -298,107 +300,107 @@ export const TelemetryView: React.FC = () => {
 
         {/* Sidebar Filters & Summary (Spans 3 cols) */}
         <div className="lg:col-span-3 flex flex-col gap-5">
-          {/* Node Selector Glassmorphism Card */}
-          <div className="bg-white rounded-xl border border-[#c2c6d6] shadow-xs p-4">
-            <h3 className="text-xs font-bold text-[#424754] uppercase tracking-wider mb-3">Danh Sách Node Hoạt Động</h3>
+          {/* Node Selector Card */}
+          <div className="bg-[#0f141a] border border-[#222c37] p-4">
+            <h3 className="text-xs font-bold text-[#ffb03a] uppercase tracking-wider mb-3 font-mono">Danh Sách Node Hoạt Động</h3>
             <div className="space-y-2">
               {/* Node 1 */}
-              <label className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#f2f4f6] cursor-pointer border border-[#e0e3e5] transition-all">
+              <label className="flex items-center justify-between p-2.5 bg-[#161d24] hover:bg-[#1c252e] cursor-pointer border border-[#222c37] transition-all">
                 <div className="flex items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={activeNodes['Node-01']}
                     onChange={(e) => setActiveNodes(prev => ({ ...prev, 'Node-01': e.target.checked }))}
-                    className="rounded border-[#c2c6d6] text-[#0058be] focus:ring-[#0058be] w-4 h-4 cursor-pointer"
+                    className="accent-[#38bdf8] w-4 h-4 cursor-pointer"
                   />
-                  <span className="text-xs font-semibold text-[#191c1e]">Node-01 (Chính)</span>
+                  <span className="text-xs font-mono font-semibold text-white">Node-01 (Chính)</span>
                 </div>
-                <span className="w-2 h-2 rounded-full bg-[#0058be]" />
+                <span className="w-2 h-2 rounded-full bg-[#38bdf8]" />
               </label>
 
               {/* Node 2 */}
-              <label className="flex items-center justify-between p-2.5 rounded-lg bg-[#d0e1fb]/30 hover:bg-[#d0e1fb]/50 cursor-pointer border-2 border-[#0058be] shadow-xs transition-all">
+              <label className="flex items-center justify-between p-2.5 bg-[#38bdf8]/10 hover:bg-[#38bdf8]/20 cursor-pointer border border-[#38bdf8]/60 transition-all">
                 <div className="flex items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={activeNodes['Node-02']}
                     onChange={(e) => setActiveNodes(prev => ({ ...prev, 'Node-02': e.target.checked }))}
-                    className="rounded border-[#c2c6d6] text-[#0058be] focus:ring-[#0058be] w-4 h-4 cursor-pointer"
+                    className="accent-[#38bdf8] w-4 h-4 cursor-pointer"
                   />
-                  <span className="text-xs font-bold text-[#004395]">Node-02 (Cơ sở dữ liệu)</span>
+                  <span className="text-xs font-mono font-bold text-[#38bdf8]">Node-02 (Cơ sở dữ liệu)</span>
                 </div>
-                <span className="w-2 h-2 rounded-full bg-[#00855b]" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
               </label>
 
               {/* Node 3 */}
-              <label className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#f2f4f6] cursor-pointer border border-[#ffdad6] bg-[#ffdad6]/15 transition-all">
+              <label className="flex items-center justify-between p-2.5 bg-rose-950/20 hover:bg-rose-950/40 cursor-pointer border border-rose-500/40 transition-all">
                 <div className="flex items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={activeNodes['Node-03']}
                     onChange={(e) => setActiveNodes(prev => ({ ...prev, 'Node-03': e.target.checked }))}
-                    className="rounded border-[#c2c6d6] text-[#ba1a1a] focus:ring-[#ba1a1a] w-4 h-4 cursor-pointer"
+                    className="accent-rose-500 w-4 h-4 cursor-pointer"
                   />
-                  <span className="text-xs font-semibold text-[#ba1a1a]">Node-03 (Xử lý Worker)</span>
+                  <span className="text-xs font-mono font-semibold text-rose-300">Node-03 (Xử lý Worker)</span>
                 </div>
-                <span className="w-2 h-2 rounded-full bg-[#ba1a1a] pulse-critical" />
+                <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
               </label>
 
               {/* Node 4 (Offline) */}
-              <label className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#f2f4f6] cursor-pointer border border-[#e0e3e5] opacity-60 transition-all">
+              <label className="flex items-center justify-between p-2.5 bg-[#161d24] hover:bg-[#1c252e] cursor-pointer border border-[#222c37] opacity-60 transition-all">
                 <div className="flex items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={activeNodes['Node-04']}
                     onChange={(e) => setActiveNodes(prev => ({ ...prev, 'Node-04': e.target.checked }))}
-                    className="rounded border-[#c2c6d6] text-[#727785] focus:ring-[#727785] w-4 h-4 cursor-pointer"
+                    className="accent-slate-500 w-4 h-4 cursor-pointer"
                   />
-                  <span className="text-xs font-medium text-[#727785]">Node-04 (Ngoại tuyến)</span>
+                  <span className="text-xs font-mono font-medium text-slate-500">Node-04 (Ngoại tuyến)</span>
                 </div>
-                <span className="w-2 h-2 rounded-full bg-[#727785]" />
+                <span className="w-2 h-2 rounded-full bg-slate-600" />
               </label>
             </div>
           </div>
 
           {/* Quick Stats */}
-          <div className="bg-white rounded-xl border border-[#c2c6d6] shadow-xs p-4 grid grid-cols-2 gap-3">
+          <div className="bg-[#0f141a] border border-[#222c37] p-4 grid grid-cols-2 gap-3 font-mono">
             <div>
-              <p className="text-xs font-bold text-[#727785]">Tải Toàn Cục</p>
-              <p className="text-2xl font-black text-[#191c1e] mt-1">42<span className="text-xs text-[#727785] font-normal ml-0.5">%</span></p>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Tải Toàn Cục</p>
+              <p className="text-2xl font-bold text-white mt-1">42<span className="text-xs text-slate-500 font-normal ml-0.5">%</span></p>
             </div>
             <div>
-              <p className="text-xs font-bold text-[#727785]">Lưu Lượng Mạng</p>
-              <p className="text-2xl font-black text-[#191c1e] mt-1">1.2<span className="text-xs text-[#727785] font-normal ml-0.5">Gbps</span></p>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Lưu Lượng Mạng</p>
+              <p className="text-2xl font-bold text-[#38bdf8] mt-1">1.2<span className="text-xs text-slate-500 font-normal ml-0.5">Gbps</span></p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Bottom Live Telemetry Event Log Terminal */}
-      <div className="h-44 bg-[#1e293b] rounded-xl border border-[#334155] shadow-lg overflow-hidden flex flex-col shrink-0 text-white">
-        <div className="px-4 py-2 bg-[#0f172a] border-b border-[#334155] flex justify-between items-center">
+      <div className="h-44 bg-[#080b0e] border border-[#222c37] overflow-hidden flex flex-col shrink-0 text-white font-mono">
+        <div className="px-4 py-2 bg-[#11161b] border-b border-[#222c37] flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#4edea3] animate-pulse" />
-            <span className="text-xs font-bold font-mono tracking-wider uppercase text-[#94a3b8]">Nhật Ký Sự Kiện Telemetry Trực Tiếp</span>
+            <span className="w-2 h-2 rounded-full bg-[#38bdf8] animate-pulse" />
+            <span className="text-xs font-bold font-mono tracking-wider uppercase text-slate-300">Nhật Ký Sự Kiện Telemetry Trực Tiếp</span>
           </div>
-          <span className="text-xs font-mono text-[#64748b]">Tự động cuộn • Bộ đệm: {logs.length}</span>
+          <span className="text-xs font-mono text-slate-500">Tự động cuộn • Bộ đệm: {logs.length}</span>
         </div>
 
         <div ref={logContainerRef} className="flex-1 p-3 overflow-y-auto font-mono text-xs space-y-1">
           <table className="w-full text-left border-collapse">
-            <tbody className="divide-y divide-[#334155]/40">
+            <tbody className="divide-y divide-[#222c37]/40">
               {logs.map((log) => {
-                let typeColor = 'text-[#4edea3]';
-                if (log.type === 'WARN') typeColor = 'text-[#facc15] font-bold';
-                if (log.type === 'CRIT') typeColor = 'text-[#ffdad6] font-bold bg-[#ba1a1a]/40 px-1 rounded';
+                let typeColor = 'text-emerald-400';
+                if (log.type === 'WARN') typeColor = 'text-yellow-400 font-bold';
+                if (log.type === 'CRIT') typeColor = 'text-rose-300 font-bold bg-rose-950/60 px-1';
                 if (log.type === 'SYNC') typeColor = 'text-[#38bdf8]';
 
                 return (
-                  <tr key={log.id} className="hover:bg-[#334155]/30 transition-colors">
-                    <td className="py-1 px-2 text-[#94a3b8] w-28 align-top whitespace-nowrap">[{log.timeStr}]</td>
+                  <tr key={log.id} className="hover:bg-[#161d24]/50 transition-colors">
+                    <td className="py-1 px-2 text-slate-500 w-28 align-top whitespace-nowrap">[{log.timeStr}]</td>
                     <td className={`py-1 px-2 w-16 align-top whitespace-nowrap ${typeColor}`}>{log.type}</td>
-                    <td className="py-1 px-2 text-[#cbd5e1] font-semibold w-24 align-top whitespace-nowrap">{log.node}</td>
-                    <td className="py-1 px-2 text-[#f8fafc] align-top">{log.message}</td>
+                    <td className="py-1 px-2 text-slate-300 font-semibold w-24 align-top whitespace-nowrap">{log.node}</td>
+                    <td className="py-1 px-2 text-slate-400 align-top">{log.message}</td>
                   </tr>
                 );
               })}
@@ -409,18 +411,18 @@ export const TelemetryView: React.FC = () => {
 
       {/* Filter Modal */}
       {filterModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-[#c2c6d6] shadow-xl p-6 max-w-md w-full animate-in fade-in">
-            <h3 className="text-lg font-bold text-[#191c1e] mb-2">Bộ Lọc & Ngưỡng Telemetry</h3>
-            <p className="text-xs text-[#727785] mb-4">Điều chỉnh tần số lấy mẫu thời gian thực và ngưỡng cảnh báo.</p>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0c1015] border border-[#222c37] shadow-2xl p-6 max-w-md w-full animate-in fade-in font-mono text-xs">
+            <h3 className="text-base font-bold text-white mb-1 font-sans">Bộ Lọc & Ngưỡng Telemetry</h3>
+            <p className="text-xs text-slate-400 mb-4 font-light">Điều chỉnh tần số lấy mẫu thời gian thực và ngưỡng cảnh báo.</p>
 
-            <div className="space-y-4 text-xs font-semibold">
+            <div className="space-y-4">
               <div>
-                <label className="block text-[#424754] mb-1">Tần Suất Lấy Mẫu</label>
+                <label className="block text-slate-400 mb-1 uppercase text-[10px]">Tần Suất Lấy Mẫu</label>
                 <select 
                   value={samplingRate}
                   onChange={(e) => setSamplingRate(Number(e.target.value))}
-                  className="w-full p-2 border border-[#c2c6d6] rounded-lg text-sm bg-white"
+                  className="w-full p-2.5 bg-[#161d24] border border-[#222c37] text-white outline-none focus:border-[#38bdf8]"
                 >
                   <option value={500}>Nhanh (500ms - Độ chính xác cao)</option>
                   <option value={1000}>Bình thường (1000ms - Cân bằng)</option>
@@ -429,11 +431,11 @@ export const TelemetryView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[#424754] mb-1">Ngưỡng Cảnh Báo Bộ Nhớ</label>
-                <input type="range" min="70" max="95" defaultValue="90" className="w-full accent-[#0058be]" />
-                <div className="flex justify-between text-[11px] text-[#727785] mt-1">
+                <label className="block text-slate-400 mb-1 uppercase text-[10px]">Ngưỡng Cảnh Báo Bộ Nhớ</label>
+                <input type="range" min="70" max="95" defaultValue="90" className="w-full accent-[#38bdf8]" />
+                <div className="flex justify-between text-[11px] text-slate-500 mt-1">
                   <span>70%</span>
-                  <span className="font-bold text-[#0058be]">Kích hoạt ở 90%</span>
+                  <span className="font-bold text-[#38bdf8]">Kích hoạt ở 90%</span>
                   <span>95%</span>
                 </div>
               </div>
@@ -442,7 +444,7 @@ export const TelemetryView: React.FC = () => {
             <div className="mt-6 flex justify-end gap-2">
               <button
                 onClick={() => setFilterModalOpen(false)}
-                className="px-4 py-2 bg-[#0058be] text-white rounded-lg text-xs font-bold hover:bg-[#2170e4] cursor-pointer"
+                className="px-4 py-2 bg-[#38bdf8] text-[#080b0e] font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#00f0ff] transition-colors cursor-pointer"
               >
                 Áp Dụng Thay Đổi
               </button>
