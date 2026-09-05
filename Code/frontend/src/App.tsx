@@ -840,7 +840,7 @@ export const App: React.FC = () => {
               </button>
             </div>
 
-            <div className="h-[480px] w-full relative">
+            <div className="w-full relative">
               <DigitalTwinView
                 racks={racks}
                 onSelectRack={(rack) => {
