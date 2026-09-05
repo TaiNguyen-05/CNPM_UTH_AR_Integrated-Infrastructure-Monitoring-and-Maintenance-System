@@ -104,6 +104,24 @@ export const App: React.FC = () => {
 
   // Parallax Scroll Effect optimized with requestAnimationFrame
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      const unitParam = params.get('unit');
+      const actionParam = params.get('action');
+      if (tabParam === 'alerts' || actionParam === 'repair' || unitParam) {
+        setActiveViewSection('alerts');
+        setTimeout(() => {
+          const element = document.getElementById('modules');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 500);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     let ticking = false;
     let lastScrollY = window.scrollY;
 
@@ -824,16 +842,16 @@ export const App: React.FC = () => {
               <div>
                 <span className="font-mono text-xs uppercase tracking-widest text-[#38bdf8] flex items-center gap-2">
                   <Box className="w-4 h-4" />
-                  Bản Sao Số 3D // Không Gian Enclave
+                  Sơ Đồ Kỹ Thuật Số // Không Gian Quản Trị
                 </span>
-                <h3 className="text-xl font-bold text-white mt-1">Mô Hình 3D Trung Tâm Dữ Liệu Tương Tác</h3>
+                <h3 className="text-xl font-bold text-white mt-1">Mặt Cắt Kỹ Thuật Số Tủ Rack &amp; Thiết Bị (Digital Twin)</h3>
               </div>
               <button
                 onClick={() => {
                   setArTargetAlert(null);
                   setIsARModalOpen(true);
                 }}
-                className="keycap-glow inline-flex items-center gap-2 bg-[#38bdf8]/20 border border-[#38bdf8] px-4 py-2 font-mono text-xs text-[#38bdf8] hover:bg-[#38bdf8] hover:text-[#080b0e] transition-all"
+                className="keycap-glow inline-flex items-center gap-2 bg-[#38bdf8]/20 border border-[#38bdf8] px-4 py-2 font-mono text-xs text-[#38bdf8] hover:bg-[#38bdf8] hover:text-[#080b0e] transition-all cursor-pointer"
               >
                 <Camera className="w-4 h-4" />
                 Kích Hoạt Không Gian AR
@@ -843,6 +861,13 @@ export const App: React.FC = () => {
             <div className="w-full relative">
               <DigitalTwinView
                 racks={racks}
+                onSelectTab={(tab) => {
+                  setActiveViewSection(tab as any);
+                  const el = document.getElementById('modules');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
                 onSelectRack={(rack) => {
                   setTerminalLogs(prev => [
                     { text: `[TWIN] Đã kiểm tra ${rack.name} (${rack.zone || 'Zone Alpha'}) - Nhiệt độ: ${rack.temperature}°C, Tải: ${rack.powerDrawKw} kW`, type: 'info' },
