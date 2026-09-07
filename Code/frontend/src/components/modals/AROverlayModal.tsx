@@ -25,8 +25,8 @@ export const AROverlayModal: React.FC<AROverlayModalProps> = ({ onClose, targetA
   const [trackingConfidence, setTrackingConfidence] = useState<number>(98.4);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-[#0f172a] rounded-2xl border border-[#334155] shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden text-white relative animate-in fade-in zoom-in-95 duration-200">
+    <div className="modal-overlay">
+      <div className="bg-[#0f172a] rounded-2xl border border-[#334155] shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden text-white relative">
         
         {/* AR Header */}
         <div className="px-6 py-3 bg-[#1e293b]/90 border-b border-[#334155] flex justify-between items-center z-20">
@@ -37,7 +37,7 @@ export const AROverlayModal: React.FC<AROverlayModalProps> = ({ onClose, targetA
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-white">Chế Độ Giám Sát Không Gian Thực Tế Ảo (AR)</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#00855b]/30 text-[#4edea3] border border-[#00855b]/40">
+                <span className="badge-tech text-[10px]">
                   Điểm Neo Đã Khóa ({trackingConfidence}%)
                 </span>
               </div>
@@ -76,7 +76,7 @@ export const AROverlayModal: React.FC<AROverlayModalProps> = ({ onClose, targetA
 
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-[#334155] text-[#94a3b8] hover:text-white transition-colors cursor-pointer"
+              className="modal-close-btn"
             >
               <X className="w-5 h-5" />
             </button>
@@ -127,7 +127,7 @@ export const AROverlayModal: React.FC<AROverlayModalProps> = ({ onClose, targetA
               </div>
               <p className="text-[11px] text-[#cbd5e1] mb-2">Lưu lượng khí làm mát bị hạn chế. Khuyến nghị thay thế quạt tản nhiệt.</p>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] px-2 py-0.5 rounded bg-[#ba1a1a] text-white font-bold">Cần Xử Lý Ngay</span>
+                <span className="badge-danger">Cần Xử Lý Ngay</span>
                 <span className="text-[10px] font-mono text-[#94a3b8]">GUID: 8f7e-2a19</span>
               </div>
             </div>
@@ -156,7 +156,7 @@ export const AROverlayModal: React.FC<AROverlayModalProps> = ({ onClose, targetA
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setTrackingConfidence(prev => (prev === 98.4 ? 99.1 : 98.4))}
-                className="px-3 py-1.5 bg-[#0058be] text-white rounded-lg text-xs font-bold hover:bg-[#2170e4] transition-colors cursor-pointer"
+                className="btn-primary py-1.5 px-3 text-xs"
               >
                 Hiệu Chỉnh Lại Điểm Neo
               </button>

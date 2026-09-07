@@ -43,66 +43,63 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ userToEdit, onClos
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#080b0e] rounded-xl border border-[#222c37] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="px-6 py-4 bg-[#11161b] border-b border-[#222c37] flex justify-between items-center">
-          <div className="flex items-center gap-2">
+    <div className="modal-overlay">
+      <div className="modal-box max-w-md">
+        <div className="modal-header">
+          <div className="modal-title">
             <UserCheck className="w-5 h-5 text-[#38bdf8]" />
-            <h3 className="font-bold text-base text-white tracking-wide">
+            <h3>
               {userToEdit ? `Quản Lý Phân Quyền: ${userToEdit.name}` : 'Thêm Người Dùng Mới'}
             </h3>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-[#161d24] cursor-pointer"
-          >
+          <button onClick={onClose} className="modal-close-btn">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
           <div>
-            <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Họ Và Tên</label>
+            <label className="form-label">Họ Và Tên</label>
             <input
               type="text"
               required
               placeholder="VD: Nguyễn Văn An"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-[#161d24] border border-[#222c37] text-white rounded-lg text-sm focus:outline-none focus:border-[#38bdf8]"
+              className="form-input"
             />
           </div>
 
           <div>
-            <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Email Tài Khoản</label>
+            <label className="form-label">Email Tài Khoản</label>
             <input
               type="email"
               required
               placeholder="an.nguyen@ar-imms.corp"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 bg-[#161d24] border border-[#222c37] text-white rounded-lg text-sm focus:outline-none focus:border-[#38bdf8] font-mono"
+              className="form-input font-mono"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Vai Trò (Role)</label>
+              <label className="form-label">Vai Trò (Role)</label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as any)}
-                className="w-full px-3 py-2 bg-[#161d24] border border-[#222c37] text-white rounded-lg text-sm cursor-pointer focus:border-[#38bdf8]"
+                className="form-select"
               >
                 <option value="Admin" className="bg-[#11161b]">👑 Quản trị viên (Admin)</option>
                 <option value="Technician" className="bg-[#11161b]">🛠️ Kỹ thuật viên (Technician)</option>
               </select>
             </div>
             <div>
-              <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Trạng Thái</label>
+              <label className="form-label">Trạng Thái</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
-                className="w-full px-3 py-2 bg-[#161d24] border border-[#222c37] text-white rounded-lg text-sm cursor-pointer focus:border-[#38bdf8]"
+                className="form-select"
               >
                 <option value="Active" className="bg-[#11161b]">🟢 Đang hoạt động (Active)</option>
                 <option value="Pending" className="bg-[#11161b]">🟡 Chờ duyệt (Pending)</option>
@@ -112,8 +109,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ userToEdit, onClos
           </div>
 
           {/* Role summary preview */}
-          <div className="p-3 bg-[#11161b] border border-[#222c37] rounded-lg">
-            <div className="text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1.5">
+          <div className="panel-subtle">
+            <div className="text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1.5 font-mono">
               <Shield className="w-3.5 h-3.5 text-[#38bdf8]" />
               Quyền hạn áp dụng cho vai trò:
             </div>
@@ -135,17 +132,17 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ userToEdit, onClos
             </ul>
           </div>
 
-          <div className="pt-4 border-t border-[#222c37] flex justify-end gap-3">
+          <div className="modal-footer">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-[#222c37] text-slate-400 font-bold text-xs rounded-lg hover:bg-[#161d24] hover:text-white cursor-pointer"
+              className="btn-secondary"
             >
               Hủy Bỏ
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#38bdf8] text-[#080b0e] font-bold text-xs rounded-lg hover:bg-[#7dd3fc] flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-colors"
+              className="btn-primary"
             >
               {userToEdit ? <Check className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
               {userToEdit ? 'Lưu Phân Quyền' : 'Tạo Tài Khoản'}
