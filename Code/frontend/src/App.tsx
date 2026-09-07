@@ -1079,9 +1079,17 @@ export const App: React.FC = () => {
             <a href="#architecture" className="transition-colors hover:text-[#00f0ff]">
               Kiến Trúc
             </a>
-            <a href="#console" className="transition-colors hover:text-[#00f0ff]">
-              Bảng Lệnh
-            </a>
+            <button
+              onClick={() => {
+                setActiveViewSection('users');
+                const el = document.getElementById('operations');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="transition-colors hover:text-[#00f0ff] flex items-center gap-1.5 cursor-pointer uppercase tracking-widest text-slate-400 font-mono"
+            >
+              <Shield className="w-3.5 h-3.5 text-[#00f0ff]" />
+              Trang Quản Trị
+            </button>
             <a href="#modules" className="transition-colors hover:text-[#00f0ff]">
               Modules
             </a>
@@ -1104,15 +1112,18 @@ export const App: React.FC = () => {
 
           {/* Actions & Profile */}
           <div className="flex items-center gap-3">
-            {/* Operations Console Direct Button */}
+            {/* Admin Portal Direct Button */}
             <button 
               onClick={() => {
+                setActiveViewSection('users');
                 const el = document.getElementById('operations');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="keycap-glow border border-[#38bdf8]/40 bg-[#11161b] px-3.5 py-1.5 font-mono text-xs uppercase tracking-widest text-white transition-all hover:border-[#00f0ff] cursor-pointer"
+              className="keycap-glow flex items-center gap-1.5 border border-[#38bdf8]/50 bg-[#11161b] px-3.5 py-1.5 font-mono text-xs uppercase tracking-widest text-[#38bdf8] hover:text-white transition-all hover:border-[#00f0ff] hover:bg-[#38bdf8]/10 cursor-pointer shadow-sm font-bold"
+              title="Mở Trang Quản Trị Hệ Thống & Phân Quyền"
             >
-              Bảng Lệnh
+              <Shield className="w-3.5 h-3.5 text-[#38bdf8]" />
+              Trang Quản Trị
             </button>
 
             {!currentUser ? (
@@ -1205,12 +1216,17 @@ export const App: React.FC = () => {
 
             {/* Call to Actions */}
             <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
-              <a
-                href="#console"
-                className="keycap-glow rounded-none bg-[#38bdf8] px-8 py-4 text-center font-mono text-xs font-bold uppercase tracking-widest text-[#080b0e] transition-all hover:bg-[#00f0ff]"
+              <button
+                onClick={() => {
+                  setActiveViewSection('users');
+                  const el = document.getElementById('operations');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="keycap-glow flex items-center justify-center gap-2 rounded-none bg-[#38bdf8] px-8 py-4 text-center font-mono text-xs font-bold uppercase tracking-widest text-[#080b0e] transition-all hover:bg-[#00f0ff] cursor-pointer"
               >
-                Khởi Tạo Bảng Lệnh
-              </a>
+                <Shield className="w-4 h-4" />
+                Vào Trang Quản Trị
+              </button>
               <a
                 href="#architecture"
                 className="rounded-none border border-[#222c37] bg-[#11161b]/40 px-8 py-4 text-center font-mono text-xs font-light uppercase tracking-widest text-slate-300 transition-all hover:border-slate-400 hover:text-white"
@@ -1510,11 +1526,12 @@ export const App: React.FC = () => {
         >
           <div className="mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-[#222c37] pb-6">
             <div>
-              <span className="text-xs uppercase tracking-widest text-[#ffb03a] font-mono">
-                Trung Tâm Chỉ Huy // Vận Hành
+              <span className="text-xs uppercase tracking-widest text-[#38bdf8] font-mono flex items-center gap-1.5 font-bold">
+                <Shield className="w-3.5 h-3.5 text-[#38bdf8]" />
+                TRANG QUẢN TRỊ // VẬN HÀNH & GIÁM SÁT
               </span>
               <h2 className="text-3xl font-bold tracking-tight text-white mt-1 font-mono">
-                Giám Sát & Quản Trị Hệ Thống Trực Tiếp
+                Trung Tâm Quản Trị & Vận Hành Hệ Thống
               </h2>
             </div>
             
