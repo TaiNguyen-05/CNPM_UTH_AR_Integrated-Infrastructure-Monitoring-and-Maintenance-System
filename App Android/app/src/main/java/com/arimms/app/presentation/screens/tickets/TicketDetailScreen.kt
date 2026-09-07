@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -137,8 +138,8 @@ fun TicketDetailScreen(
                         }
                         Button(
                             onClick = { onNavigateToNodeDetail(currentTicket.nodeId) },
-                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark, contentColor = PrimaryCyan),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.5f)),
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated, contentColor = PrimaryCyan),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.4f)),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -169,7 +170,9 @@ fun TicketDetailScreen(
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
                             focusedLabelColor = PrimaryCyan,
-                            unfocusedLabelColor = TextSecondary
+                            unfocusedLabelColor = TextSecondary,
+                            unfocusedContainerColor = SurfaceElevated,
+                            focusedContainerColor = Color.White
                         ),
                         minLines = 2,
                         maxLines = 4,
@@ -189,7 +192,9 @@ fun TicketDetailScreen(
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
                             focusedLabelColor = PrimaryCyan,
-                            unfocusedLabelColor = TextSecondary
+                            unfocusedLabelColor = TextSecondary,
+                            unfocusedContainerColor = SurfaceElevated,
+                            focusedContainerColor = Color.White
                         ),
                         minLines = 2,
                         maxLines = 4,
@@ -214,7 +219,7 @@ fun TicketDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan, contentColor = BgDark),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan, contentColor = Color.White),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(Icons.Default.PlayArrow, contentDescription = null)
@@ -246,7 +251,7 @@ fun TicketDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = StatusHealthy, contentColor = BgDark),
+                            colors = ButtonDefaults.buttonColors(containerColor = StatusHealthy, contentColor = Color.White),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null)

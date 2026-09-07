@@ -9,7 +9,7 @@ class UserAccount(BaseEntity):
     Domain Entity đại diện cho Tài khoản người dùng và phân quyền RBAC.
     """
 
-    VALID_ROLES = {"ADMIN", "OPERATOR", "TECHNICIAN"}
+    VALID_ROLES = {"ADMIN", "OPERATOR", "TECHNICIAN", "VIEWER"}
     VALID_STATUSES = {"PENDING_APPROVAL", "APPROVED", "LOCKED", "REJECTED"}
 
     def __init__(
@@ -86,6 +86,30 @@ class UserAccount(BaseEntity):
         self._status = val
         self.touch()
 
+    @property
+    def phone_number(self) -> Optional[str]:
+        return self._phone_number
+
+    @property
+    def department(self) -> Optional[str]:
+        return self._department
+
+    @property
+    def avatar(self) -> Optional[str]:
+        return self._avatar
+
+    @property
+    def password_hash(self) -> Optional[str]:
+        return self._password_hash
+
+    @property
+    def approved_by(self) -> Optional[str]:
+        return self._approved_by
+
+    @property
+    def approved_at(self) -> Optional[datetime]:
+        return self._approved_at
+
     # --- Domain Business Methods ---
 
     def approve(self, approver_id: str):
@@ -98,6 +122,11 @@ class UserAccount(BaseEntity):
     def lock(self):
         """Khóa quyền truy cập của tài khoản."""
         self._status = "LOCKED"
+        self.touch()
+
+    def unlock(self):
+        """Mở khóa quyền truy cập của tài khoản."""
+        self._status = "APPROVED"
         self.touch()
 
     def to_dict(self) -> Dict[str, Any]:

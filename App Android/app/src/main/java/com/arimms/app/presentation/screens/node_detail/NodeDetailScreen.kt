@@ -244,8 +244,8 @@ fun NodeDetailScreen(
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (serverNode.isBlinkingLed) StatusWarning else SurfaceCard,
-                                contentColor = if (serverNode.isBlinkingLed) BgDark else TextPrimary
+                                containerColor = if (serverNode.isBlinkingLed) StatusWarning else SurfaceElevated,
+                                contentColor = if (serverNode.isBlinkingLed) Color.White else TextPrimary
                             ),
                             border = androidx.compose.foundation.BorderStroke(1.dp, if (serverNode.isBlinkingLed) StatusWarning else BorderStroke),
                             shape = RoundedCornerShape(12.dp)
@@ -271,7 +271,7 @@ fun NodeDetailScreen(
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = SurfaceCard,
+                                containerColor = SurfaceElevated,
                                 contentColor = PrimaryCyan
                             ),
                             border = androidx.compose.foundation.BorderStroke(1.dp, BorderStroke),

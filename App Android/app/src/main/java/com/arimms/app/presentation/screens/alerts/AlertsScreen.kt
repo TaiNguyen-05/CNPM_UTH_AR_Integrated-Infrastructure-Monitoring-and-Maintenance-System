@@ -101,7 +101,7 @@ fun AlertsScreen(
                             onClick = { selectedSeverity = null },
                             label = { Text("Tất cả (${alerts.size})") },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PrimaryCyan.copy(alpha = 0.2f),
+                                selectedContainerColor = PrimaryCyan.copy(alpha = 0.15f),
                                 selectedLabelColor = PrimaryCyan,
                                 containerColor = SurfaceCard,
                                 labelColor = TextSecondary
@@ -119,7 +119,7 @@ fun AlertsScreen(
                                 onClick = { selectedSeverity = if (selectedSeverity == sev) null else sev },
                                 label = { Text("$label ($count)") },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = if (sev == AlertSeverity.CRITICAL) StatusCritical.copy(alpha = 0.2f) else StatusWarning.copy(alpha = 0.2f),
+                                    selectedContainerColor = if (sev == AlertSeverity.CRITICAL) StatusCriticalBg else StatusWarningBg,
                                     selectedLabelColor = if (sev == AlertSeverity.CRITICAL) StatusCritical else StatusWarning,
                                     containerColor = SurfaceCard,
                                     labelColor = TextSecondary
@@ -155,7 +155,7 @@ fun AlertsScreen(
                             ) {
                                 SeverityBadge(severity = alert.severity)
                                 Surface(
-                                    color = if (alert.state == AlertState.OPEN) Color(0x33FF1744) else Color(0x3300E676),
+                                    color = if (alert.state == AlertState.OPEN) StatusCriticalBg else StatusHealthyBg,
                                     shape = RoundedCornerShape(4.dp)
                                 ) {
                                     Text(
@@ -216,8 +216,8 @@ fun AlertsScreen(
                                                 repository.acknowledgeAlert(alert.id)
                                             }
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark, contentColor = PrimaryCyan),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.5f)),
+                                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated, contentColor = PrimaryCyan),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.4f)),
                                         shape = RoundedCornerShape(8.dp),
                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
@@ -229,7 +229,7 @@ fun AlertsScreen(
 
                                 Button(
                                     onClick = { onNavigateToNodeDetail(alert.nodeId) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan, contentColor = BgDark),
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan, contentColor = Color.White),
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                                 ) {

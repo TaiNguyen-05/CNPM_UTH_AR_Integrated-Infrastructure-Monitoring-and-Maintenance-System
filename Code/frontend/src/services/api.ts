@@ -3,6 +3,8 @@
  * Clean Architecture & OOP Endpoints connection
  */
 
+import { supabase } from './supabase';
+
 const API_BASE_URL = '/api';
 
 export interface ServerNodeDto {
@@ -45,21 +47,31 @@ export interface AlertDto {
 
 export interface TicketDto {
   id: string;
+  server_node_id: string;
   title: string;
-  description: string;
-  node_id: string;
+  description?: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  assigned_to_id?: string;
+  status: 'created' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
+  alert_id?: string;
+  assigned_technician_id?: string;
+  assigned_technician_name?: string;
+  ar_action_logs_json?: string;
   created_at: string;
+  updated_at?: string;
+  resolved_at?: string;
+  closed_at?: string;
+  resolution_notes?: string;
 }
 
 export interface UserDto {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'operator' | 'technician' | 'viewer';
-  status: 'active' | 'pending' | 'locked';
+  role: string;
+  status: string;
+  department?: string;
+  phone_number?: string;
+  avatar?: string;
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -85,10 +97,10 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return response.json();
 }
 
-import { supabase } from './supabase';
-
 export const ApiService = {
-  // Nodes CRUD
+  // ==========================================
+  // NODES CRUD
+  // ==========================================
   async getNodes(rackId?: string): Promise<{ data: ServerNodeDto[] }> {
     if (supabase) {
       try {
@@ -161,59 +173,41 @@ export const ApiService = {
     return request<{ data: ServerNodeDto }>(`/nodes/${id}`);
   },
 
-  async createNode(node: Partial<ServerNodeDto>): Promise<{ data: ServerNodeDto }> {
-    if (supabase) {
-      try {
-        const { data, error } = await supabase.from('server_nodes').insert([{
-          id: node.id,
-          rack_id: node.rack_id || 'rack-a1',
-          name: node.name,
-          u_start: node.u_start || 1,
-          u_height: node.u_size || 2,
-          ip_address: node.ip_address || '192.168.1.100',
-          model: node.model,
-          qr_code_payload: node.qr_code || `ar-imms://node/${node.id}`,
-          status: (node.status || 'HEALTHY').toUpperCase()
-        }]).select().single();
-        if (!error && data) return { data: data as any };
-      } catch (err) {
-        console.warn('Supabase createNode fallback:', err);
-      }
-    }
+  async createNode(node: Partial<ServerNodeDto> & { qr_code_payload?: string; u_height?: number }): Promise<{ data: ServerNodeDto }> {
+    const payload = {
+      id: node.id,
+      name: node.name,
+      model: node.model || 'Standard Compute Server',
+      rack_id: node.rack_id || 'rack-a1',
+      u_start: node.u_start || 1,
+      u_height: node.u_height || node.u_size || 2,
+      ip_address: node.ip_address || '192.168.1.100',
+      status: (node.status || 'HEALTHY').toUpperCase(),
+      qr_code_payload: node.qr_code_payload || node.qr_code || `ar-imms://node/${node.id}`
+    };
     return request<{ data: ServerNodeDto }>('/nodes', {
       method: 'POST',
-      body: JSON.stringify(node)
+      body: JSON.stringify(payload)
     });
   },
 
-  async updateNode(id: string, node: Partial<ServerNodeDto>): Promise<{ data: ServerNodeDto }> {
-    if (supabase) {
-      try {
-        const updatePayload: any = {};
-        if (node.name) updatePayload.name = node.name;
-        if (node.model) updatePayload.model = node.model;
-        if (node.status) updatePayload.status = node.status.toUpperCase();
-        const { data, error } = await supabase.from('server_nodes').update(updatePayload).eq('id', id).select().single();
-        if (!error && data) return { data: data as any };
-      } catch (err) {
-        console.warn('Supabase updateNode fallback:', err);
-      }
-    }
+  async updateNode(id: string, node: Partial<ServerNodeDto> & { qr_code_payload?: string; u_height?: number }): Promise<{ data: ServerNodeDto }> {
+    const payload: any = {};
+    if (node.name) payload.name = node.name;
+    if (node.model) payload.model = node.model;
+    if (node.status) payload.status = node.status.toUpperCase();
+    if (node.ip_address) payload.ip_address = node.ip_address;
+    if (node.u_start) payload.u_start = node.u_start;
+    if (node.u_height || node.u_size) payload.u_height = node.u_height || node.u_size;
+    if (node.rack_id) payload.rack_id = node.rack_id;
+    if (node.qr_code_payload || node.qr_code) payload.qr_code_payload = node.qr_code_payload || node.qr_code;
     return request<{ data: ServerNodeDto }>(`/nodes/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(node)
+      body: JSON.stringify(payload)
     });
   },
 
   async deleteNode(id: string): Promise<{ success: boolean; message: string }> {
-    if (supabase) {
-      try {
-        const { error } = await supabase.from('server_nodes').delete().eq('id', id);
-        if (!error) return { success: true, message: 'Node deleted successfully' };
-      } catch (err) {
-        console.warn('Supabase deleteNode fallback:', err);
-      }
-    }
     return request<{ success: boolean; message: string }>(`/nodes/${id}`, {
       method: 'DELETE'
     });
@@ -226,38 +220,44 @@ export const ApiService = {
     });
   },
 
-  // Racks CRUD
+  // ==========================================
+  // RACKS CRUD
+  // ==========================================
   async getRacks(): Promise<{ data: RackDto[] }> {
-    if (supabase) {
-      try {
-        const { data, error } = await supabase.from('racks').select('*');
-        if (!error && data && data.length > 0) {
-          const mapped: RackDto[] = data.map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            location: r.room_name || 'Server Room 01',
-            total_u: r.total_u || 42,
-            status: 'healthy',
-            power_draw_kw: 6.4,
-            max_power_kw: r.power_limit_kw || 15.0
-          }));
-          return { data: mapped };
-        }
-      } catch (err) {
-        console.warn('Supabase getRacks fallback:', err);
-      }
-    }
     return request<{ data: RackDto[] }>('/racks');
   },
 
-  async createRack(rack: Partial<RackDto>): Promise<{ data: RackDto }> {
+  async createRack(rack: Partial<RackDto> & { code?: string; room_name?: string; power_limit_kw?: number }): Promise<{ data: RackDto }> {
+    const payload = {
+      id: rack.id,
+      name: rack.name,
+      code: rack.code || rack.id?.toUpperCase() || `RACK-${Date.now().toString().slice(-4)}`,
+      room_name: rack.room_name || rack.location || 'Server Room 01',
+      total_u: rack.total_u || 42,
+      power_limit_kw: rack.power_limit_kw || rack.max_power_kw || rack.power_draw_kw || 15.0
+    };
     return request<{ data: RackDto }>('/racks', {
       method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async updateRack(id: string, rack: Partial<RackDto> & { code?: string; room_name?: string; power_limit_kw?: number }): Promise<{ data: RackDto }> {
+    return request<{ data: RackDto }>(`/racks/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(rack)
     });
   },
 
-  // Alerts CRUD
+  async deleteRack(id: string): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>(`/racks/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  // ==========================================
+  // ALERTS CRUD
+  // ==========================================
   async getAlerts(status?: string): Promise<{ data: AlertDto[] }> {
     if (supabase) {
       try {
@@ -305,71 +305,72 @@ export const ApiService = {
     });
   },
 
-  // Tickets CRUD
-  async getTickets(status?: string): Promise<{ data: TicketDto[] }> {
-    if (supabase) {
-      try {
-        let query = supabase.from('maintenance_tickets').select('*');
-        if (status) query = query.eq('status', status.toUpperCase());
-        const { data, error } = await query;
-        if (!error && data && data.length > 0) {
-          const mapped: TicketDto[] = data.map((t: any) => ({
-            id: t.id,
-            title: t.title,
-            description: t.description,
-            node_id: t.server_node_id,
-            priority: (t.priority || 'medium').toLowerCase() as any,
-            status: (t.status || 'open').toLowerCase() as any,
-            assigned_to_id: t.assigned_technician_name || t.assigned_technician_id,
-            created_at: t.created_at || new Date().toISOString()
-          }));
-          return { data: mapped };
-        }
-      } catch (err) {
-        console.warn('Supabase getTickets fallback:', err);
-      }
-    }
-    const query = status ? `?status=${encodeURIComponent(status)}` : '';
-    return request<{ data: TicketDto[] }>(`/tickets${query}`);
+  // ==========================================
+  // TICKETS CRUD & LIFECYCLE
+  // ==========================================
+  async getTickets(status?: string, techId?: string, nodeId?: string): Promise<{ data: any[] }> {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (techId) params.append('technician_id', techId);
+    if (nodeId) params.append('node_id', nodeId);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return request<{ data: any[] }>(`/tickets${queryString}`);
   },
 
-  async createTicket(ticket: Partial<TicketDto>): Promise<{ data: TicketDto }> {
-    return request<{ data: TicketDto }>('/tickets', {
+  async createTicket(ticket: {
+    server_node_id: string;
+    title: string;
+    description?: string;
+    priority?: string;
+    alert_id?: string;
+    assigned_technician_id?: string;
+    assigned_technician_name?: string;
+  }): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>('/tickets', {
       method: 'POST',
       body: JSON.stringify(ticket)
     });
   },
 
-  async assignTicket(id: string, technicianId: string): Promise<{ data: TicketDto }> {
-    return request<{ data: TicketDto }>(`/tickets/${id}/assign`, {
+  async assignTicket(id: string, technicianId: string, technicianName?: string): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>(`/tickets/${id}/assign`, {
       method: 'POST',
-      body: JSON.stringify({ technician_id: technicianId })
+      body: JSON.stringify({ technician_id: technicianId, technician_name: technicianName })
     });
   },
 
-  // Users CRUD
-  async getUsers(role?: string): Promise<{ data: UserDto[] }> {
-    if (supabase) {
-      try {
-        let query = supabase.from('users').select('*');
-        if (role) query = query.eq('role', role.toUpperCase());
-        const { data, error } = await query;
-        if (!error && data && data.length > 0) {
-          const mapped: UserDto[] = data.map((u: any) => ({
-            id: u.id,
-            email: u.email,
-            full_name: u.full_name,
-            role: (u.role || 'viewer').toLowerCase() as any,
-            status: u.status === 'APPROVED' ? 'active' : u.status === 'PENDING_APPROVAL' ? 'pending' : 'locked'
-          }));
-          return { data: mapped };
-        }
-      } catch (err) {
-        console.warn('Supabase getUsers fallback:', err);
-      }
-    }
+  async addArLog(id: string, action: string, details?: Record<string, any>): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>(`/tickets/${id}/ar-log`, {
+      method: 'POST',
+      body: JSON.stringify({ action, details })
+    });
+  },
+
+  async resolveTicket(id: string, notes?: string): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>(`/tickets/${id}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ notes })
+    });
+  },
+
+  async closeTicket(id: string): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>(`/tickets/${id}/close`, {
+      method: 'POST'
+    });
+  },
+
+  async deleteTicket(id: string): Promise<{ message?: string }> {
+    return request<{ message?: string }>(`/tickets/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  // ==========================================
+  // USERS CRUD & AUTH
+  // ==========================================
+  async getUsers(role?: string): Promise<{ data: any[] }> {
     const query = role ? `?role=${encodeURIComponent(role)}` : '';
-    return request<{ data: UserDto[] }>(`/users${query}`);
+    return request<{ data: any[] }>(`/users${query}`);
   },
 
   async createUser(user: Partial<UserDto>): Promise<{ data: UserDto }> {
@@ -379,12 +380,50 @@ export const ApiService = {
     });
   },
 
-  async approveUser(id: string, approverRole: string = 'admin'): Promise<{ data: UserDto }> {
-    return request<{ data: UserDto }>(`/users/${id}/approve`, {
+  async googleLogin(data: { email: string; full_name: string; avatar?: string }): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>('/users/google', {
       method: 'POST',
-      body: JSON.stringify({ approver_role: approverRole })
+      body: JSON.stringify(data)
     });
-  }
+  },
+
+  async approveUser(userId: string): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>(`/users/${userId}/approve`, {
+      method: 'POST'
+    });
+  },
+
+  async updateUserRole(userId: string, role: string): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>(`/users/${userId}/role`, {
+      method: 'POST',
+      body: JSON.stringify({ role })
+    });
+  },
+
+  async lockUser(userId: string): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>(`/users/${userId}/lock`, {
+      method: 'POST'
+    });
+  },
+
+  async unlockUser(userId: string): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>(`/users/${userId}/unlock`, {
+      method: 'POST'
+    });
+  },
+
+  async deleteUser(userId: string): Promise<{ message?: string }> {
+    return request<{ message?: string }>(`/users/${userId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async testSendAlertEmail(targetEmail?: string): Promise<{ data: any; message?: string }> {
+    return request<{ data: any; message?: string }>('/users/test-email', {
+      method: 'POST',
+      body: JSON.stringify({ email: targetEmail })
+    });
+  },
 };
 
 export const arImmsApi = ApiService;

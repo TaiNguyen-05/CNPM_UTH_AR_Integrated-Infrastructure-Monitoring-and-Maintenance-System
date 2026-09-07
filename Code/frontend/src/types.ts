@@ -1,4 +1,37 @@
-export type TabType = 'digital-twin' | 'telemetry' | 'assets-qr' | 'alerts' | 'users' | 'audit-logs';
+export type TabType = 'digital-twin' | 'telemetry' | 'assets-qr' | 'alerts' | 'tickets' | 'users' | 'audit-logs' | 'analytics';
+
+export type TicketStatus = 'CREATED' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface ARActionLog {
+  timestamp: string;
+  action: string;
+  details?: Record<string, any>;
+  technicianId?: string;
+  technicianName?: string;
+}
+
+export interface TicketItem {
+  id: string;
+  serverNodeId: string;
+  serverNodeName?: string;
+  rackId?: string;
+  title: string;
+  description: string;
+  priority: TicketPriority;
+  status: TicketStatus;
+  alertId?: string;
+  assignedTechnicianId?: string;
+  assignedTechnicianName?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  resolvedAt?: string;
+  closedAt?: string;
+  resolutionNotes?: string;
+  arLogs?: ARActionLog[];
+}
+
 
 export interface RackUnit {
   u: number;
@@ -91,7 +124,7 @@ export interface UserItem {
   userId: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Technician' | 'Viewer';
+  role: 'Admin' | 'Technician';
   status: 'Active' | 'Pending' | 'Locked';
   lastAuth: string;
   initials: string;
@@ -111,3 +144,11 @@ export interface AuditLogItem {
   status: 'Success' | 'Critical' | 'Warning';
   details?: Record<string, any>;
 }
+
+export interface TelemetryPoint {
+  time: string;
+  temp: number;
+  cpu: number;
+  power: number;
+}
+

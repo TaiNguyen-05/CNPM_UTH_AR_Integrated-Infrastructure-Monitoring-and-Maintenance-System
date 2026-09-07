@@ -529,6 +529,17 @@ def init_ar_database(app=None):
             # 5. SEED USERS
             # ====================================================
 
+            user_admin_sj = UserModel(
+                id='ADM-0001',
+                email='sjenkins@ar-imms.corp',
+                full_name='Sarah Jenkins',
+                role='ADMIN',
+                status='APPROVED',
+                avatar='SJ',
+                department='Core Engineering & Management',
+                approved_at=datetime.utcnow(),
+            )
+
             user_admin = UserModel(
                 id='USR-001',
                 email='admin@ar-imms.dc',
@@ -551,19 +562,69 @@ def init_ar_database(app=None):
                 approved_at=datetime.utcnow(),
             )
 
+            user_tech_rk = UserModel(
+                id='TECH-4421',
+                email='rking@ar-imms.corp',
+                full_name='Robert King',
+                role='TECHNICIAN',
+                status='APPROVED',
+                avatar='RK',
+                department='Field Operations & AR Maintenance',
+                approved_at=datetime.utcnow(),
+            )
+
+            user_tech_er = UserModel(
+                id='TECH-1940',
+                email='erostova@ar-imms.corp',
+                full_name='Elena Rostova',
+                role='TECHNICIAN',
+                status='APPROVED',
+                avatar='ER',
+                department='Field Operations',
+                approved_at=datetime.utcnow(),
+            )
+
+            user_tech_jd = UserModel(
+                id='TECH-8892',
+                email='jdoe@ar-imms.corp',
+                full_name='John Doe',
+                role='TECHNICIAN',
+                status='APPROVED',
+                avatar='JD',
+                department='Hardware Maintenance',
+                approved_at=datetime.utcnow(),
+            )
+
+            user_viewer_mc = UserModel(
+                id='VIEW-1024',
+                email='mchen@ar-imms.corp',
+                full_name='Michael Chen',
+                role='OPERATOR',
+                status='APPROVED',
+                avatar='MC',
+                department='Infrastructure Monitoring',
+                approved_at=datetime.utcnow(),
+            )
+
             user_tech = UserModel(
                 id='USR-003',
                 email='tech.nguyenvanb@ar-imms.dc',
                 full_name='Nguyen Van B',
                 role='TECHNICIAN',
-                status='PENDING_APPROVAL',
+                status='APPROVED',
                 avatar='NB',
                 department='Field Operations',
+                approved_at=datetime.utcnow(),
             )
 
             session.add_all([
+                user_admin_sj,
                 user_admin,
                 user_op,
+                user_tech_rk,
+                user_tech_er,
+                user_tech_jd,
+                user_viewer_mc,
                 user_tech
             ])
 

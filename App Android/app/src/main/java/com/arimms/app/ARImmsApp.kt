@@ -4,7 +4,6 @@ import android.app.Application
 import com.arimms.app.data.api.ApiClient
 import com.arimms.app.data.api.SocketManager
 import com.arimms.app.data.local.AppPreferences
-import com.arimms.app.data.mock.TelemetrySimulator
 import com.arimms.app.data.repository.ARImmsRepositoryImpl
 import com.arimms.app.domain.repository.ARImmsRepository
 
@@ -16,8 +15,6 @@ class ARImmsApp : Application() {
         private set
     lateinit var socketManager: SocketManager
         private set
-    lateinit var simulator: TelemetrySimulator
-        private set
     lateinit var repository: ARImmsRepository
         private set
 
@@ -28,12 +25,10 @@ class ARImmsApp : Application() {
         preferences = AppPreferences(this)
         apiClient = ApiClient(preferences)
         socketManager = SocketManager(preferences)
-        simulator = TelemetrySimulator()
-        repository = ARImmsRepositoryImpl(preferences, apiClient, socketManager, simulator)
+        repository = ARImmsRepositoryImpl(preferences, apiClient, socketManager)
 
-        if (!preferences.isDemoMode) {
-            socketManager.connect()
-        }
+        // Always connect to backend server in 100% online mode
+        socketManager.connect()
     }
 
     companion object {

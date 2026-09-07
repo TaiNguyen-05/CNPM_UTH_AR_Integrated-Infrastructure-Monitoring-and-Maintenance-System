@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -47,8 +50,8 @@ fun AppNavigation() {
     val bottomNavItems = listOf(
         BottomNavItem(Screen.Dashboard, Icons.Default.Dashboard, "Tổng quan"),
         BottomNavItem(Screen.ARScanner, Icons.Default.QrCodeScanner, "Quét AR"),
-        BottomNavItem(Screen.DigitalTwin, Icons.Default.Lan, "Digital Twin"),
-        BottomNavItem(Screen.Tickets, Icons.Default.Assignment, "Bảo trì"),
+        BottomNavItem(Screen.Alerts, Icons.Default.NotificationsActive, "Cảnh báo"),
+        BottomNavItem(Screen.Tickets, Icons.AutoMirrored.Filled.Assignment, "Bảo trì"),
         BottomNavItem(Screen.Settings, Icons.Default.Settings, "Cài đặt")
     )
 
@@ -62,7 +65,7 @@ fun AppNavigation() {
             if (showBottomBar) {
                 NavigationBar(
                     containerColor = SurfaceDark,
-                    tonalElevation = 8.dp,
+                    tonalElevation = 2.dp,
                     modifier = Modifier.border(1.dp, BorderStroke)
                 ) {
                     bottomNavItems.forEach { item ->
@@ -88,11 +91,14 @@ fun AppNavigation() {
                             label = {
                                 Text(
                                     text = item.label,
-                                    fontSize = 10.sp
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = BgDark,
+                                selectedIconColor = Color.White,
                                 selectedTextColor = PrimaryCyan,
                                 indicatorColor = PrimaryCyan,
                                 unselectedIconColor = TextSecondary,

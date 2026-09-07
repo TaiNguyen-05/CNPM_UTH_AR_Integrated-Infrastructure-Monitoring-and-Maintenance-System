@@ -10,7 +10,8 @@ import {
   LogOut,
   Layers,
   Server,
-  Radio
+  Radio,
+  TrendingUp
 } from 'lucide-react';
 import { TabType, UserItem } from '../types';
 
@@ -71,6 +72,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'audit-logs' as TabType,
       label: 'Nhật Ký Kiểm Toán',
       icon: FileText,
+    },
+    {
+      id: 'analytics' as TabType,
+      label: 'Báo Cáo & PUE',
+      icon: TrendingUp,
     }
   ];
 

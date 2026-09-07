@@ -3,73 +3,87 @@ import { AssetItem, AlertItem, UserItem, AuditLogItem, Rack } from '../types';
 export const INITIAL_ASSETS: AssetItem[] = [
   {
     id: 'asset-1',
-    name: 'SRV-DB-01A',
-    model: 'Dell R740',
+    name: 'Primary Compute Node 01',
+    model: 'Dell PowerEdge R740 / Xeon Gold 6248R',
     rack: 'Rack A1',
-    uPosition: 'Rack A1, U12-14',
+    uPosition: 'Rack A1, U38-39',
     qrStatus: 'Active',
-    guid: '8f7e-2a19-b4c6',
+    guid: 'ar-imms://node/SRV-NODE-01',
     manufacturer: 'Dell Technologies',
-    serialNumber: 'CN-0XTY72',
-    installDate: '2023-10-15',
+    serialNumber: 'CN-0XNODE01',
+    installDate: '2024-01-15',
     powerDraw: '450W (Avg)',
-    networkInterfaces: ['eth0: 10.0.1.24', 'eth1: 10.0.2.24']
+    networkInterfaces: ['eth0: 192.168.1.101', 'eth1: 10.0.1.101']
   },
   {
     id: 'asset-2',
-    name: 'SRV-APP-04B',
-    model: 'HP DL380',
+    name: 'Secondary Compute Node 02',
+    model: 'Dell PowerEdge R740 / Xeon Gold 6248R',
     rack: 'Rack A1',
-    uPosition: 'Rack A1, U15-16',
+    uPosition: 'Rack A1, U35-36',
     qrStatus: 'Active',
-    guid: '3d4b-99e2-88af',
-    manufacturer: 'Hewlett Packard Enterprise',
-    serialNumber: 'HP-99281X',
-    installDate: '2023-11-02',
-    powerDraw: '380W (Avg)',
-    networkInterfaces: ['eth0: 10.0.1.28', 'eth1: 10.0.2.28']
+    guid: 'ar-imms://node/SRV-NODE-02',
+    manufacturer: 'Dell Technologies',
+    serialNumber: 'CN-0XNODE02',
+    installDate: '2024-01-15',
+    powerDraw: '420W (Avg)',
+    networkInterfaces: ['eth0: 192.168.1.102', 'eth1: 10.0.1.102']
   },
   {
     id: 'asset-3',
-    name: 'SW-CORE-01',
-    model: 'Cisco 9300',
-    rack: 'Rack B2',
-    uPosition: 'Rack B2, U40-41',
-    qrStatus: 'Mismatch',
-    guid: '11fe-65ba-90cd',
-    manufacturer: 'Cisco Systems',
-    serialNumber: 'CSCO-9300-X7',
-    installDate: '2022-08-19',
-    powerDraw: '220W (Avg)',
-    networkInterfaces: ['mgm0: 10.0.0.1', 'te1/1: 10.0.10.1']
+    name: 'Database Primary Replica',
+    model: 'HPE ProLiant DL380 Gen10',
+    rack: 'Rack A1',
+    uPosition: 'Rack A1, U30-33',
+    qrStatus: 'Active',
+    guid: 'ar-imms://node/SRV-NODE-03',
+    manufacturer: 'Hewlett Packard Enterprise',
+    serialNumber: 'HP-0XNODE03',
+    installDate: '2023-11-20',
+    powerDraw: '680W (Avg)',
+    networkInterfaces: ['eth0: 192.168.1.103', 'iscsi0: 10.0.50.10']
   },
   {
     id: 'asset-4',
-    name: 'SAN-STOR-02',
-    model: 'NetApp AFF',
-    rack: 'Rack C1',
-    uPosition: 'Rack C1, U01-04',
-    qrStatus: 'Pending',
-    guid: '9a3b-287c-199f',
-    manufacturer: 'NetApp Inc.',
-    serialNumber: 'NA-A800-449',
-    installDate: '2024-01-10',
-    powerDraw: '850W (Avg)',
-    networkInterfaces: ['iscsi0: 10.0.50.11', 'iscsi1: 10.0.50.12']
+    name: 'Application Web Gateway',
+    model: 'Supermicro 1U TwinPro',
+    rack: 'Rack A2',
+    uPosition: 'Rack A2, U36-37',
+    qrStatus: 'Active',
+    guid: 'ar-imms://node/SRV-NODE-04',
+    manufacturer: 'Supermicro Inc.',
+    serialNumber: 'SM-0XNODE04',
+    installDate: '2024-02-10',
+    powerDraw: '310W (Avg)',
+    networkInterfaces: ['eth0: 192.168.1.104', 'eth1: 10.0.1.104']
   },
   {
     id: 'asset-5',
-    name: 'SRV-AI-GPU-01',
-    model: 'NVIDIA DGX H100',
+    name: 'Log Aggregator & Pipeline',
+    model: 'Dell PowerEdge R640',
     rack: 'Rack A2',
-    uPosition: 'Rack A2, U03-08',
+    uPosition: 'Rack A2, U20-22',
+    qrStatus: 'Mismatch',
+    guid: 'ar-imms://node/SRV-NODE-05',
+    manufacturer: 'Dell Technologies',
+    serialNumber: 'CN-0XNODE05',
+    installDate: '2024-03-05',
+    powerDraw: '390W (Avg)',
+    networkInterfaces: ['eth0: 192.168.1.105', 'eth1: 10.0.1.105']
+  },
+  {
+    id: 'asset-6',
+    name: 'Edge Router B1',
+    model: 'Juniper MX204',
+    rack: 'Rack B1',
+    uPosition: 'Rack B1, U01-02',
     qrStatus: 'Active',
-    guid: '44aa-7788-bbee',
-    manufacturer: 'NVIDIA Corporation',
-    serialNumber: 'NV-H100-88219',
-    installDate: '2024-03-20',
-    powerDraw: '3200W (Avg)',
-    networkInterfaces: ['ib0: 192.168.100.1', 'eth0: 10.0.1.99']
+    guid: 'ar-imms://node/SRV-ROUTER-01',
+    manufacturer: 'Juniper Networks',
+    serialNumber: 'JN-0XROUT01',
+    installDate: '2023-08-12',
+    powerDraw: '220W (Avg)',
+    networkInterfaces: ['ge0: 192.168.1.1', 'xe0: 10.100.0.1']
   }
 ];
 
@@ -199,10 +213,10 @@ export const INITIAL_USERS: UserItem[] = [
   },
   {
     id: 'usr-2',
-    userId: 'VIEW-1024',
+    userId: 'TECH-1024',
     name: 'Michael Chen',
     email: 'mchen@ar-imms.corp',
-    role: 'Viewer',
+    role: 'Technician',
     status: 'Locked',
     lastAuth: '10 mins ago (Zone B)',
     initials: 'MC',
@@ -239,6 +253,26 @@ export const INITIAL_USERS: UserItem[] = [
     status: 'Active',
     lastAuth: '4 hrs ago (Zone C)',
     initials: 'ER'
+  },
+  {
+    id: 'usr-6',
+    userId: 'TECH-0002',
+    name: 'System Operator',
+    email: 'operator@ar-imms.dc',
+    role: 'Technician',
+    status: 'Active',
+    lastAuth: 'Current Session',
+    initials: 'OP'
+  },
+  {
+    id: 'usr-7',
+    userId: 'ADM-0002',
+    name: 'System Administrator',
+    email: 'admin@ar-imms.dc',
+    role: 'Admin',
+    status: 'Active',
+    lastAuth: 'Current Session',
+    initials: 'AD'
   }
 ];
 
@@ -312,35 +346,36 @@ export const INITIAL_RACKS: Rack[] = [
     id: 'rack-a1',
     name: 'A1',
     status: 'healthy',
+    temperature: 32.5,
+    powerDrawKw: 4.8,
+    fanSpeedRpm: 3800,
     units: [
-      { u: 1, name: 'PDU Main A', model: 'APC 8000', status: 'healthy', temp: 24, cpu: 12, ram: 18, disk: 10, net: 8 },
-      { u: 2, name: 'PDU Backup B', model: 'APC 8000', status: 'healthy', temp: 25, cpu: 10, ram: 15, disk: 10, net: 6 },
-      { u: 3, name: 'Storage Vault 1', model: 'NetApp FAS', status: 'healthy', temp: 28, cpu: 32, ram: 44, disk: 68, net: 22 },
-      { u: 4, name: 'App Node 01', model: 'Dell R640', status: 'healthy', temp: 29, cpu: 45, ram: 50, disk: 25, net: 30 },
-      { u: 5, name: 'App Node 02', model: 'Dell R640', status: 'healthy', temp: 30, cpu: 48, ram: 52, disk: 28, net: 34 }
+      { u: 38, name: 'Primary Compute Node 01', model: 'Dell PowerEdge R740 / Xeon Gold 6248R', status: 'healthy', temp: 38, cpu: 48, ram: 62, disk: 38, net: 28 },
+      { u: 35, name: 'Secondary Compute Node 02', model: 'Dell PowerEdge R740 / Xeon Gold 6248R', status: 'healthy', temp: 42, cpu: 52, ram: 58, disk: 45, net: 34 },
+      { u: 30, name: 'Database Primary Replica', model: 'HPE ProLiant DL380 Gen10', status: 'healthy', temp: 45, cpu: 45, ram: 54, disk: 52, net: 22 }
     ]
   },
   {
     id: 'rack-a2',
     name: 'A2',
-    status: 'critical',
+    status: 'warning',
+    temperature: 39.0,
+    powerDrawKw: 5.2,
+    fanSpeedRpm: 4200,
     units: [
-      { u: 1, name: 'Patch Panel A2-P1', model: 'Cat6A 48P', status: 'healthy', temp: 22, cpu: 0, ram: 0, disk: 0, net: 45 },
-      { u: 2, name: 'TOR Switch 02', model: 'Cisco Nexus', status: 'healthy', temp: 32, cpu: 52, ram: 60, disk: 15, net: 78 },
-      { u: 3, name: 'A2 - Unit 03', model: 'XR-9000 Compute Blade', status: 'critical', temp: 92, cpu: 95, ram: 62, disk: 28, net: 14 },
-      { u: 4, name: 'GPU Node 04', model: 'NVIDIA DGX A100', status: 'healthy', temp: 58, cpu: 70, ram: 75, disk: 40, net: 60 },
-      { u: 5, name: 'Compute Node 05', model: 'Dell R740xd', status: 'healthy', temp: 34, cpu: 38, ram: 42, disk: 20, net: 18 },
-      { u: 6, name: 'Database Worker', model: 'HP DL580', status: 'healthy', temp: 36, cpu: 65, ram: 80, disk: 55, net: 32 }
+      { u: 36, name: 'Application Web Gateway', model: 'Supermicro 1U TwinPro', status: 'healthy', temp: 39, cpu: 32, ram: 44, disk: 41, net: 45 },
+      { u: 20, name: 'Log Aggregator & Pipeline', model: 'Dell PowerEdge R640', status: 'warning', temp: 58, cpu: 65, ram: 72, disk: 60, net: 38 }
     ]
   },
   {
     id: 'rack-b1',
     name: 'B1',
     status: 'healthy',
+    temperature: 27.0,
+    powerDrawKw: 2.2,
+    fanSpeedRpm: 3200,
     units: [
-      { u: 1, name: 'Edge Router B1', model: 'Juniper MX204', status: 'healthy', temp: 27, cpu: 22, ram: 35, disk: 12, net: 92 },
-      { u: 2, name: 'Core Firewall 01', model: 'Palo Alto PA-5220', status: 'healthy', temp: 31, cpu: 40, ram: 48, disk: 22, net: 85 },
-      { u: 3, name: 'Backup Appliance', model: 'Veeam Storage Unit', status: 'healthy', temp: 26, cpu: 18, ram: 25, disk: 88, net: 12 }
+      { u: 1, name: 'Edge Router B1', model: 'Juniper MX204', status: 'healthy', temp: 27, cpu: 22, ram: 35, disk: 12, net: 92 }
     ]
   }
 ];

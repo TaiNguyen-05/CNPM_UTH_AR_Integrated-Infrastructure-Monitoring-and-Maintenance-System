@@ -2,38 +2,40 @@ package com.arimms.app.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-val BgDark = Color(0xFF0A0E1A)
-val SurfaceDark = Color(0xFF131B2E)
-val SurfaceCard = Color(0xFF182238)
-val SurfaceElevated = Color(0xFF1F2D4A)
-val BorderStroke = Color(0xFF263859)
+// Light Theme Base Colors
+val BgDark = Color(0xFFF8FAFC)          // Slate 50 (App main background)
+val SurfaceDark = Color(0xFFFFFFFF)     // Pure White (TopAppBar, BottomNav, etc.)
+val SurfaceCard = Color(0xFFFFFFFF)     // Pure White (Cards)
+val SurfaceElevated = Color(0xFFF1F5F9) // Slate 100 (Inputs, elevated containers)
+val BorderStroke = Color(0xFFE2E8F0)    // Slate 200 (Subtle borders)
 
-val PrimaryCyan = Color(0xFF00E5FF)
-val PrimaryCyanDim = Color(0xFF00B4D8)
-val AccentPurple = Color(0xFF7C4DFF)
-val AccentBlue = Color(0xFF2979FF)
+// Brand & Tech Accents
+val PrimaryCyan = Color(0xFF0284C7)     // Sky 600 (High-contrast tech cyan/blue for white theme)
+val PrimaryCyanDim = Color(0xFF0EA5E9)  // Sky 500
+val AccentPurple = Color(0xFF7C3AED)    // Purple 600
+val AccentBlue = Color(0xFF2563EB)      // Blue 600
 
-// Status Colors
-val StatusHealthy = Color(0xFF00E676)
-val StatusHealthyBg = Color(0x2200E676)
+// Status Colors (Light theme badges & indicators)
+val StatusHealthy = Color(0xFF16A34A)   // Green 600
+val StatusHealthyBg = Color(0xFFDCFCE7) // Green 100
 
-val StatusWarning = Color(0xFFFFD600)
-val StatusWarningBg = Color(0x22FFD600)
+val StatusWarning = Color(0xFFD97706)   // Amber 600
+val StatusWarningBg = Color(0xFFFEF3C7) // Amber 100
 
-val StatusCritical = Color(0xFFFF1744)
-val StatusCriticalBg = Color(0x22FF1744)
+val StatusCritical = Color(0xFFDC2626)  // Red 600
+val StatusCriticalBg = Color(0xFFFEE2E2) // Red 100
 
-val StatusOffline = Color(0xFF78909C)
-val StatusOfflineBg = Color(0x2278909C)
+val StatusOffline = Color(0xFF64748B)   // Slate 500
+val StatusOfflineBg = Color(0xFFF1F5F9) // Slate 100
 
-// Text Colors
-val TextPrimary = Color(0xFFFFFFFF)
-val TextSecondary = Color(0xFF94A3B8)
-val TextTertiary = Color(0xFF64748B)
+// Text Colors (Crisp readability on white backgrounds)
+val TextPrimary = Color(0xFF0F172A)     // Slate 900
+val TextSecondary = Color(0xFF475569)   // Slate 600
+val TextTertiary = Color(0xFF94A3B8)    // Slate 400
 
 // Gauges & Metrics
-val CpuColor = Color(0xFF00E5FF)
-val RamColor = Color(0xFF7C4DFF)
-val TempColor = Color(0xFFFF6D00)
-val NetColor = Color(0xFF00E676)
-val PowerColor = Color(0xFFFFD600)
+val CpuColor = Color(0xFF0284C7)
+val RamColor = Color(0xFF7C3AED)
+val TempColor = Color(0xFFEA580C)
+val NetColor = Color(0xFF16A34A)
+val PowerColor = Color(0xFFD97706)

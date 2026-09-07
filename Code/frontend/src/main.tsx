@@ -1,44 +1,41 @@
-import React, { StrictMode, Component, ErrorInfo, ReactNode } from 'react';
+import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: ErrorInfo | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-    errorInfo: null
-  };
-
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, errorInfo: null };
+class ErrorBoundary extends (React.Component as any) {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
     console.error("Uncaught runtime error:", error, errorInfo);
-    this.setState({ error, errorInfo });
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
         <div style={{ padding: '30px', color: '#ff5555', background: '#080b0e', fontFamily: 'monospace', minHeight: '100vh' }}>
           <h1 style={{ color: '#ffb03a' }}>🚨 Application Runtime Error</h1>
           <pre style={{ background: '#11161b', padding: '15px', border: '1px solid #334155', color: '#38bdf8', overflowX: 'auto' }}>
             {this.state.error?.toString()}
-          </pre>
-          <pre style={{ background: '#11161b', padding: '15px', border: '1px solid #334155', color: '#94a3b8', fontSize: '12px', overflowX: 'auto' }}>
-            {this.state.errorInfo?.componentStack}
           </pre>
           <button
             onClick={() => window.location.reload()}

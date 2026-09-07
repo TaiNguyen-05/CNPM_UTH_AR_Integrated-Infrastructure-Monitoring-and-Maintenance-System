@@ -13,20 +13,18 @@ class AppPreferences(context: Context) {
 
     companion object {
         private const val KEY_SERVER_URL = "server_url"
-        private const val KEY_DEMO_MODE = "demo_mode"
         private const val KEY_USER_DATA = "user_data"
         private const val KEY_AUTH_TOKEN = "auth_token"
-        const val DEFAULT_SERVER_URL = "http://10.0.2.2:9999"
+        private const val KEY_REGISTERED_USERS = "registered_users"
+        const val DEFAULT_SERVER_URL = "https://ar-imms-monitor.vercel.app"
     }
-
 
     var serverUrl: String
         get() = prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
         set(value) = prefs.edit().putString(KEY_SERVER_URL, value).apply()
 
-    var isDemoMode: Boolean
-        get() = prefs.getBoolean(KEY_DEMO_MODE, true) // Default true for seamless offline evaluation
-        set(value) = prefs.edit().putBoolean(KEY_DEMO_MODE, value).apply()
+    val isDemoMode: Boolean
+        get() = false // 100% Pure Online Mode
 
     var authToken: String?
         get() = prefs.getString(KEY_AUTH_TOKEN, null)
@@ -48,6 +46,23 @@ class AppPreferences(context: Context) {
                 prefs.edit().putString(KEY_USER_DATA, gson.toJson(value)).apply()
             }
         }
+
+    fun getRegisteredUsers(): List<User> {
+        val json = prefs.getString(KEY_REGISTERED_USERS, null) ?: return emptyList()
+        return try {
+            val type = object : com.google.gson.reflect.TypeToken<List<User>>() {}.type
+            gson.fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun saveRegisteredUser(user: User) {
+        val current = getRegisteredUsers().toMutableList()
+        current.removeAll { it.email.equals(user.email, ignoreCase = true) || it.username.equals(user.username, ignoreCase = true) || it.id == user.id }
+        current.add(0, user)
+        prefs.edit().putString(KEY_REGISTERED_USERS, gson.toJson(current)).apply()
+    }
 
     fun clearAuth() {
         prefs.edit().remove(KEY_AUTH_TOKEN).remove(KEY_USER_DATA).apply()

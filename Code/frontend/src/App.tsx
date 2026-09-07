@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Icon } from '@iconify/react';
 import { 
   Camera, Terminal as TerminalIcon, Box, Activity, Server, AlertTriangle, 
   Users as UsersIcon, FileText, CheckCircle2, ShieldAlert, Cpu, 
-  ExternalLink, QrCode, RefreshCw, Zap, Shield, Sparkles, LogIn, LogOut, ChevronRight
+  ExternalLink, QrCode, RefreshCw, Zap, Shield, Sparkles, LogIn, LogOut, ChevronRight,
+  Plus, Trash2, Edit, Layers, TrendingUp, Wrench
 } from 'lucide-react';
-import { TabType, AssetItem, AlertItem, UserItem, AuditLogItem, Rack, TelemetryPoint } from './types';
+import { TabType, AssetItem, AlertItem, UserItem, AuditLogItem, Rack, RackUnit, TelemetryPoint, TicketItem, TicketPriority, TicketStatus } from './types';
 import { 
   INITIAL_ASSETS, 
   INITIAL_ALERTS, 
@@ -19,8 +20,10 @@ import { DigitalTwinView } from './components/DigitalTwinView';
 import { TelemetryView } from './components/TelemetryView';
 import { AssetsView } from './components/AssetsView';
 import { AlertsView } from './components/AlertsView';
+import { TicketsView } from './components/TicketsView';
 import { UsersView } from './components/UsersView';
 import { AuditLogsView } from './components/AuditLogsView';
+import { AnalyticsView } from './components/AnalyticsView';
 
 // Modals
 import { AROverlayModal } from './components/modals/AROverlayModal';
@@ -38,12 +41,12 @@ import { AuthView } from './components/AuthView';
 import { arImmsApi } from './services/api';
 import { socketService } from './services/socketService';
 
-type RevealId = "architecture" | "console" | "modules" | "hardware" | "operations" | "subscribe";
+type RevealId = "architecture" | "console" | "modules" | "operations" | "subscribe";
 
 export const App: React.FC = () => {
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [revealed, setRevealed] = useState<Set<RevealId>>(
-    new Set(["architecture", "console", "modules", "hardware", "operations", "subscribe"])
+    new Set(["architecture", "console", "modules", "operations", "subscribe"])
   );
   const heroVideoRef = useRef<HTMLVideoElement | null>(null);
   const typewriterRef = useRef<HTMLSpanElement | null>(null);
@@ -53,11 +56,190 @@ export const App: React.FC = () => {
   const [assets, setAssets] = useState<AssetItem[]>(INITIAL_ASSETS);
   const [alerts, setAlerts] = useState<AlertItem[]>(INITIAL_ALERTS);
   const [users, setUsers] = useState<UserItem[]>(INITIAL_USERS);
+  const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(INITIAL_AUDIT_LOGS);
 
-  // Active User / Auth State
-  const [currentUser, setCurrentUser] = useState<UserItem | null>(INITIAL_USERS[0]);
+  // Tải danh sách Người dùng thực tế từ Database
+  const fetchDbUsers = useCallback(async () => {
+    try {
+      const res = await arImmsApi.getUsers();
+      if (res && res.data && res.data.length > 0) {
+        const mapped: UserItem[] = res.data.map((u: any) => {
+          const roleNormalized: 'Admin' | 'Technician' = 
+            (u.role || '').toUpperCase() === 'ADMIN' ? 'Admin' : 'Technician';
+          
+          const statusNormalized: 'Active' | 'Pending' | 'Locked' = 
+            (u.status || '').toUpperCase() === 'APPROVED' ? 'Active' :
+            (u.status || '').toUpperCase() === 'PENDING_APPROVAL' ? 'Pending' : 'Locked';
+
+          const name = u.full_name || u.email.split('@')[0];
+          const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+
+          return {
+            id: u.id,
+            userId: u.id,
+            name: name,
+            email: u.email,
+            role: roleNormalized,
+            status: statusNormalized,
+            department: u.department || 'Data Hall Alpha - Zone 1',
+            phone: u.phone_number || '--',
+            lastAuth: u.updated_at ? new Date(u.updated_at).toLocaleString() : 'System Record',
+            initials: initials,
+            avatarUrl: u.avatar || undefined
+          };
+        });
+
+        setUsers(mapped);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải người dùng từ Database:', err);
+    }
+  }, []);
+
+  // Tải danh sách Phiếu Bảo Trì (Tickets) từ Database
+  const fetchTickets = useCallback(async () => {
+    try {
+      const res = await arImmsApi.getTickets();
+      if (res && res.data) {
+        const mapped: TicketItem[] = res.data.map((t: any) => {
+          let arLogs: any[] = [];
+          if (Array.isArray(t.ar_session_logs)) {
+            arLogs = t.ar_session_logs;
+          } else if (Array.isArray(t.ar_action_logs_json)) {
+            arLogs = t.ar_action_logs_json;
+          } else if (typeof t.ar_action_logs_json === 'string') {
+            try { arLogs = JSON.parse(t.ar_action_logs_json); } catch {}
+          }
+          return {
+            id: t.id,
+            serverNodeId: t.server_node_id,
+            serverNodeName: t.server_node_name || t.server_node_id,
+            rackId: t.rack_id,
+            title: t.title,
+            description: t.description || '',
+            priority: (t.priority || 'MEDIUM').toUpperCase() as TicketPriority,
+            status: (t.status || 'CREATED').toUpperCase() as TicketStatus,
+            alertId: t.alert_id,
+            assignedTechnicianId: t.assigned_technician_id,
+            assignedTechnicianName: t.assigned_technician_name,
+            createdAt: t.created_at,
+            updatedAt: t.updated_at,
+            resolvedAt: t.resolved_at,
+            closedAt: t.closed_at,
+            resolutionNotes: t.resolution_notes,
+            arLogs: arLogs
+          };
+        });
+        setTickets(mapped);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải danh sách tickets:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDbUsers();
+    fetchTickets();
+
+    // Socket.io Real-time ticket updates
+    const unsubCreated = socketService.on('ticket_created', () => fetchTickets());
+    const unsubAssigned = socketService.on('ticket_assigned', () => fetchTickets());
+    const unsubResolved = socketService.on('ticket_resolved', () => fetchTickets());
+    const unsubClosed = socketService.on('ticket_closed', () => fetchTickets());
+    const unsubLog = socketService.on('ticket_ar_log_added', () => fetchTickets());
+
+    return () => {
+      unsubCreated();
+      unsubAssigned();
+      unsubResolved();
+      unsubClosed();
+      unsubLog();
+    };
+  }, [fetchDbUsers, fetchTickets]);
+
+  // Ticket CRUD Handlers
+  const handleCreateTicket = async (ticketData: {
+    server_node_id: string;
+    title: string;
+    description: string;
+    priority: TicketPriority;
+    assigned_technician_id?: string;
+    assigned_technician_name?: string;
+  }) => {
+    try {
+      await arImmsApi.createTicket(ticketData);
+      await fetchTickets();
+      setActiveViewSection('tickets');
+    } catch (err) {
+      console.error('Lỗi tạo ticket:', err);
+    }
+  };
+
+  const handleAssignTicket = async (ticketId: string, technicianId: string, technicianName?: string) => {
+    try {
+      await arImmsApi.assignTicket(ticketId, technicianId, technicianName);
+      await fetchTickets();
+    } catch (err) {
+      console.error('Lỗi phân công ticket:', err);
+    }
+  };
+
+  const handleAddArLog = async (ticketId: string, action: string, details?: Record<string, any>) => {
+    try {
+      await arImmsApi.addArLog(ticketId, action, details);
+      await fetchTickets();
+    } catch (err) {
+      console.error('Lỗi ghi log AR:', err);
+    }
+  };
+
+  const handleResolveTicket = async (ticketId: string, notes?: string) => {
+    try {
+      await arImmsApi.resolveTicket(ticketId, notes);
+      await fetchTickets();
+    } catch (err) {
+      console.error('Lỗi hoàn tất ticket:', err);
+    }
+  };
+
+  const handleCloseTicket = async (ticketId: string) => {
+    try {
+      await arImmsApi.closeTicket(ticketId);
+      await fetchTickets();
+    } catch (err) {
+      console.error('Lỗi đóng ticket:', err);
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId: string) => {
+    try {
+      await arImmsApi.deleteTicket(ticketId);
+      await fetchTickets();
+    } catch (err) {
+      console.error('Lỗi xóa ticket:', err);
+    }
+  };
+
+  // Active User / Auth State (Không tự động đăng nhập - khôi phục phiên nếu có)
+  const [currentUser, setCurrentUser] = useState<UserItem | null>(() => {
+    try {
+      const saved = localStorage.getItem('ar_imms_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+
+  // Đồng bộ phiên người dùng vào localStorage
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('ar_imms_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('ar_imms_user');
+    }
+  }, [currentUser]);
 
   // Modals & CRUD State
   const [isARModalOpen, setIsARModalOpen] = useState<boolean>(false);
@@ -88,7 +270,8 @@ export const App: React.FC = () => {
 
   // Telemetry status
   const [activeTelemetry, setActiveTelemetry] = useState<TelemetryPoint | null>(null);
-  const [activeViewSection, setActiveViewSection] = useState<'twin' | 'telemetry' | 'assets' | 'alerts' | 'users' | 'audit'>('twin');
+  const [activeViewSection, setActiveViewSection] = useState<'twin' | 'telemetry' | 'assets' | 'alerts' | 'tickets' | 'users' | 'audit' | 'analytics'>('twin');
+  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
 
   // Particles config
   const particles = useMemo(
@@ -227,14 +410,15 @@ export const App: React.FC = () => {
           arImmsApi.getRacks()
         ]);
 
+        let mappedAssets: AssetItem[] = [];
         if (nodesRes.status === 'fulfilled' && nodesRes.value?.data && nodesRes.value.data.length > 0) {
-          const mappedAssets: AssetItem[] = nodesRes.value.data.map(n => ({
+          mappedAssets = nodesRes.value.data.map(n => ({
             id: n.id,
             name: n.name,
             model: n.model,
-            rack: `Rack ${n.rack_id?.toUpperCase().replace('RACK-', '') || 'A1'}`,
-            uPosition: `Rack ${n.rack_id?.toUpperCase().replace('RACK-', '') || 'A1'}, U${String(n.u_start).padStart(2, '0')}-${String(n.u_start + (n.u_size || 1) - 1).padStart(2, '0')}`,
-            qrStatus: n.status === 'healthy' ? 'Active' : n.status === 'warning' ? 'Mismatch' : 'Pending',
+            rack: n.rack_id ? (n.rack_id.toUpperCase().includes('RACK') ? n.rack_id.toUpperCase() : `Rack ${n.rack_id.toUpperCase().replace('RACK-', '')}`) : 'Rack A1',
+            uPosition: `Rack ${n.rack_id?.toUpperCase().replace('RACK-', '') || 'A1'}, U${String(n.u_start || 1).padStart(2, '0')}-${String((n.u_start || 1) + (n.u_size || 2) - 1).padStart(2, '0')}`,
+            qrStatus: (String(n.status).toLowerCase() === 'healthy') ? 'Active' : (String(n.status).toLowerCase() === 'warning') ? 'Mismatch' : 'Pending',
             guid: n.qr_code || `guid-${n.id}`,
             manufacturer: n.model?.split(' ')[0] || 'Enterprise OEM',
             serialNumber: `CN-0X${n.id.slice(-4).toUpperCase()}`,
@@ -243,6 +427,9 @@ export const App: React.FC = () => {
             networkInterfaces: [`eth0: ${n.ip_address || '10.0.1.20'}`]
           }));
           setAssets(mappedAssets);
+        } else {
+          mappedAssets = INITIAL_ASSETS;
+          setAssets(INITIAL_ASSETS);
         }
 
         if (alertsRes.status === 'fulfilled' && alertsRes.value?.data && alertsRes.value.data.length > 0) {
@@ -273,22 +460,61 @@ export const App: React.FC = () => {
           setAlerts(mappedAlerts);
         }
 
+        let baseRacks = INITIAL_RACKS;
         if (racksRes.status === 'fulfilled' && racksRes.value?.data && racksRes.value.data.length > 0) {
-          const mappedRacks: Rack[] = racksRes.value.data.map((r: any, idx: number) => {
+          baseRacks = racksRes.value.data.map((r: any, idx: number) => {
             const initial = INITIAL_RACKS[idx] || INITIAL_RACKS[0];
             return {
               ...initial,
               ...r,
               id: r.id || initial.id,
-              name: r.name || initial.name,
-              status: r.status || initial.status,
+              name: r.name ? (r.name.includes('Rack') || r.name.includes('Tủ') ? r.name : `Rack ${r.name}`) : initial.name,
+              status: r.status ? (r.status.toLowerCase() as ('healthy' | 'warning' | 'critical')) : initial.status,
               temperature: typeof r.temperature === 'number' ? r.temperature : initial.temperature,
               powerDrawKw: typeof r.power_draw_kw === 'number' ? r.power_draw_kw : (r.powerDrawKw || initial.powerDrawKw),
-              units: (Array.isArray(r.units) && r.units.length > 0) ? r.units : initial.units
             };
           });
-          setRacks(mappedRacks);
         }
+
+        // Đồng bộ 100% các unit bên trong tủ rack theo đúng danh sách thiết bị
+        const syncedRacks = baseRacks.map(rack => {
+          const rackKey = rack.name.replace('Tủ ', '').replace('Rack ', '').trim().toLowerCase();
+          const rackIdKey = rack.id.replace('rack-', '').trim().toLowerCase();
+
+          const matchedAssets = mappedAssets.filter(a => {
+            const aRack = a.rack.replace('Tủ ', '').replace('Rack ', '').trim().toLowerCase();
+            return aRack === rackKey || aRack === rackIdKey || a.rack.toLowerCase().includes(rackKey);
+          });
+
+          if (matchedAssets.length > 0) {
+            const rackUnits: RackUnit[] = matchedAssets.map((asset, uIdx) => {
+              const uMatch = asset.uPosition.match(/U(\d+)/i);
+              const uNum = uMatch ? parseInt(uMatch[1], 10) : (uIdx + 1);
+              const unitStatus: 'healthy' | 'warning' | 'critical' | 'offline' = 
+                asset.qrStatus === 'Mismatch' ? 'warning' : asset.qrStatus === 'Pending' ? 'critical' : 'healthy';
+              return {
+                u: uNum,
+                name: asset.name,
+                model: asset.model || 'Blade Node',
+                status: unitStatus,
+                temp: 30 + (uIdx * 6) % 25,
+                cpu: 35 + (uIdx * 12) % 55,
+                ram: 45 + (uIdx * 10) % 45,
+                disk: 30 + (uIdx * 8) % 50,
+                net: 20 + (uIdx * 9) % 65
+              };
+            }).sort((a, b) => a.u - b.u);
+
+            return {
+              ...rack,
+              units: rackUnits,
+              nodesCount: rackUnits.length
+            };
+          }
+          return rack;
+        });
+
+        setRacks(syncedRacks);
       } catch (err) {
         console.warn("Backend sync notice:", err);
       }
@@ -399,8 +625,14 @@ export const App: React.FC = () => {
     }, 2500);
   };
 
-  // --- CRUD HANDLERS: RACKS ---
+  // --- CRUD HANDLERS: RACKS (DATABASE PERSISTENCE) ---
   const handleSaveRack = (savedRack: Rack) => {
+    if ((currentUser?.role || '').toUpperCase() !== 'ADMIN') {
+      alert('Yêu cầu quyền Admin: Bạn cần đăng nhập với tài khoản Quản trị viên (Admin) để lưu hoặc thay đổi cấu hình Tủ Rack!');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     setRacks(prev => {
       const exists = prev.some(r => r.id === savedRack.id);
       if (exists) {
@@ -408,6 +640,26 @@ export const App: React.FC = () => {
       }
       return [...prev, savedRack];
     });
+
+    // Lưu trực tiếp vào Database thông qua Backend REST API
+    try {
+      const rackDto = {
+        id: savedRack.id,
+        name: savedRack.name,
+        code: savedRack.id.toUpperCase(),
+        room_name: savedRack.location || savedRack.zone || 'Server Room 01',
+        total_u: 42,
+        power_limit_kw: savedRack.powerDrawKw || 15.0
+      };
+      if (rackToEdit) {
+        arImmsApi.updateRack(savedRack.id, rackDto).catch(e => console.warn('Backend updateRack fallback:', e));
+      } else {
+        arImmsApi.createRack(rackDto).catch(e => console.warn('Backend createRack fallback:', e));
+      }
+    } catch (err) {
+      console.warn('Rack API persistence error:', err);
+    }
+
     setAuditLogs(prev => [
       {
         id: `audit-${Date.now()}`,
@@ -425,7 +677,21 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteRack = (rackId: string) => {
+    if ((currentUser?.role || '').toUpperCase() !== 'ADMIN') {
+      alert('Yêu cầu quyền Admin: Bạn cần đăng nhập với tài khoản Quản trị viên (Admin) để xóa Tủ Rack!');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     setRacks(prev => prev.filter(r => r.id !== rackId));
+
+    // Xóa khỏi Database thông qua Backend REST API
+    try {
+      arImmsApi.deleteRack(rackId).catch(e => console.warn('Backend deleteRack fallback:', e));
+    } catch (err) {
+      console.warn('Rack API delete error:', err);
+    }
+
     setAuditLogs(prev => [
       {
         id: `audit-${Date.now()}`,
@@ -442,15 +708,86 @@ export const App: React.FC = () => {
     ]);
   };
 
-  // --- CRUD HANDLERS: ASSETS / DEVICES ---
+  // --- CRUD HANDLERS: ASSETS / DEVICES (DATABASE PERSISTENCE) ---
   const handleSaveAsset = (savedAsset: AssetItem) => {
+    if ((currentUser?.role || '').toUpperCase() !== 'ADMIN') {
+      alert('Yêu cầu quyền Admin: Bạn cần đăng nhập với tài khoản Quản trị viên (Admin) để đăng ký hoặc chỉnh sửa Thiết bị!');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    let nextAssets: AssetItem[] = [];
     setAssets(prev => {
       const exists = prev.some(a => a.id === savedAsset.id);
-      if (exists) {
-        return prev.map(a => a.id === savedAsset.id ? savedAsset : a);
-      }
-      return [savedAsset, ...prev];
+      nextAssets = exists
+        ? prev.map(a => a.id === savedAsset.id ? savedAsset : a)
+        : [savedAsset, ...prev];
+      return nextAssets;
     });
+
+    // Đồng bộ lập tức vào các Rack Units
+    setRacks(prevRacks => prevRacks.map(rack => {
+      const rackKey = rack.name.replace('Tủ ', '').replace('Rack ', '').trim().toLowerCase();
+      const rackIdKey = rack.id.replace('rack-', '').trim().toLowerCase();
+
+      const matchedAssets = (nextAssets.length > 0 ? nextAssets : [savedAsset, ...assets]).filter(a => {
+        const aRack = a.rack.replace('Tủ ', '').replace('Rack ', '').trim().toLowerCase();
+        return aRack === rackKey || aRack === rackIdKey || a.rack.toLowerCase().includes(rackKey);
+      });
+
+      if (matchedAssets.length > 0) {
+        const rackUnits: RackUnit[] = matchedAssets.map((asset, uIdx) => {
+          const uMatch = asset.uPosition.match(/U(\d+)/i);
+          const uNum = uMatch ? parseInt(uMatch[1], 10) : (uIdx + 1);
+          const unitStatus: 'healthy' | 'warning' | 'critical' | 'offline' = 
+            asset.qrStatus === 'Mismatch' ? 'warning' : asset.qrStatus === 'Pending' ? 'critical' : 'healthy';
+          return {
+            u: uNum,
+            name: asset.name,
+            model: asset.model || 'Blade Node',
+            status: unitStatus,
+            temp: 30 + (uIdx * 6) % 25,
+            cpu: 35 + (uIdx * 12) % 55,
+            ram: 45 + (uIdx * 10) % 45,
+            disk: 30 + (uIdx * 8) % 50,
+            net: 20 + (uIdx * 9) % 65
+          };
+        }).sort((a, b) => a.u - b.u);
+
+        return {
+          ...rack,
+          units: rackUnits,
+          nodesCount: rackUnits.length
+        };
+      }
+      return rack;
+    }));
+
+    // Lưu trực tiếp thiết bị vào Database thông qua Backend REST API
+    try {
+      const uMatch = savedAsset.uPosition.match(/U(\d+)/i);
+      const uStart = uMatch ? parseInt(uMatch[1], 10) : 1;
+      const rackId = savedAsset.rack.toLowerCase().replace(' ', '-').replace('tủ-', 'rack-');
+      const nodeDto = {
+        id: savedAsset.id,
+        name: savedAsset.name,
+        model: savedAsset.model,
+        rack_id: rackId.startsWith('rack-') ? rackId : `rack-${rackId}`,
+        u_start: uStart,
+        u_size: 2,
+        status: (savedAsset.qrStatus === 'Mismatch' ? 'warning' : savedAsset.qrStatus === 'Pending' ? 'critical' : 'healthy') as any,
+        qr_code: savedAsset.guid || `ar-imms://node/${savedAsset.id}`,
+        ip_address: '192.168.1.100'
+      };
+      if (assetToEdit) {
+        arImmsApi.updateNode(savedAsset.id, nodeDto).catch(e => console.warn('Backend updateNode fallback:', e));
+      } else {
+        arImmsApi.createNode(nodeDto).catch(e => console.warn('Backend createNode fallback:', e));
+      }
+    } catch (err) {
+      console.warn('Node API persistence error:', err);
+    }
+
     setAuditLogs(prev => [
       {
         id: `audit-${Date.now()}`,
@@ -468,7 +805,35 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteAsset = (assetId: string) => {
-    setAssets(prev => prev.filter(a => a.id !== assetId));
+    if ((currentUser?.role || '').toUpperCase() !== 'ADMIN') {
+      alert('Yêu cầu quyền Admin: Bạn cần đăng nhập với tài khoản Quản trị viên (Admin) để xóa Thiết bị Node!');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    let targetName = '';
+    setAssets(prev => {
+      const target = prev.find(a => a.id === assetId);
+      if (target) targetName = target.name;
+      return prev.filter(a => a.id !== assetId);
+    });
+
+    setRacks(prevRacks => prevRacks.map(rack => {
+      const filteredUnits = rack.units.filter(u => u.name !== targetName);
+      return {
+        ...rack,
+        units: filteredUnits,
+        nodesCount: filteredUnits.length
+      };
+    }));
+
+    // Xóa Node khỏi Database thông qua Backend REST API
+    try {
+      arImmsApi.deleteNode(assetId).catch(e => console.warn('Backend deleteNode fallback:', e));
+    } catch (err) {
+      console.warn('Node API delete error:', err);
+    }
+
     setAuditLogs(prev => [
       {
         id: `audit-${Date.now()}`,
@@ -488,9 +853,9 @@ export const App: React.FC = () => {
   // --- CRUD HANDLERS: USERS & RBAC ---
   const handleSaveUser = (savedUser: UserItem) => {
     setUsers(prev => {
-      const exists = prev.some(u => u.id === savedUser.id);
+      const exists = prev.some(u => u.id === savedUser.id || (u.email && u.email.toLowerCase() === savedUser.email.toLowerCase()));
       if (exists) {
-        return prev.map(u => u.id === savedUser.id ? savedUser : u);
+        return prev.map(u => (u.id === savedUser.id || (u.email && u.email.toLowerCase() === savedUser.email.toLowerCase())) ? savedUser : u);
       }
       return [...prev, savedUser];
     });
@@ -510,8 +875,17 @@ export const App: React.FC = () => {
     ]);
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers(prev => prev.filter(u => u.id !== userId));
+  const handleDeleteUser = async (userId: string) => {
+    const targetUser = users.find(u => u.id === userId || u.userId === userId || u.email === userId);
+    const identifier = targetUser?.id || targetUser?.email || userId;
+
+    setUsers(prev => prev.filter(u => u.id !== userId && u.userId !== userId && u.email !== userId));
+    try {
+      await arImmsApi.deleteUser(identifier);
+      await fetchDbUsers();
+    } catch (err) {
+      console.warn('Backend deleteUser fallback:', err);
+    }
     setAuditLogs(prev => [
       {
         id: `audit-${Date.now()}`,
@@ -528,8 +902,17 @@ export const App: React.FC = () => {
     ]);
   };
 
-  const handleUpdateUserRole = (userId: string, newRole: 'Admin' | 'Technician' | 'Viewer') => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+  const handleUpdateUserRole = async (userId: string, newRole: 'Admin' | 'Technician') => {
+    const targetUser = users.find(u => u.id === userId || u.userId === userId || u.email === userId);
+    const identifier = targetUser?.id || targetUser?.email || userId;
+
+    setUsers(prev => prev.map(u => (u.id === userId || u.userId === userId || u.email === userId) ? { ...u, role: newRole } : u));
+    try {
+      await arImmsApi.updateUserRole(identifier, newRole);
+      await fetchDbUsers();
+    } catch (err) {
+      console.warn('Backend updateUserRole fallback:', err);
+    }
     setAuditLogs(prev => [
       {
         id: `audit-${Date.now()}`,
@@ -546,8 +929,18 @@ export const App: React.FC = () => {
     ]);
   };
 
-  const handleApproveUser = (userId: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: 'Active' } : u));
+  const handleApproveUser = async (userId: string) => {
+    const targetUser = users.find(u => u.id === userId || u.userId === userId || u.email === userId);
+    const identifier = targetUser?.id || targetUser?.email || userId;
+
+    setUsers(prev => prev.map(u => (u.id === userId || u.userId === userId || u.email === userId) ? { ...u, status: 'Active' } : u));
+    try {
+      await arImmsApi.approveUser(identifier);
+      await fetchDbUsers();
+    } catch (err) {
+      console.warn('Backend approveUser sync fallback:', err);
+    }
+
     setAuditLogs(prev => [
       {
         id: `audit-${Date.now()}`,
@@ -555,7 +948,7 @@ export const App: React.FC = () => {
         user: currentUser?.email || 'admin@ar-imms.corp',
         userType: 'user',
         initials: currentUser?.initials || 'AD',
-        action: 'Phê Duyệt Tài Khoản',
+        action: 'Phê Duyệt Tài Khoản (Gửi Email Chào Mừng)',
         target: userId,
         ipAddress: '192.168.1.100',
         status: 'Success'
@@ -564,18 +957,50 @@ export const App: React.FC = () => {
     ]);
   };
 
-  const handleDenyUser = (userId: string) => {
-    setUsers(prev => prev.filter(u => u.id !== userId));
+  const handleDenyUser = async (userId: string) => {
+    const targetUser = users.find(u => u.id === userId || u.userId === userId || u.email === userId);
+    const identifier = targetUser?.id || targetUser?.email || userId;
+
+    setUsers(prev => prev.filter(u => u.id !== userId && u.userId !== userId && u.email !== userId));
+    try {
+      await arImmsApi.deleteUser(identifier);
+      await fetchDbUsers();
+    } catch (err) {
+      console.warn('Backend denyUser fallback:', err);
+    }
   };
 
-  const handleToggleLockUser = (userId: string) => {
-    setUsers(prev => prev.map(u => {
-      if (u.id === userId) {
-        const nextStatus = u.status === 'Locked' ? 'Active' : 'Locked';
-        return { ...u, status: nextStatus };
+  const handleToggleLockUser = async (userId: string) => {
+    const targetUser = users.find(u => u.id === userId || u.userId === userId || u.email === userId);
+    const identifier = targetUser?.id || targetUser?.email || userId;
+    const willLock = targetUser ? targetUser.status !== 'Locked' : true;
+    
+    setUsers(prev => prev.map(u => (u.id === userId || u.userId === userId || u.email === userId) ? { ...u, status: willLock ? 'Locked' : 'Active' } : u));
+    try {
+      if (willLock) {
+        await arImmsApi.lockUser(identifier);
+      } else {
+        await arImmsApi.unlockUser(identifier);
       }
-      return u;
-    }));
+      await fetchDbUsers();
+    } catch (err) {
+      console.warn('Backend lock/unlock fallback:', err);
+    }
+
+    setAuditLogs(prev => [
+      {
+        id: `audit-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        user: currentUser?.email || 'admin@ar-imms.corp',
+        userType: 'user',
+        initials: currentUser?.initials || 'AD',
+        action: willLock ? 'Khóa Tài Khoản Người Dùng' : 'Mở Khóa Tài Khoản Người Dùng',
+        target: userId,
+        ipAddress: '192.168.1.100',
+        status: 'Warning'
+      },
+      ...prev
+    ]);
   };
 
   const handleAcknowledgeAlert = (id: string) => {
@@ -587,6 +1012,26 @@ export const App: React.FC = () => {
   };
 
   const revealClass = (id: RevealId) => (revealed.has(id) ? "code-reveal active" : "code-reveal");
+
+  // Nếu chưa đăng nhập: Bắt buộc hiển thị màn hình Đăng Nhập / Xác Thực (AuthView)
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-[#080b0e] text-slate-100 flex flex-col justify-center">
+        <AuthView
+          onLoginSuccess={(user) => {
+            setCurrentUser(user);
+          }}
+          onRegisterUser={(newUser) => {
+            handleSaveUser(newUser);
+            if (newUser.status === 'Active') {
+              setCurrentUser(newUser);
+            }
+          }}
+          registeredUsers={users}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#080b0e] text-slate-200 antialiased selection:bg-[#f59e0b] selection:text-[#080b0e] font-sans">
@@ -630,7 +1075,7 @@ export const App: React.FC = () => {
           </a>
 
           {/* Navigation Links */}
-          <div className="hidden items-center gap-8 text-xs uppercase tracking-widest text-slate-400 md:flex font-mono">
+          <div className="hidden items-center gap-6 text-xs uppercase tracking-widest text-slate-400 md:flex font-mono">
             <a href="#architecture" className="transition-colors hover:text-[#00f0ff]">
               Kiến Trúc
             </a>
@@ -640,9 +1085,17 @@ export const App: React.FC = () => {
             <a href="#modules" className="transition-colors hover:text-[#00f0ff]">
               Modules
             </a>
-            <a href="#hardware" className="transition-colors hover:text-[#00f0ff]">
-              Phần Cứng
-            </a>
+            <button
+              onClick={() => {
+                setActiveViewSection('assets');
+                const el = document.getElementById('operations');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="transition-colors hover:text-[#38bdf8] flex items-center gap-1.5 cursor-pointer uppercase tracking-widest text-slate-400"
+            >
+              <Server className="w-3.5 h-3.5 text-[#38bdf8]" />
+              Tủ Rack & Thiết Bị
+            </button>
             <a href="#operations" className="transition-colors hover:text-[#ffb03a] flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 text-[#ffb03a]" />
               Vận Hành
@@ -650,50 +1103,49 @@ export const App: React.FC = () => {
           </div>
 
           {/* Actions & Profile */}
-          <div className="flex items-center gap-4">
-            <span className="hidden border border-[#222c37] bg-[#11161b] px-3 py-1 font-mono text-[10px] text-[#ffb03a] sm:inline-block">
-              KẾT NỐI // BẢO MẬT
-            </span>
-
-            {/* Launch AR Button */}
-            <button
-              onClick={() => {
-                setArTargetAlert(null);
-                setIsARModalOpen(true);
-              }}
-              className="hidden sm:inline-flex items-center gap-1.5 border border-[#38bdf8]/40 bg-[#38bdf8]/10 px-3.5 py-2 font-mono text-xs uppercase tracking-widest text-[#38bdf8] hover:bg-[#38bdf8]/20 transition-all"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              Kính AR
-            </button>
-
-            {/* Compile Space / Main Action */}
+          <div className="flex items-center gap-3">
+            {/* Operations Console Direct Button */}
             <button 
               onClick={() => {
-                if (!currentUser) {
-                  setIsAuthModalOpen(true);
-                } else {
-                  const el = document.getElementById('operations');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }
+                const el = document.getElementById('operations');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="keycap-glow border border-[#38bdf8]/40 bg-[#11161b] px-5 py-2.5 font-mono text-xs uppercase tracking-widest text-white transition-all hover:border-[#00f0ff]"
+              className="keycap-glow border border-[#38bdf8]/40 bg-[#11161b] px-3.5 py-1.5 font-mono text-xs uppercase tracking-widest text-white transition-all hover:border-[#00f0ff] cursor-pointer"
             >
-              {currentUser ? "Bảng Điều Khiển" : "Đăng Nhập // Truy Cập"}
+              Bảng Lệnh
             </button>
 
-            {/* User Profile Badge / Sign Out */}
-            {currentUser && (
-              <div className="hidden lg:flex items-center gap-2 border-l border-[#222c37] pl-4">
-                <span className="w-7 h-7 rounded bg-gradient-to-tr from-[#38bdf8] to-[#f59e0b] flex items-center justify-center font-bold text-xs text-[#080b0e]">
-                  {currentUser.name.charAt(0)}
+            {!currentUser ? (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex items-center gap-1.5 border border-[#ffb03a]/50 bg-[#ffb03a]/10 hover:bg-[#ffb03a] hover:text-[#080b0e] px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-wider text-[#ffb03a] transition-all cursor-pointer font-bold shadow-sm"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Đăng Nhập / Đăng Ký
+              </button>
+            ) : (
+              <div className="flex items-center gap-2.5 border border-[#222c37] bg-[#11161b] px-3 py-1.5 font-mono shadow-sm">
+                <span className="w-6 h-6 rounded-none bg-gradient-to-tr from-[#38bdf8] to-[#f59e0b] flex items-center justify-center font-bold text-[11px] text-[#080b0e]">
+                  {currentUser.initials || currentUser.name.charAt(0)}
                 </span>
+                <div className="flex flex-col text-left">
+                  <span className="text-[11px] font-bold text-white leading-none truncate max-w-[120px]">
+                    {currentUser.name}
+                  </span>
+                  <span className={`text-[9px] font-bold leading-tight ${currentUser.role === 'Admin' ? 'text-indigo-300' : 'text-sky-400'}`}>
+                    {currentUser.role === 'Admin' ? '👑 Admin' : '🛠️ Technician'}
+                  </span>
+                </div>
                 <button
-                  onClick={() => setCurrentUser(null)}
-                  title="Đăng xuất"
-                  className="text-slate-500 hover:text-red-400 p-1 transition-colors"
+                  onClick={() => {
+                    setCurrentUser(null);
+                    localStorage.removeItem('ar_imms_user');
+                  }}
+                  title="Đăng xuất khỏi hệ thống"
+                  className="ml-2 flex items-center gap-1 text-[10px] font-bold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500/30 border border-rose-500/30 px-2 py-1 transition-all cursor-pointer font-mono"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3 h-3" />
+                  <span>Đăng Xuất</span>
                 </button>
               </div>
             )}
@@ -1046,141 +1498,9 @@ export const App: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Interactive Server Racks Grid */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {racks.map((rack) => (
-              <div key={rack.id} className="border border-[#222c37] bg-[#0f141a] p-6 space-y-4 relative overflow-hidden group">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 font-mono text-sm text-white font-bold">
-                    <Server className="w-4 h-4 text-[#38bdf8]" />
-                    {rack.name}
-                  </div>
-                  <span className={`px-2 py-0.5 text-[10px] font-mono uppercase rounded ${
-                    rack.status === 'healthy' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-                  }`}>
-                    {rack.status === 'healthy' ? 'Hoạt Động Tốt' : 'Cần Chú Ý'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 font-mono text-xs py-2 border-y border-[#222c37]">
-                  <div>
-                    <span className="text-slate-500 text-[10px]">NHIỆT ĐỘ</span>
-                    <div className="text-white font-bold">{(rack.temperature ?? 32.5).toFixed(1)}°C</div>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-[10px]">CÔNG SUẤT</span>
-                    <div className="text-white font-bold">{(rack.powerDrawKw ?? 4.8).toFixed(2)} kW</div>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-[10px]">TỐC ĐỘ QUẠT</span>
-                    <div className="text-[#38bdf8] font-bold">{(rack.fanSpeedRpm ?? 3800).toLocaleString()} RPM</div>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-[10px]">MÁY CHỦ</span>
-                    <div className="text-white font-bold">{rack.nodesCount ?? 6} Node</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 pt-2">
-                  <button
-                    onClick={() => handleFanBoost(rack.id)}
-                    className="flex-1 py-1.5 bg-[#38bdf8]/10 border border-[#38bdf8]/30 hover:bg-[#38bdf8] hover:text-[#080b0e] text-[#38bdf8] font-mono text-[10px] uppercase font-bold transition-all"
-                  >
-                    Quạt 100%
-                  </button>
-                  <button
-                    onClick={() => handleRackReboot(rack.id)}
-                    className="flex-1 py-1.5 bg-[#161d24] border border-[#222c37] hover:border-red-400 hover:text-red-400 text-slate-300 font-mono text-[10px] uppercase transition-all"
-                  >
-                    Khởi Động Lại
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
         </section>
 
-        {/* Section 4: Hardware & AR Tactile Interface */}
-        <section
-          id="hardware"
-          data-reveal-id="hardware"
-          className={`${revealClass("hardware")} border-t border-[#222c37] bg-[#161d24]/30 py-32`}
-        >
-          <div className="mx-auto grid max-w-7xl items-center gap-16 px-6 lg:grid-cols-12">
-            <div className="relative order-2 lg:col-span-6 lg:order-1">
-              <div className="pointer-events-none absolute inset-0 rounded-full bg-[#38bdf8]/5 blur-[100px]" />
-              <div className="relative z-10 space-y-4 border border-[#222c37] bg-[#080b0e] p-8 font-mono text-xs">
-                <div className="flex justify-between border-b border-[#222c37]/40 pb-3 text-slate-500">
-                  <span>MA TRẬN LINH KIỆN</span>
-                  <span>THÔNG SỐ ALPHA</span>
-                </div>
-                <div className="flex justify-between border-b border-[#222c37]/40 pb-2">
-                  <span className="text-slate-400">Kiểu Phím (Profile)</span>
-                  <span className="text-white">OEM / Trong Suốt Quang Học</span>
-                </div>
-                <div className="flex justify-between border-b border-[#222c37]/40 pb-2">
-                  <span className="text-slate-400">Vật Liệu Khung Vỏ</span>
-                  <span className="text-white">Polycarbonate Đúc Dày Cao Cấp</span>
-                </div>
-                <div className="flex justify-between border-b border-[#222c37]/40 pb-2">
-                  <span className="text-slate-400">Lõi Bàn Máy Chủ</span>
-                  <span className="text-white">Veneer Gỗ Óc Chó Nguyên Khối</span>
-                </div>
-                <div className="flex justify-between pb-1">
-                  <span className="text-slate-400">Hệ Thống Đèn LED</span>
-                  <span className="text-[#ffb03a]">Mô Phỏng Sợi Đốt Neon SMD</span>
-                </div>
-              </div>
 
-              {/* AR Marker & QR Hardware Trigger */}
-              <div className="mt-6 flex gap-4">
-                <button
-                  onClick={() => {
-                    setSelectedNodeDetail(assets[0]);
-                  }}
-                  className="flex-1 inline-flex items-center justify-center gap-2 border border-[#38bdf8] bg-[#38bdf8]/10 px-4 py-3 font-mono text-xs uppercase font-bold text-[#38bdf8] hover:bg-[#38bdf8] hover:text-[#080b0e] transition-all cursor-pointer"
-                >
-                  <QrCode className="w-4 h-4" />
-                  Xem Mã QR & Chỉ Số AR
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedPrintAsset(assets[0]);
-                    setIsPrintLabelModalOpen(true);
-                  }}
-                  className="flex-1 inline-flex items-center justify-center gap-2 border border-[#222c37] bg-[#11161b] px-4 py-3 font-mono text-xs uppercase text-slate-300 hover:border-slate-400 hover:text-white transition-all cursor-pointer"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  In Tem Nhãn QR
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-6 order-1 lg:col-span-6 lg:order-2">
-              <span className="block text-xs uppercase tracking-widest text-[#38bdf8] font-mono">
-                Giao Diện Xúc Giác & Phần Cứng
-              </span>
-              <h2 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
-                Khung vỏ gia công cơ khí chính xác cho người vận hành.
-              </h2>
-              <p className="leading-relaxed text-slate-400 font-light">
-                Mỗi khung vỏ được đúc từ nhựa polycarbonate trong suốt như pha lê, tán sắc hoàn hảo ánh sáng từ bo mạch chủ. Làm chủ không gian phần cứng khép kín tối ưu cho hiệu năng và độ ổn định cao.
-              </p>
-              <div className="pt-2">
-                <button 
-                  onClick={() => {
-                    setArTargetAlert(null);
-                    setIsARModalOpen(true);
-                  }}
-                  className="bg-white px-8 py-4 font-mono text-xs font-bold uppercase tracking-widest text-[#080b0e] transition-colors hover:bg-[#f59e0b] cursor-pointer"
-                >
-                  Mở Lớp Phủ Thực Tế Ảo (AR)
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Section 5: Live Datacenter Operations & Incidents */}
         <section
@@ -1222,6 +1542,17 @@ export const App: React.FC = () => {
                 Cảnh Báo Sự Cố ({alerts.filter(a => !a.resolved).length})
               </button>
               <button
+                onClick={() => setActiveViewSection('tickets')}
+                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeViewSection === 'tickets'
+                    ? 'border-sky-500 bg-sky-500/10 text-sky-300 font-bold shadow-sm'
+                    : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
+                }`}
+              >
+                <Wrench className="w-3.5 h-3.5 text-sky-400" />
+                Phiếu Bảo Trì & AR ({tickets.filter(t => t.status !== 'CLOSED').length})
+              </button>
+              <button
                 onClick={() => setActiveViewSection('assets')}
                 className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeViewSection === 'assets'
@@ -1253,6 +1584,17 @@ export const App: React.FC = () => {
               >
                 Nhật Ký Kiểm Toán
               </button>
+              <button
+                onClick={() => setActiveViewSection('analytics')}
+                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeViewSection === 'analytics'
+                    ? 'border-teal-400 bg-teal-400/10 text-teal-300'
+                    : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                Báo Cáo & PUE / Quy Hoạch
+              </button>
             </div>
           </div>
 
@@ -1281,6 +1623,26 @@ export const App: React.FC = () => {
                 }}
                 onOpenAR={(alert) => {
                   setArTargetAlert(alert);
+                  setIsARModalOpen(true);
+                }}
+              />
+            )}
+
+            {activeViewSection === 'tickets' && (
+              <TicketsView
+                tickets={tickets}
+                technicians={users.filter(u => u.role === 'Technician' || u.role === 'Admin')}
+                nodes={assets.map(a => ({ id: a.id, name: a.name, rack_id: a.rack }))}
+                currentUser={currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role } : null}
+                onCreateTicket={handleCreateTicket}
+                onAssignTicket={handleAssignTicket}
+                onAddArLog={handleAddArLog}
+                onResolveTicket={handleResolveTicket}
+                onCloseTicket={handleCloseTicket}
+                onDeleteTicket={handleDeleteTicket}
+                onLaunchARView={(nodeId) => {
+                  const foundAlert = alerts.find(a => a.id.includes(nodeId) || (a as any).node_id === nodeId) || alerts[0];
+                  setArTargetAlert(foundAlert || null);
                   setIsARModalOpen(true);
                 }}
               />
@@ -1320,27 +1682,41 @@ export const App: React.FC = () => {
             {activeViewSection === 'users' && (
               <UsersView
                 users={users}
+                currentUser={currentUser}
+                onRequireLogin={() => setIsAuthModalOpen(true)}
                 onApproveUser={handleApproveUser}
                 onDenyUser={handleDenyUser}
                 onToggleLockUser={handleToggleLockUser}
                 onInviteUser={() => {
+                  if ((currentUser?.role || '').toUpperCase() !== 'ADMIN') {
+                    setIsAuthModalOpen(true);
+                    return;
+                  }
                   setUserToEdit(null);
                   setIsEditUserModalOpen(true);
                 }}
                 onEditUser={(user) => {
+                  if ((currentUser?.role || '').toUpperCase() !== 'ADMIN') {
+                    setIsAuthModalOpen(true);
+                    return;
+                  }
                   setUserToEdit(user);
                   setIsEditUserModalOpen(true);
                 }}
                 onDeleteUser={handleDeleteUser}
                 onUpdateUserRole={handleUpdateUserRole}
                 onManagePolicies={() => setIsManagePoliciesModalOpen(true)}
-                searchQuery=""
-                onSearchChange={() => {}}
+                searchQuery={userSearchQuery}
+                onSearchChange={setUserSearchQuery}
               />
             )}
 
             {activeViewSection === 'audit' && (
               <AuditLogsView auditLogs={auditLogs} />
+            )}
+
+            {activeViewSection === 'analytics' && (
+              <AnalyticsView racks={racks} assets={assets} />
             )}
           </div>
         </section>
@@ -1577,8 +1953,10 @@ export const App: React.FC = () => {
             }}
             onRegisterUser={(newUser) => {
               handleSaveUser(newUser);
-              setCurrentUser(newUser);
-              setIsAuthModalOpen(false);
+              if (newUser.status === 'Active') {
+                setCurrentUser(newUser);
+                setIsAuthModalOpen(false);
+              }
             }}
             registeredUsers={users}
             onClose={() => setIsAuthModalOpen(false)}

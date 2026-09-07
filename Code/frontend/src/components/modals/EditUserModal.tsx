@@ -11,7 +11,7 @@ interface EditUserModalProps {
 export const EditUserModal: React.FC<EditUserModalProps> = ({ userToEdit, onClose, onSave }) => {
   const [name, setName] = useState(userToEdit?.name || '');
   const [email, setEmail] = useState(userToEdit?.email || '');
-  const [role, setRole] = useState<'Admin' | 'Technician' | 'Viewer'>(userToEdit?.role || 'Technician');
+  const [role, setRole] = useState<'Admin' | 'Technician'>(userToEdit?.role || 'Technician');
   const [status, setStatus] = useState<'Active' | 'Pending' | 'Locked'>(userToEdit?.status || 'Active');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,7 +95,6 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ userToEdit, onClos
               >
                 <option value="Admin" className="bg-[#11161b]">👑 Quản trị viên (Admin)</option>
                 <option value="Technician" className="bg-[#11161b]">🛠️ Kỹ thuật viên (Technician)</option>
-                <option value="Viewer" className="bg-[#11161b]">👁️ Người xem (Viewer)</option>
               </select>
             </div>
             <div>
@@ -131,13 +130,6 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ userToEdit, onClos
                   <li className="text-sky-400">Đọc/Ghi dữ liệu thiết bị, in mã AR QR</li>
                   <li className="text-sky-400">Xử lý phiếu sự cố kỹ thuật & điểm neo AR</li>
                   <li className="text-slate-500">Chỉ xem danh sách người dùng (Không xóa/phân quyền)</li>
-                </>
-              )}
-              {role === 'Viewer' && (
-                <>
-                  <li className="text-slate-400">Xem luồng Telemetry thời gian thực</li>
-                  <li className="text-slate-400">Xem sơ đồ 3D Digital Twin & danh mục thiết bị</li>
-                  <li className="text-rose-400">Không có quyền thêm/sửa/xóa dữ liệu hệ thống</li>
                 </>
               )}
             </ul>

@@ -32,10 +32,6 @@ class SocketManager(
     val connectionState: SharedFlow<Boolean> = _connectionState.asSharedFlow()
 
     fun connect() {
-        if (preferences.isDemoMode) {
-            return
-        }
-
         try {
             disconnect()
             val serverUrl = preferences.serverUrl

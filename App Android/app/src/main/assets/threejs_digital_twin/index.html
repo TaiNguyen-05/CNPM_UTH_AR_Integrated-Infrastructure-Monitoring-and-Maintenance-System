@@ -16,9 +16,9 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: #0A0E1A;
+      background-color: #F8FAFC;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
-      color: #FFFFFF;
+      color: #0F172A;
     }
     #canvas-container {
       width: 100%;
@@ -44,21 +44,22 @@
       align-items: center;
     }
     .chip {
-      background: rgba(19, 27, 46, 0.85);
-      border: 1px solid rgba(0, 229, 255, 0.4);
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #0284C7;
       border-radius: 20px;
       padding: 4px 12px;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.5px;
-      color: #00E5FF;
+      color: #0284C7;
       backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
       pointer-events: auto;
     }
     .chip.danger {
-      border-color: rgba(255, 23, 68, 0.6);
-      color: #FF1744;
-      background: rgba(255, 23, 68, 0.15);
+      border-color: #DC2626;
+      color: #DC2626;
+      background: #FEE2E2;
     }
     /* Camera Presets Bar */
     .presets-bar {
@@ -73,9 +74,9 @@
       padding-bottom: 4px;
     }
     .btn-preset {
-      background: rgba(24, 34, 56, 0.9);
-      border: 1px solid #263859;
-      color: #94A3B8;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #CBD5E1;
+      color: #475569;
       border-radius: 8px;
       padding: 6px 10px;
       font-size: 11px;
@@ -83,12 +84,14 @@
       white-space: nowrap;
       cursor: pointer;
       backdrop-filter: blur(6px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
       transition: all 0.2s;
     }
     .btn-preset:active, .btn-preset.active {
-      border-color: #00E5FF;
-      color: #00E5FF;
-      background: rgba(0, 229, 255, 0.2);
+      border-color: #0284C7;
+      color: #0284C7;
+      background: #E0F2FE;
+      font-weight: 700;
     }
     /* Holographic Selected Node Card */
     .holo-card {
@@ -96,19 +99,19 @@
       top: 50px;
       left: 12px;
       right: 12px;
-      background: rgba(19, 27, 46, 0.92);
-      border: 1.5px solid #00E5FF;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1.5px solid #0284C7;
       border-radius: 14px;
       padding: 12px 14px;
       backdrop-filter: blur(12px);
-      box-shadow: 0 8px 32px rgba(0, 229, 255, 0.25);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       display: none;
       pointer-events: auto;
       animation: fadeIn 0.3s ease;
     }
     .holo-card.critical {
-      border-color: #FF1744;
-      box-shadow: 0 8px 32px rgba(255, 23, 68, 0.3);
+      border-color: #DC2626;
+      box-shadow: 0 10px 25px rgba(220, 38, 38, 0.15);
     }
     .holo-header {
       display: flex;
@@ -119,14 +122,15 @@
     .holo-title {
       font-size: 13px;
       font-weight: 700;
-      color: #FFFFFF;
+      color: #0F172A;
     }
     .holo-tag {
       font-size: 10px;
-      color: #00E5FF;
-      background: rgba(0, 229, 255, 0.15);
+      color: #0284C7;
+      background: #E0F2FE;
       padding: 2px 6px;
       border-radius: 4px;
+      font-weight: 700;
     }
     .holo-metrics {
       display: grid;
@@ -135,19 +139,20 @@
       margin-top: 6px;
     }
     .metric-box {
-      background: rgba(10, 14, 26, 0.6);
+      background: #F1F5F9;
       border-radius: 6px;
       padding: 4px 6px;
       text-align: center;
     }
     .metric-box .label {
       font-size: 9px;
-      color: #94A3B8;
+      color: #64748B;
+      font-weight: 600;
     }
     .metric-box .val {
       font-size: 11px;
       font-weight: 700;
-      color: #00E5FF;
+      color: #0284C7;
     }
     .holo-actions {
       display: flex;
@@ -156,21 +161,21 @@
     }
     .holo-btn {
       flex: 1;
-      padding: 6px 0;
-      border-radius: 6px;
+      padding: 8px 0;
+      border-radius: 8px;
       font-size: 11px;
       font-weight: 700;
       border: none;
       cursor: pointer;
     }
     .holo-btn.primary {
-      background: #00E5FF;
-      color: #0A0E1A;
+      background: #0284C7;
+      color: #FFFFFF;
     }
     .holo-btn.secondary {
-      background: #1C2742;
-      border: 1px solid #263859;
-      color: #FFFFFF;
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      color: #475569;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
@@ -178,14 +183,15 @@
     }
     /* Heatmap legend */
     .heatmap-toggle {
-      background: rgba(24, 34, 56, 0.9);
-      border: 1px solid #FFD600;
-      color: #FFD600;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #D97706;
+      color: #D97706;
       border-radius: 8px;
       padding: 6px 10px;
       font-size: 11px;
       font-weight: 700;
       cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -206,7 +212,7 @@
     <div class="holo-header">
       <div>
         <div class="holo-title" id="holo-node-name">SRV-AI-GPU-01</div>
-        <div style="font-size: 10px; color: #94A3B8;" id="holo-node-sub">Rack R-02 • U24 (4U) • 192.168.10.105</div>
+        <div style="font-size: 10px; color: #64748B;" id="holo-node-sub">Rack R-02 • U24 (4U) • 192.168.10.105</div>
       </div>
       <div class="holo-tag" id="holo-node-tag">AR-NODE-05</div>
     </div>
@@ -221,7 +227,7 @@
       </div>
       <div class="metric-box">
         <div class="label">TEMP</div>
-        <div class="val" style="color: #FF1744;" id="holo-temp">83.5°C</div>
+        <div class="val" style="color: #DC2626;" id="holo-temp">83.5°C</div>
       </div>
       <div class="metric-box">
         <div class="label">QUẠT</div>
@@ -263,8 +269,8 @@
       const height = window.innerHeight;
 
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0A0E1A);
-      scene.fog = new THREE.FogExp2(0x0A0E1A, 0.035);
+      scene.background = new THREE.Color(0xF8FAFC);
+      scene.fog = new THREE.FogExp2(0xF8FAFC, 0.035);
 
       camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
       camera.position.set(0, 5, 8.5);
@@ -298,34 +304,34 @@
     }
 
     function setupLighting() {
-      const ambientLight = new THREE.AmbientLight(0x1F2D4A, 1.8);
+      const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1.1);
       scene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0x00E5FF, 1.2);
+      const dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.9);
       dirLight.position.set(5, 10, 7);
       scene.add(dirLight);
 
-      const bluePoint = new THREE.PointLight(0x00B4D8, 2, 12);
+      const bluePoint = new THREE.PointLight(0x0284C7, 1.5, 12);
       bluePoint.position.set(-3, 4, 2);
       scene.add(bluePoint);
 
-      const warnPoint = new THREE.PointLight(0xFF1744, 2.5, 8);
+      const warnPoint = new THREE.PointLight(0xDC2626, 2.0, 8);
       warnPoint.position.set(2.5, 2.5, 0);
       scene.add(warnPoint);
     }
 
     function createEnvironment() {
-      // Cyber Neon Floor Grid
-      const gridHelper = new THREE.GridHelper(24, 24, 0x00E5FF, 0x182238);
+      // Modern Light Grid
+      const gridHelper = new THREE.GridHelper(24, 24, 0x0284C7, 0xCBD5E1);
       gridHelper.position.y = 0;
       scene.add(gridHelper);
 
-      // Floor Plane with subtle reflection
+      // Floor Plane
       const floorGeo = new THREE.PlaneGeometry(30, 30);
       const floorMat = new THREE.MeshStandardMaterial({
-        color: 0x070B14,
+        color: 0xEEF2F6,
         roughness: 0.8,
-        metalness: 0.2
+        metalness: 0.1
       });
       const floor = new THREE.Mesh(floorGeo, floorMat);
       floor.rotation.x = -Math.PI / 2;
@@ -333,7 +339,7 @@
 
       // Ceiling Cable Trays
       const trayGeo = new THREE.BoxGeometry(10, 0.1, 0.6);
-      const trayMat = new THREE.MeshStandardMaterial({ color: 0x1F2D4A, metalness: 0.8, roughness: 0.4 });
+      const trayMat = new THREE.MeshStandardMaterial({ color: 0x94A3B8, metalness: 0.7, roughness: 0.3 });
       const tray = new THREE.Mesh(trayGeo, trayMat);
       tray.position.set(0, 3.8, 0);
       scene.add(tray);
@@ -365,7 +371,7 @@
 
       // 42U Outer Frame Pillars
       const frameMat = new THREE.MeshStandardMaterial({
-        color: 0x131B2E,
+        color: 0x334155,
         metalness: 0.85,
         roughness: 0.25
       });
@@ -373,10 +379,10 @@
       // Frame Box
       const frameGeo = new THREE.BoxGeometry(width, height, depth);
       const frameMesh = new THREE.Mesh(frameGeo, new THREE.MeshStandardMaterial({
-        color: 0x0A0F1D,
+        color: 0xE2E8F0,
         roughness: 0.9,
         transparent: true,
-        opacity: 0.6
+        opacity: 0.35
       }));
       frameMesh.position.y = height / 2;
       rackGroup.add(frameMesh);
@@ -395,7 +401,7 @@
 
       // Top Rack Name Plate
       const topPlateGeo = new THREE.BoxGeometry(width * 0.9, 0.18, 0.05);
-      const topPlateMat = new THREE.MeshStandardMaterial({ color: 0x00E5FF, emissive: 0x004050 });
+      const topPlateMat = new THREE.MeshStandardMaterial({ color: 0x0284C7, emissive: 0x0369A1 });
       const topPlate = new THREE.Mesh(topPlateGeo, topPlateMat);
       topPlate.position.set(0, height - 0.1, depth/2 - 0.02);
       rackGroup.add(topPlate);
@@ -415,7 +421,7 @@
       
       const statusColor = getStatusColor(nodeData.status);
       const serverMat = new THREE.MeshStandardMaterial({
-        color: 0x182238,
+        color: 0x1E293B,
         metalness: 0.6,
         roughness: 0.35,
         emissive: statusColor,
@@ -439,15 +445,14 @@
 
     function getStatusColor(status) {
       switch(status) {
-        case "CRITICAL": return 0xFF1744;
-        case "WARNING": return 0xFFD600;
-        case "HEALTHY": return 0x00E676;
-        default: return 0x00E5FF;
+        case "CRITICAL": return 0xDC2626;
+        case "WARNING": return 0xD97706;
+        case "HEALTHY": return 0x16A34A;
+        default: return 0x0284C7;
       }
     }
 
     function onPointerDown(event) {
-      // Calculate mouse position in normalized device coordinates
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -466,7 +471,6 @@
       const data = nodesData[nodeId];
       if (!data) return;
 
-      // Animate Camera to focus on the selected node
       const targetPos = new THREE.Vector3();
       mesh.getWorldPosition(targetPos);
 
@@ -480,7 +484,7 @@
       document.getElementById('holo-cpu').innerText = `${data.cpu}%`;
       document.getElementById('holo-ram').innerText = `${data.ram}%`;
       document.getElementById('holo-temp').innerText = `${data.temp}°C`;
-      document.getElementById('holo-temp').style.color = data.temp > 75 ? '#FF1744' : (data.temp > 50 ? '#FFD600' : '#00E676');
+      document.getElementById('holo-temp').style.color = data.temp > 75 ? '#DC2626' : (data.temp > 50 ? '#D97706' : '#16A34A');
       document.getElementById('holo-fan').innerText = `${data.fan} RPM`;
 
       const holoCard = document.getElementById('holo-card');
@@ -507,26 +511,25 @@
     function toggleHeatmap() {
       isHeatmapMode = !isHeatmapMode;
       const btn = document.getElementById('btn-heatmap');
-      btn.style.background = isHeatmapMode ? '#FFD600' : 'rgba(24, 34, 56, 0.9)';
-      btn.style.color = isHeatmapMode ? '#0A0E1A' : '#FFD600';
+      btn.style.background = isHeatmapMode ? '#D97706' : 'rgba(255, 255, 255, 0.95)';
+      btn.style.color = isHeatmapMode ? '#FFFFFF' : '#D97706';
 
       serverMeshes.forEach(mesh => {
         const data = nodesData[mesh.userData.nodeId];
         if (!data) return;
 
         if (isHeatmapMode) {
-          // Heatmap gradient color based on temperature
-          let heatColor = 0x00E5FF; // Cool
-          if (data.temp >= 75) heatColor = 0xFF1744; // Extreme Hot
-          else if (data.temp >= 55) heatColor = 0xFF9100; // Warm
-          else if (data.temp >= 45) heatColor = 0xFFD600; // Mild
+          let heatColor = 0x0284C7; // Cool
+          if (data.temp >= 75) heatColor = 0xDC2626; // Extreme Hot
+          else if (data.temp >= 55) heatColor = 0xEA580C; // Warm
+          else if (data.temp >= 45) heatColor = 0xD97706; // Mild
 
           mesh.material.color.setHex(heatColor);
           mesh.material.emissive.setHex(heatColor);
           mesh.material.emissiveIntensity = 0.5;
         } else {
           const statusColor = getStatusColor(data.status);
-          mesh.material.color.setHex(0x182238);
+          mesh.material.color.setHex(0x1E293B);
           mesh.material.emissive.setHex(statusColor);
           mesh.material.emissiveIntensity = data.status === "CRITICAL" ? 0.35 : 0.08;
         }

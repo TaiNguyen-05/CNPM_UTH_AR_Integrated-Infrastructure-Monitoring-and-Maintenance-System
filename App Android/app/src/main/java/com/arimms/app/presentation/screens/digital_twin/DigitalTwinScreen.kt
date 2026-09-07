@@ -130,7 +130,7 @@ fun DigitalTwinScreen(
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
                         .clickable { viewMode = DigitalTwinViewMode.THREE_JS_3D },
-                    color = if (viewMode == DigitalTwinViewMode.THREE_JS_3D) PrimaryCyan.copy(alpha = 0.2f) else SurfaceCard,
+                    color = if (viewMode == DigitalTwinViewMode.THREE_JS_3D) PrimaryCyan.copy(alpha = 0.12f) else SurfaceCard,
                     border = androidx.compose.foundation.BorderStroke(
                         1.dp,
                         if (viewMode == DigitalTwinViewMode.THREE_JS_3D) PrimaryCyan else BorderStroke
@@ -164,7 +164,7 @@ fun DigitalTwinScreen(
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
                         .clickable { viewMode = DigitalTwinViewMode.ELEVATION_2D },
-                    color = if (viewMode == DigitalTwinViewMode.ELEVATION_2D) PrimaryCyan.copy(alpha = 0.2f) else SurfaceCard,
+                    color = if (viewMode == DigitalTwinViewMode.ELEVATION_2D) PrimaryCyan.copy(alpha = 0.12f) else SurfaceCard,
                     border = androidx.compose.foundation.BorderStroke(
                         1.dp,
                         if (viewMode == DigitalTwinViewMode.ELEVATION_2D) PrimaryCyan else BorderStroke
@@ -206,7 +206,7 @@ fun DigitalTwinScreen(
                                     settings.domStorageEnabled = true
                                     settings.allowFileAccess = true
                                     settings.cacheMode = WebSettings.LOAD_NO_CACHE
-                                    setBackgroundColor(0xFF0A0E1A.toInt())
+                                    setBackgroundColor(0xFFF8FAFC.toInt())
 
                                     webViewClient = object : WebViewClient() {
                                         override fun onPageFinished(view: WebView?, url: String?) {
@@ -275,7 +275,7 @@ fun DigitalTwinScreen(
                                             .weight(1f)
                                             .clip(RoundedCornerShape(10.dp))
                                             .clickable { selectedRackId = id },
-                                        color = if (isSelected) PrimaryCyan.copy(alpha = 0.2f) else SurfaceCard,
+                                        color = if (isSelected) PrimaryCyan.copy(alpha = 0.12f) else SurfaceCard,
                                         border = androidx.compose.foundation.BorderStroke(
                                             1.dp,
                                             if (isSelected) PrimaryCyan else BorderStroke
@@ -317,7 +317,7 @@ fun DigitalTwinScreen(
                                             fontWeight = FontWeight.Bold
                                         )
                                         Surface(
-                                            color = Color(0x2200E5FF),
+                                            color = Color(0xFFE0F2FE),
                                             shape = RoundedCornerShape(6.dp)
                                         ) {
                                             Text(
@@ -384,9 +384,9 @@ fun DigitalTwinScreen(
                         // Interactive Rack Chassis Slots
                         item {
                             Surface(
-                                color = Color(0xFF0D1424),
+                                color = Color(0xFFF1F5F9),
                                 shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF263859)),
+                                border = androidx.compose.foundation.BorderStroke(1.5.dp, BorderStroke),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
@@ -422,7 +422,7 @@ fun DigitalTwinScreen(
                                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                                 ) {
                                                     Surface(
-                                                        color = glowColor.copy(alpha = 0.2f),
+                                                        color = glowColor.copy(alpha = 0.12f),
                                                         shape = RoundedCornerShape(6.dp)
                                                     ) {
                                                         Text(

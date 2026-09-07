@@ -92,6 +92,58 @@ class UserRepository(
         )
 
     # ==========================================================
+    # FIND USER BY ID OR EMAIL (FLEXIBLE)
+    # ==========================================================
+
+    def get_by_id_or_email(
+        self,
+        identifier: str
+    ) -> Optional[UserAccount]:
+
+        if not identifier:
+            return None
+
+        session = self._get_session()
+
+        try:
+            clean_val = str(identifier).strip()
+
+            # 1. Match exact ID
+            model = (
+                session.query(UserModel)
+                .filter(UserModel.id == clean_val)
+                .first()
+            )
+
+            # 2. Match case-insensitive ID
+            if not model:
+                model = (
+                    session.query(UserModel)
+                    .filter(UserModel.id.ilike(clean_val))
+                    .first()
+                )
+
+            # 3. Match email
+            if not model:
+                model = (
+                    session.query(UserModel)
+                    .filter(UserModel.email.ilike(clean_val))
+                    .first()
+                )
+
+            if model is None:
+                return None
+
+            return self._to_domain(model)
+
+        except Exception:
+            session.rollback()
+            raise
+
+        finally:
+            session.close()
+
+    # ==========================================================
     # FIND USER BY EMAIL
     # ==========================================================
 
@@ -108,7 +160,7 @@ class UserRepository(
             model = (
                 session.query(UserModel)
                 .filter(
-                    UserModel.email == normalized_email
+                    UserModel.email.ilike(normalized_email)
                 )
                 .first()
             )

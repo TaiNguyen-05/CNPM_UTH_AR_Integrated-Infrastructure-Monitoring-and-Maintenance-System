@@ -8,18 +8,23 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arimms.app.ARImmsApp
+import com.arimms.app.domain.model.User
+import com.arimms.app.domain.model.UserRole
 import com.arimms.app.presentation.components.CyberCard
 import com.arimms.app.presentation.theme.*
 import kotlinx.coroutines.launch
@@ -36,7 +41,6 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var isDemoMode by remember { mutableStateOf(preferences.isDemoMode) }
     var serverUrl by remember { mutableStateOf(preferences.serverUrl) }
     var isTestingConnection by remember { mutableStateOf(false) }
     var connectionResult by remember { mutableStateOf<String?>(null) }
@@ -62,7 +66,7 @@ fun SettingsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceDark)
@@ -107,53 +111,99 @@ fun SettingsScreen(
                 }
             }
 
-            // Operation Mode Section (Demo vs Live Backend)
-            CyberCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "CHẾ ĐỘ HOẠT ĐỘNG",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(10.dp))
+            // Admin User Management & User Creation
+            if (user?.role == UserRole.ADMIN) {
+                var showCreateUserDialog by remember { mutableStateOf(false) }
 
+                CyberCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    borderColor = PrimaryCyan.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "QUẢN TRỊ VIÊN: CẤP TÀI KHOẢN",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = PrimaryCyan,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Tạo và phân quyền tài khoản Kỹ thuật viên / Vận hành viên / Quản trị viên mới",
+                                fontSize = 11.sp,
+                                color = TextSecondary
+                            )
+                        }
+                        Button(
+                            onClick = { showCreateUserDialog = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Tạo User", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                }
+
+                if (showCreateUserDialog) {
+                    CreateUserDialog(
+                        onDismiss = { showCreateUserDialog = false },
+                        onUserCreated = { newUser ->
+                            preferences.saveRegisteredUser(newUser)
+                            Toast.makeText(context, "Đã tạo tài khoản: ${newUser.username} (${newUser.role})", Toast.LENGTH_LONG).show()
+                            showCreateUserDialog = false
+                        }
+                    )
+                }
+            }
+
+            // Online Mode Information Card
+            CyberCard(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFDCFCE7)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Wifi,
+                            contentDescription = null,
+                            tint = Color(0xFF15803D),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Mô phỏng Offline (Demo Simulator)",
-                            style = MaterialTheme.typography.bodyLarge,
+                            text = "CHẾ ĐỘ TRỰC TUYẾN (ONLINE 100%)",
+                            style = MaterialTheme.typography.titleSmall,
                             color = TextPrimary,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Sinh dữ liệu Telemetry liên tục (CPU, RAM, Temp, Quạt, Ticket) độc lập, không phụ thuộc mạng.",
-                            fontSize = 11.sp,
+                            text = "Ứng dụng kết nối trực tiếp đến backend REST API và WebSocket để truyền nhận dữ liệu thời gian thực.",
+                            fontSize = 12.sp,
                             color = TextSecondary
                         )
                     }
-                    Switch(
-                        checked = isDemoMode,
-                        onCheckedChange = {
-                            isDemoMode = it
-                            repository.setDemoMode(it)
-                            Toast.makeText(context, if (it) "Đã bật chế độ Demo Simulator" else "Đã chuyển sang kết nối Live Backend", Toast.LENGTH_SHORT).show()
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = BgDark,
-                            checkedTrackColor = StatusHealthy
-                        )
-                    )
                 }
             }
 
             // Backend Server Configuration
             CyberCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "CẤU HÌNH MÁY CHỦ NESTJS & SOCKET.IO",
+                    text = "CẤU HÌNH MÁY CHỦ BACKEND & SOCKET.IO",
                     style = MaterialTheme.typography.titleSmall,
                     color = TextPrimary,
                     fontWeight = FontWeight.Bold
@@ -172,7 +222,9 @@ fun SettingsScreen(
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary,
                         focusedLabelColor = PrimaryCyan,
-                        unfocusedLabelColor = TextSecondary
+                        unfocusedLabelColor = TextSecondary,
+                        unfocusedContainerColor = SurfaceElevated,
+                        focusedContainerColor = Color.White
                     ),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -186,22 +238,23 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(
-                        "10.0.2.2:3000" to "http://10.0.2.2:3000",
-                        "localhost:3000" to "http://localhost:3000",
-                        "192.168.1.100" to "http://192.168.1.100:3000"
+                        "Vercel Cloud" to "https://ar-imms-monitor.vercel.app",
+                        "10.0.2.2:9999" to "http://10.0.2.2:9999",
+                        "Localhost" to "http://localhost:3000"
                     ).forEach { (label, url) ->
                         Surface(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
                                 .clickable { serverUrl = url },
-                            color = SurfaceDark,
+                            color = SurfaceElevated,
                             border = androidx.compose.foundation.BorderStroke(1.dp, BorderStroke)
                         ) {
                             Text(
                                 text = label,
                                 fontSize = 10.sp,
                                 color = PrimaryCyan,
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
                             )
                         }
@@ -220,7 +273,7 @@ fun SettingsScreen(
                             Toast.makeText(context, "Đã lưu cấu hình Server URL", Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan, contentColor = BgDark),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan, contentColor = Color.White),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text("LƯU CẤU HÌNH", fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -241,8 +294,8 @@ fun SettingsScreen(
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark, contentColor = PrimaryCyan),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.5f)),
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated, contentColor = PrimaryCyan),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.4f)),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         if (isTestingConnection) {
@@ -298,14 +351,137 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SurfaceCard, contentColor = StatusCritical),
-                border = androidx.compose.foundation.BorderStroke(1.dp, StatusCritical.copy(alpha = 0.5f)),
+                colors = ButtonDefaults.buttonColors(containerColor = StatusCriticalBg, contentColor = StatusCritical),
+                border = androidx.compose.foundation.BorderStroke(1.dp, StatusCritical.copy(alpha = 0.4f)),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.Logout, contentDescription = null, tint = StatusCritical)
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = StatusCritical)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("ĐĂNG XUẤT KHỎI HỆ THỐNG", fontWeight = FontWeight.Bold, color = StatusCritical)
             }
         }
     }
+}
+
+@Composable
+fun CreateUserDialog(
+    onDismiss: () -> Unit,
+    onUserCreated: (com.arimms.app.domain.model.User) -> Unit
+) {
+    var fullName by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("123456") }
+    var selectedRole by remember { mutableStateOf(com.arimms.app.domain.model.UserRole.TECHNICIAN) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(Icons.Default.PersonAdd, contentDescription = null, tint = PrimaryCyan)
+                Text("Cấp Tài Khoản Người Dùng Mới", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (errorMessage != null) {
+                    Text(errorMessage ?: "", color = StatusCritical, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+
+                OutlinedTextField(
+                    value = fullName,
+                    onValueChange = { fullName = it },
+                    label = { Text("Họ và Tên") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Tên Đăng Nhập (Username)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email liên kết") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Mật khẩu ban đầu") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text("Vai trò (Phân quyền):", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    com.arimms.app.domain.model.UserRole.values().forEach { role ->
+                        val isSelected = selectedRole == role
+                        Surface(
+                            onClick = { selectedRole = role },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) PrimaryCyan.copy(alpha = 0.15f) else SurfaceElevated,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) PrimaryCyan else BorderStroke),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = role.name,
+                                fontSize = 10.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) PrimaryCyan else TextSecondary,
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (fullName.isBlank() || username.isBlank() || email.isBlank()) {
+                        errorMessage = "Vui lòng điền đủ họ tên, username và email"
+                        return@Button
+                    }
+                    val newUser = User(
+                        id = "usr-${System.currentTimeMillis()}",
+                        username = username.trim(),
+                        email = email.trim(),
+                        fullName = fullName.trim(),
+                        role = selectedRole
+                    )
+                    onUserCreated(newUser)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan)
+            ) {
+                Text("Tạo Tài Khoản", fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Hủy", color = TextSecondary)
+            }
+        },
+        containerColor = SurfaceDark
+    )
 }

@@ -59,6 +59,7 @@ fun StatusBadge(
 
     Row(
         modifier = modifier
+            .wrapContentWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
             .border(1.dp, color.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
@@ -78,7 +79,8 @@ fun StatusBadge(
                 color = color,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
+                fontFamily = FontFamily.SansSerif,
+                maxLines = 1
             )
         }
     }
@@ -89,7 +91,7 @@ fun SeverityBadge(severity: AlertSeverity) {
     val (color, bgColor, text) = when (severity) {
         AlertSeverity.CRITICAL -> Triple(StatusCritical, StatusCriticalBg, "CRITICAL")
         AlertSeverity.WARNING -> Triple(StatusWarning, StatusWarningBg, "WARNING")
-        AlertSeverity.INFO -> Triple(PrimaryCyan, Color(0x2200E5FF), "INFO")
+        AlertSeverity.INFO -> Triple(PrimaryCyan, Color(0xFFE0F2FE), "INFO")
     }
 
     Box(
@@ -104,7 +106,8 @@ fun SeverityBadge(severity: AlertSeverity) {
             color = color,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
+            fontFamily = FontFamily.SansSerif,
+            maxLines = 1
         )
     }
 }
@@ -113,7 +116,7 @@ fun SeverityBadge(severity: AlertSeverity) {
 fun PriorityBadge(priority: TicketPriority) {
     val (color, text) = when (priority) {
         TicketPriority.EMERGENCY -> Pair(StatusCritical, "EMERGENCY")
-        TicketPriority.HIGH -> Pair(Color(0xFFFF6D00), "HIGH")
+        TicketPriority.HIGH -> Pair(Color(0xFFEA580C), "HIGH")
         TicketPriority.MEDIUM -> Pair(StatusWarning, "MEDIUM")
         TicketPriority.LOW -> Pair(PrimaryCyan, "LOW")
     }
@@ -130,7 +133,8 @@ fun PriorityBadge(priority: TicketPriority) {
             color = color,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
+            fontFamily = FontFamily.SansSerif,
+            maxLines = 1
         )
     }
 }
@@ -157,7 +161,8 @@ fun TicketStatusBadge(status: TicketStatus) {
             color = color,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
+            fontFamily = FontFamily.SansSerif,
+            maxLines = 1
         )
     }
 }
@@ -375,7 +380,7 @@ fun SafetyConfirmDialog(
                     color = TextSecondary
                 )
                 Surface(
-                    color = SurfaceDark,
+                    color = SurfaceElevated,
                     shape = RoundedCornerShape(8.dp),
                     border = borderStroke(1.dp, BorderStroke)
                 ) {
@@ -407,7 +412,7 @@ fun SafetyConfirmDialog(
                 enabled = checkAgreed,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isDestructive) StatusCritical else PrimaryCyan,
-                    contentColor = if (isDestructive) Color.White else BgDark
+                    contentColor = Color.White
                 )
             ) {
                 Text(confirmActionText, fontWeight = FontWeight.Bold)

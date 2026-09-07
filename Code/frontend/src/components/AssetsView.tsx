@@ -172,6 +172,32 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
             </button>
           </div>
 
+          {/* Search input */}
+          <div className="flex items-center bg-[#11161b] rounded-xl px-3 py-1.5 border border-[#222c37] focus-within:border-[#38bdf8] transition-colors">
+            <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
+            <input
+              type="text"
+              placeholder={activeTab === 'devices' ? "Tìm thiết bị, model, GUID..." : "Tìm tên tủ, zone, vị trí..."}
+              value={currentSearch}
+              onChange={(e) => {
+                setLocalSearch(e.target.value);
+                if (onSearchChange) onSearchChange(e.target.value);
+              }}
+              className="bg-transparent border-none focus:outline-none text-xs text-slate-200 placeholder-slate-500 w-32 sm:w-44"
+            />
+            {currentSearch && (
+              <button
+                onClick={() => {
+                  setLocalSearch('');
+                  if (onSearchChange) onSearchChange('');
+                }}
+                className="text-slate-500 hover:text-white ml-1 text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
           {activeTab === 'devices' && (
             <div className="flex items-center bg-[#11161b] rounded-xl px-3 py-1.5 border border-[#222c37] hover:border-[#38bdf8] transition-colors">
               <Filter className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />

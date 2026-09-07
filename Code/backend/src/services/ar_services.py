@@ -201,19 +201,50 @@ class UserService(BaseService[UserAccount]):
     def get_by_email(self, email: str) -> Optional[UserAccount]:
         return self.user_repo.get_by_email(email)
 
+    def get_user_by_id_or_email(self, identifier: str) -> Optional[UserAccount]:
+        if not identifier:
+            return None
+        if hasattr(self.user_repo, 'get_by_id_or_email'):
+            return self.user_repo.get_by_id_or_email(identifier)
+        user = self.get_by_id(identifier)
+        if not user:
+            user = self.get_by_email(identifier)
+        return user
+
     def list_pending(self) -> List[UserAccount]:
         return self.user_repo.list_pending()
 
     def approve_user(self, user_id: str, approver_id: str) -> UserAccount:
-        user = self.get_by_id(user_id)
+        user = self.get_user_by_id_or_email(user_id)
         if not user:
             raise ValueError(f"Không tìm thấy người dùng ID: {user_id}")
         user.approve(approver_id)
         return self.update(user)
 
     def lock_user(self, user_id: str) -> UserAccount:
-        user = self.get_by_id(user_id)
+        user = self.get_user_by_id_or_email(user_id)
         if not user:
             raise ValueError(f"Không tìm thấy người dùng ID: {user_id}")
         user.lock()
         return self.update(user)
+
+    def unlock_user(self, user_id: str) -> UserAccount:
+        user = self.get_user_by_id_or_email(user_id)
+        if not user:
+            raise ValueError(f"Không tìm thấy người dùng ID: {user_id}")
+        user.unlock()
+        return self.update(user)
+
+    def update_role(self, user_id: str, new_role: str) -> UserAccount:
+        user = self.get_user_by_id_or_email(user_id)
+        if not user:
+            raise ValueError(f"Không tìm thấy người dùng ID: {user_id}")
+        user.role = new_role
+        return self.update(user)
+
+    def delete_user(self, user_id: str) -> bool:
+        user = self.get_user_by_id_or_email(user_id)
+        if not user:
+            return False
+        return self.delete(user.id)
+

@@ -18,9 +18,24 @@ data class LoginRequest(
     val role: String? = null
 )
 
+data class SignupRequest(
+    val username: String,
+    val email: String,
+    val password: String,
+    val passwordconfirm: String,
+    val role: String? = null,
+    val fullName: String? = null
+)
+
+data class SignupResponse(
+    val username: String? = null,
+    val email: String? = null,
+    val message: String? = null
+)
+
 data class LoginResponse(
     val token: String,
-    val user: UserDto
+    val user: UserDto? = null
 )
 
 data class UserDto(
@@ -91,8 +106,26 @@ data class UpdateTicketRequest(
 )
 
 interface ApiService {
+    @GET("api/users")
+    suspend fun getUsers(): Response<ApiResponse<List<UserDto>>>
+
+    @GET("api/users/{id}")
+    suspend fun getUserById(@Path("id") userId: String): Response<ApiResponse<UserDto>>
+
+    @POST("api/users")
+    suspend fun createUser(@Body user: Map<String, Any>): Response<ApiResponse<UserDto>>
+
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    @POST("auth/login")
+    suspend fun loginFlask(@Body request: LoginRequest): Response<LoginResponse>
+
+    @POST("api/auth/register")
+    suspend fun register(@Body request: SignupRequest): Response<ApiResponse<UserDto>>
+
+    @POST("auth/signup")
+    suspend fun registerFlask(@Body request: SignupRequest): Response<SignupResponse>
 
     @GET("api/nodes")
     suspend fun getNodes(

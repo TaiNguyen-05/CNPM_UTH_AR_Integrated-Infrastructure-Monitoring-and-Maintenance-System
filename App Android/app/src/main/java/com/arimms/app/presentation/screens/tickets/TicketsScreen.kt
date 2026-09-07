@@ -94,7 +94,7 @@ fun TicketsScreen(
                             onClick = { selectedFilter = null },
                             label = { Text("Tất cả (${allTickets.size})") },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PrimaryCyan.copy(alpha = 0.2f),
+                                selectedContainerColor = PrimaryCyan.copy(alpha = 0.15f),
                                 selectedLabelColor = PrimaryCyan,
                                 containerColor = SurfaceCard,
                                 labelColor = TextSecondary
@@ -114,7 +114,7 @@ fun TicketsScreen(
                                 onClick = { selectedFilter = if (selectedFilter == status) null else status },
                                 label = { Text("$label ($count)") },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = PrimaryCyan.copy(alpha = 0.2f),
+                                    selectedContainerColor = PrimaryCyan.copy(alpha = 0.15f),
                                     selectedLabelColor = PrimaryCyan,
                                     containerColor = SurfaceCard,
                                     labelColor = TextSecondary
@@ -142,7 +142,7 @@ fun TicketsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         borderColor = when (ticket.priority) {
                             TicketPriority.EMERGENCY -> StatusCritical.copy(alpha = 0.6f)
-                            TicketPriority.HIGH -> Color(0xFFFF6D00).copy(alpha = 0.5f)
+                            TicketPriority.HIGH -> Color(0xFFEA580C).copy(alpha = 0.5f)
                             else -> BorderStroke
                         },
                         onClick = { onNavigateToTicketDetail(ticket.id) }

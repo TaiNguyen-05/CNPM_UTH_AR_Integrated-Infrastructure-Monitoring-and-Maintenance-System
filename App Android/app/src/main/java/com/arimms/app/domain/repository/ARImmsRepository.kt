@@ -5,7 +5,9 @@ import kotlinx.coroutines.flow.Flow
 
 interface ARImmsRepository {
     // Auth
-    suspend fun login(username: String, role: UserRole): Result<User>
+    suspend fun login(username: String, role: UserRole): Result<User> = login(username, "123456", role)
+    suspend fun login(username: String, password: String, role: UserRole): Result<User>
+    suspend fun register(username: String, email: String, password: String, fullName: String, role: UserRole): Result<User>
     fun getCurrentUser(): User?
     suspend fun logout()
 
@@ -16,6 +18,7 @@ interface ARImmsRepository {
     suspend fun getNodes(rackId: String? = null): Result<List<ServerNode>>
     suspend fun getNodeById(nodeId: String): Result<ServerNode?>
     suspend fun getNodeByMarker(markerCode: String): Result<ServerNode?>
+    suspend fun addNode(node: ServerNode): Result<ServerNode>
 
     // Telemetry & Real-time Stream
     fun streamNodeTelemetry(nodeId: String): Flow<TelemetryMetric>

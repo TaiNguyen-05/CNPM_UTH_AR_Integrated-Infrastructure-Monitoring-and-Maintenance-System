@@ -270,13 +270,13 @@ fun ARScannerScreen(
                 onClick = onNavigateBack,
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(Color(0x880A0E1A))
+                    .background(Color(0xCCFFFFFF))
             ) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
 
             Surface(
-                color = Color(0xCC131B2E),
+                color = Color(0xEEFFFFFF),
                 shape = RoundedCornerShape(20.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.5f))
             ) {
@@ -308,7 +308,7 @@ fun ARScannerScreen(
                 },
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(Color(0x880A0E1A))
+                    .background(Color(0xCCFFFFFF))
             ) {
                 Icon(
                     imageVector = if (isFlashOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
@@ -328,7 +328,7 @@ fun ARScannerScreen(
         ) {
             // Quick Marker Switcher (Enables instant testing on physical device / emulator without printed QR codes)
             Surface(
-                color = Color(0xCC0F172A),
+                color = Color(0xF2FFFFFF),
                 shape = RoundedCornerShape(12.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, BorderStroke)
             ) {
@@ -350,7 +350,7 @@ fun ARScannerScreen(
                                         recognizedMarker = node.markerCode
                                         detectedNode = node
                                     },
-                                color = if (isSelected) PrimaryCyan.copy(alpha = 0.25f) else SurfaceCard,
+                                color = if (isSelected) PrimaryCyan.copy(alpha = 0.15f) else SurfaceElevated,
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
                                     if (isSelected) PrimaryCyan else BorderStroke
@@ -381,7 +381,7 @@ fun ARScannerScreen(
                     val telem = node.currentTelemetry
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        color = Color(0xEE131B2E),
+                        color = Color(0xF8FFFFFF),
                         shape = RoundedCornerShape(18.dp),
                         border = androidx.compose.foundation.BorderStroke(
                             1.5.dp,
@@ -471,7 +471,7 @@ fun ARScannerScreen(
                                     Text("Containers:", fontSize = 10.sp, color = TextSecondary)
                                     node.containers.forEach { container ->
                                         Surface(
-                                            color = if (container.state == ContainerState.RUNNING) Color(0x2200E676) else Color(0x22FF1744),
+                                            color = if (container.state == ContainerState.RUNNING) StatusHealthyBg else StatusCriticalBg,
                                             shape = RoundedCornerShape(4.dp),
                                             border = androidx.compose.foundation.BorderStroke(
                                                 0.5.dp,
@@ -528,7 +528,7 @@ fun ARScannerScreen(
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = PrimaryCyan,
-                                        contentColor = BgDark
+                                        contentColor = Color.White
                                     )
                                 ) {
                                     Text("XEM CHI TIẾT", fontSize = 11.sp, fontWeight = FontWeight.Bold)

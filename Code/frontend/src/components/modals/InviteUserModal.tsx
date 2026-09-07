@@ -10,7 +10,7 @@ interface InviteUserModalProps {
 export const InviteUserModal: React.FC<InviteUserModalProps> = ({ onClose, onInvite }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'Admin' | 'Technician' | 'Viewer'>('Technician');
+  const [role, setRole] = useState<'Admin' | 'Technician'>('Technician');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,9 +86,8 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({ onClose, onInv
               onChange={(e) => setRole(e.target.value as any)}
               className="w-full px-3 py-2 bg-[#161d24] border border-[#222c37] text-white rounded-lg text-sm cursor-pointer focus:border-[#38bdf8]"
             >
-              <option value="Technician" className="bg-[#11161b]">Kỹ thuật viên (Đọc/Cập nhật khu vực phần cứng)</option>
-              <option value="Admin" className="bg-[#11161b]">Quản trị viên (Toàn quyền quản trị CRUD)</option>
-              <option value="Viewer" className="bg-[#11161b]">Người xem (Chỉ xem dữ liệu Telemetry)</option>
+              <option value="Technician" className="bg-[#11161b]">🛠️ Kỹ thuật viên (Đọc/Cập nhật khu vực phần cứng, AR)</option>
+              <option value="Admin" className="bg-[#11161b]">👑 Quản trị viên (Toàn quyền quản trị CRUD & Phân quyền)</option>
             </select>
           </div>
 

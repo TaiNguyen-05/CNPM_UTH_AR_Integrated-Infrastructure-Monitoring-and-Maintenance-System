@@ -45,6 +45,14 @@ class SocketService {
     return this.socket;
   }
 
+  public on(event: string, callback: (...args: any[]) => void): () => void {
+    if (!this.socket) this.connect();
+    this.socket?.on(event, callback);
+    return () => {
+      this.socket?.off(event, callback);
+    };
+  }
+
   public joinRoom(room: string): void {
     if (this.socket && this.socket.connected) {
       this.socket.emit('join_room', { room });

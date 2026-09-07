@@ -178,11 +178,8 @@ class HeartbeatWatchdog:
                         ),
 
                         status="OPEN",
-
-                        # QUAN TRỌNG:
-                        # AlertModel dùng triggered_at,
-                        # KHÔNG dùng created_at / updated_at.
-                        triggered_at=datetime.utcnow()
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
                     )
 
                     session.add(new_alert)
@@ -232,7 +229,7 @@ class HeartbeatWatchdog:
                     )
 
                     # ======================================
-                    # 6. Broadcast Alert mới
+                    # 6. Broadcast Alert mới & Gửi Email Cảnh Báo Kỹ Thuật Viên
                     # ======================================
 
                     if new_alert:
@@ -262,12 +259,33 @@ class HeartbeatWatchdog:
 
                                 "triggered_at":
                                     (
-                                        new_alert.triggered_at.isoformat()
-                                        if new_alert.triggered_at
+                                        new_alert.created_at.isoformat()
+                                        if new_alert.created_at
                                         else None
                                     )
                             }
                         )
+
+                        # Tự động gửi Email thông báo sự cố tới các Kỹ thuật viên (Technicians) đã duyệt
+                        try:
+                            from infrastructure.models.ar_models import UserModel
+                            from services.email_service import email_service
+                            tech_users = session.query(UserModel).filter(
+                                UserModel.role == "TECHNICIAN",
+                                UserModel.status == "APPROVED"
+                            ).all()
+                            tech_emails = [u.email for u in tech_users if u.email]
+                            if tech_emails:
+                                email_service.send_incident_alert(
+                                    node_id=node.id,
+                                    node_name=node.name,
+                                    rack_id=str(node.rack_id) if node.rack_id else "Rack Alpha",
+                                    severity="CRITICAL",
+                                    message=f"Node mất kết nối, không phản hồi Heartbeat quá {self.timeout_seconds}s.",
+                                    recipients=tech_emails
+                                )
+                        except Exception as mail_err:
+                            print(f"[Watchdog] Lỗi khi gửi email cảnh báo: {mail_err}")
 
                     # ======================================
                     # 7. Cập nhật statistics
