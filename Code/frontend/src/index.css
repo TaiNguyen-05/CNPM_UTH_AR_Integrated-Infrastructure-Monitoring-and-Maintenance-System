@@ -164,6 +164,10 @@
   @apply flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold font-mono rounded-xl transition-all cursor-pointer;
 }
 
+.btn-icon {
+  @apply p-1.5 rounded-lg border border-[#222c37] transition-all flex items-center justify-center cursor-pointer;
+}
+
 .btn-tab-active {
   @apply flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-[#38bdf8] text-slate-950 shadow-md cursor-pointer;
 }
@@ -172,7 +176,31 @@
   @apply flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white cursor-pointer;
 }
 
+.tab-wrapper {
+  @apply flex items-center bg-[#11161b] p-1 rounded-xl border border-[#222c37];
+}
+
 /* Khung giao diện (Surfaces) */
+.bg-app {
+  @apply bg-[#080b0e] text-slate-100;
+}
+
+.page-container {
+  @apply flex-1 overflow-y-auto p-4 lg:p-6 space-y-5 bg-[#080b0e] text-slate-100;
+}
+
+.max-container {
+  @apply p-4 md:p-6 max-w-[1600px] mx-auto flex flex-col gap-6 text-slate-100;
+}
+
+.card-base {
+  @apply bg-[#0c1015] border border-[#222c37] rounded-2xl overflow-hidden shadow-lg p-4 flex flex-col justify-between relative;
+}
+
+.card-glass {
+  @apply rounded-2xl overflow-hidden flex flex-col;
+}
+
 .card-surface {
   @apply bg-[#0c1015] border border-[#222c37] rounded-2xl overflow-hidden shadow-lg;
 }
@@ -185,7 +213,32 @@
   @apply bg-[#11161b] p-3 rounded-xl border border-[#222c37];
 }
 
+.panel-dark {
+  @apply bg-[#161d24] border border-[#222c37];
+}
+
+/* Tiêu đề & Header */
+.view-header {
+  @apply flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#222c37] pb-5;
+}
+
+.view-title {
+  @apply text-xl lg:text-2xl font-black text-white tracking-tight flex items-center gap-2;
+}
+
+.view-subtitle {
+  @apply text-xs text-slate-400 mt-1;
+}
+
+.section-title {
+  @apply text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2;
+}
+
 /* Nhãn trạng thái (Badges & Roles) */
+.badge-pill {
+  @apply px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider uppercase bg-sky-500/10 text-sky-400 border border-sky-500/20;
+}
+
 .badge-admin {
   @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold border font-mono bg-indigo-500/20 text-indigo-300 border-indigo-500/30;
 }
@@ -206,12 +259,83 @@
   @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold font-mono bg-rose-500/10 text-rose-300 border border-rose-500/20;
 }
 
+.badge-neutral {
+  @apply inline-flex items-center gap-1 text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md text-[10px] font-bold font-mono;
+}
+
 /* Ô nhập liệu (Forms) */
 .input-dark {
   @apply bg-[#11161b] border border-[#222c37] text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#38bdf8] font-mono outline-none;
 }
 
+.input-search {
+  @apply bg-[#11161b] border border-[#222c37] text-slate-200 text-xs rounded-xl pl-8 pr-3 py-1.5 focus:outline-none focus:border-[#38bdf8] font-mono outline-none;
+}
+
 .select-dark {
   @apply bg-[#11161b] border border-[#222c37] text-slate-300 text-xs rounded-xl px-3 py-2 pr-8 appearance-none focus:outline-none focus:border-[#38bdf8] cursor-pointer outline-none;
 }
+
+.search-wrapper {
+  @apply flex items-center bg-[#11161b] rounded-xl px-3 py-1.5 border border-[#222c37] focus-within:border-[#38bdf8] transition-colors;
+}
+
+/* Bảng dữ liệu (Tables) */
+.table-wrapper {
+  @apply overflow-x-auto;
+}
+
+.table-main {
+  @apply w-full text-left border-collapse;
+}
+
+.table-head-tr {
+  @apply border-b border-[#222c37] bg-[#0c1015] text-[11px] text-slate-400 font-mono uppercase;
+}
+
+.table-body {
+  @apply text-xs divide-y divide-[#1e2733];
+}
+
+.table-row {
+  @apply hover:bg-[#161d24] transition-colors;
+}
+
+.table-cell {
+  @apply p-3;
+}
+
+/* Chỉ số KPI */
+.kpi-label {
+  @apply text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono;
+}
+
+.kpi-value {
+  @apply text-2xl lg:text-3xl font-black text-white font-mono;
+}
+
+.kpi-icon-success {
+  @apply p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+}
+
+.kpi-icon-info {
+  @apply p-2 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20;
+}
+
+.kpi-icon-danger {
+  @apply p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20;
+}
+
+.kpi-tag-success {
+  @apply text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono;
+}
+
+.kpi-tag-info {
+  @apply text-xs font-semibold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md font-mono;
+}
+
+.kpi-tag-danger {
+  @apply text-xs font-semibold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md font-mono;
+}
+
 
