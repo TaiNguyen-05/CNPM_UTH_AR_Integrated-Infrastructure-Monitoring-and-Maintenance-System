@@ -210,21 +210,62 @@ export const AuthView: React.FC<AuthViewProps> = ({
     await processGoogleAccount(cleanEmail, cleanName);
   };
 
-  // Trigger Google Login
+  // Trigger Google Login (Mở cửa sổ chọn tài khoản Google chính thức)
   const handleTriggerGoogleLogin = () => {
     setGoogleNotice(null);
     try {
       const g = (window as any).google;
+      if (g && g.accounts && g.accounts.oauth2) {
+        const client = g.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'email profile openid',
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              try {
+                setIsLoading(true);
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                });
+                const profile = await res.json();
+                if (profile && profile.email) {
+                  await processGoogleAccount(
+                    profile.email.toLowerCase(),
+                    profile.name || profile.given_name || profile.email.split('@')[0],
+                    profile.picture
+                  );
+                }
+              } catch (err) {
+                console.error('Lỗi lấy thông tin Google profile:', err);
+                setShowGoogleModal(true);
+              } finally {
+                setIsLoading(false);
+              }
+            }
+          },
+          error_callback: (err: any) => {
+            console.warn('OAuth popup error/closed:', err);
+            if (err?.type === 'popup_closed' || err?.type === 'popup_blocked_by_browser') {
+              setShowGoogleModal(true);
+            }
+          }
+        });
+        client.requestAccessToken({ prompt: 'select_account' });
+        return;
+      }
+      
+      // Fallback One-Tap nếu oauth2 chưa sẵn sàng
       if (g && g.accounts && g.accounts.id) {
         g.accounts.id.prompt((notification: any) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
             setShowGoogleModal(true);
           }
         });
-      } else {
-        setShowGoogleModal(true);
+        return;
       }
+
+      setShowGoogleModal(true);
     } catch (err) {
+      console.warn('Lỗi kích hoạt Google OAuth:', err);
       setShowGoogleModal(true);
     }
   };
