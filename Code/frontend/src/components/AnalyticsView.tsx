@@ -19,18 +19,20 @@ interface AnalyticsViewProps {
   assets: AssetItem[];
 }
 
-export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ racks, assets }) => {
+export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ racks = [], assets = [] }) => {
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
   const [selectedRackId, setSelectedRackId] = useState<string>('all');
 
   // Calculate dynamic capacity metrics based on live racks and assets
-  const totalSlots = racks.length * 42;
+  const safeRacks = racks || [];
+  const safeAssets = assets || [];
+  const totalSlots = safeRacks.length * 42;
   const totalOccupiedUnits = useMemo(() => {
-    if (assets && assets.length > 0) {
-      return assets.length;
+    if (safeAssets && safeAssets.length > 0) {
+      return safeAssets.length;
     }
-    return racks.reduce((acc, rack) => acc + (rack.units?.length || 0), 0);
-  }, [racks, assets]);
+    return safeRacks.reduce((acc, rack) => acc + (rack.units?.length || 0), 0);
+  }, [safeRacks, safeAssets]);
 
   const spaceUtilizationPercent = totalSlots > 0 ? ((totalOccupiedUnits / totalSlots) * 100).toFixed(1) : '0';
 
