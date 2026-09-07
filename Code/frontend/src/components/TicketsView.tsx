@@ -1,30 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Wrench, 
   CheckCircle2, 
   Clock, 
-  AlertTriangle, 
   User, 
   PlusCircle, 
   Search, 
-  Filter, 
   Check, 
   X, 
   QrCode, 
   Layers, 
-  Cpu, 
   ShieldAlert, 
-  ChevronRight, 
-  MessageSquare, 
   Activity, 
   PlayCircle, 
   Archive, 
-  RotateCcw,
-  Sparkles,
-  Zap,
-  Server
+  Sparkles, 
+  Server 
 } from 'lucide-react';
-import { TicketItem, TicketStatus, TicketPriority, ARActionLog, UserItem } from '../types';
+import { TicketItem, TicketStatus, TicketPriority, UserItem } from '../types';
+import { UI_STYLES, cn } from '../styles/theme';
 
 interface TicketsViewProps {
   tickets: TicketItem[];
@@ -86,27 +80,31 @@ export const TicketsView: React.FC<TicketsViewProps> = ({
 
   // KPIs
   const totalCount = tickets.length;
-  const inProgressCount = tickets.filter(t => t.status === 'IN_PROGRESS' || t.status === 'ASSIGNED').length;
-  const resolvedCount = tickets.filter(t => t.status === 'RESOLVED').length;
-  const closedCount = tickets.filter(t => t.status === 'CLOSED').length;
-  const criticalCount = tickets.filter(t => t.priority === 'CRITICAL' && t.status !== 'CLOSED').length;
+  const inProgressCount = useMemo(() => tickets.filter(t => t.status === 'IN_PROGRESS' || t.status === 'ASSIGNED').length, [tickets]);
+  const resolvedCount = useMemo(() => tickets.filter(t => t.status === 'RESOLVED').length, [tickets]);
+  const closedCount = useMemo(() => tickets.filter(t => t.status === 'CLOSED').length, [tickets]);
+  const criticalCount = useMemo(() => tickets.filter(t => t.priority === 'CRITICAL' && t.status !== 'CLOSED').length, [tickets]);
 
-  const filteredTickets = tickets.filter(t => {
-    if (filterStatus !== 'ALL' && t.status !== filterStatus) return false;
-    if (filterPriority !== 'ALL' && t.priority !== filterPriority) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return (
-        t.title.toLowerCase().includes(q) ||
-        t.id.toLowerCase().includes(q) ||
-        (t.serverNodeName && t.serverNodeName.toLowerCase().includes(q)) ||
-        (t.assignedTechnicianName && t.assignedTechnicianName.toLowerCase().includes(q))
-      );
-    }
-    return true;
-  });
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(t => {
+      if (filterStatus !== 'ALL' && t.status !== filterStatus) return false;
+      if (filterPriority !== 'ALL' && t.priority !== filterPriority) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return (
+          t.title.toLowerCase().includes(q) ||
+          t.id.toLowerCase().includes(q) ||
+          (t.serverNodeName && t.serverNodeName.toLowerCase().includes(q)) ||
+          (t.assignedTechnicianName && t.assignedTechnicianName.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    });
+  }, [tickets, filterStatus, filterPriority, searchQuery]);
 
-  const selectedTicket = tickets.find(t => t.id === selectedTicketId) || filteredTickets[0] || tickets[0] || null;
+  const selectedTicket = useMemo(() => {
+    return tickets.find(t => t.id === selectedTicketId) || filteredTickets[0] || tickets[0] || null;
+  }, [tickets, selectedTicketId, filteredTickets]);
 
   const getStatusBadge = (status: TicketStatus) => {
     switch (status) {

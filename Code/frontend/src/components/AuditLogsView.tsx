@@ -1,22 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
-  FileText, 
   Download, 
   Filter, 
-  Search, 
-  CheckCircle2, 
-  AlertCircle, 
   Bot, 
-  User, 
-  ChevronLeft, 
-  ChevronRight,
-  Code,
-  Shield,
-  Eye,
-  Check,
-  Activity
+  Code, 
+  Check, 
+  Activity 
 } from 'lucide-react';
 import { AuditLogItem } from '../types';
+import { UI_STYLES, cn } from '../styles/theme';
 
 interface AuditLogsViewProps {
   logs: AuditLogItem[];
@@ -33,19 +25,20 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('All Statuses');
   const [selectedLogForJson, setSelectedLogForJson] = useState<AuditLogItem | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
-  const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const filteredLogs = logs.filter(log => {
-    const matchesAction = actionFilter === 'All Actions' || log.action.toLowerCase().includes(actionFilter.toLowerCase());
-    const matchesStatus = statusFilter === 'All Statuses' || log.status === statusFilter;
-    const matchesSearch = !searchQuery ||
-      log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (log.target && log.target.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      log.ipAddress.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      const matchesAction = actionFilter === 'All Actions' || log.action.toLowerCase().includes(actionFilter.toLowerCase());
+      const matchesStatus = statusFilter === 'All Statuses' || log.status === statusFilter;
+      const matchesSearch = !searchQuery ||
+        log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (log.target && log.target.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        log.ipAddress.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesAction && matchesStatus && matchesSearch;
-  });
+      return matchesAction && matchesStatus && matchesSearch;
+    });
+  }, [logs, actionFilter, statusFilter, searchQuery]);
 
   const handleExportCSV = () => {
     const headers = ['ID', 'Timestamp', 'User', 'Action', 'Target', 'IP Address', 'Status'];

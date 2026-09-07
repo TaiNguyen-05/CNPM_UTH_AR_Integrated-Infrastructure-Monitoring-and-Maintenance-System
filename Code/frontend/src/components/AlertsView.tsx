@@ -1,25 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   AlertTriangle, 
   CheckCircle2, 
   MapPin, 
   User, 
-  Clock, 
   Wrench, 
-  ShieldAlert, 
   PlusCircle, 
   Check, 
   ExternalLink, 
   ArrowUp, 
-  Layers, 
-  Activity,
-  Box,
-  Share2,
-  Cpu,
-  Flame
+  Activity, 
+  Box 
 } from 'lucide-react';
 import { AlertItem } from '../types';
 import { MOCK_RACK_ISOMETRIC } from '../data/mockData';
+import { UI_STYLES, cn } from '../styles/theme';
 
 interface AlertsViewProps {
   alerts: AlertItem[];
@@ -47,7 +42,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
   const [selectedAlertId, setSelectedAlertId] = useState<string>(alerts[0]?.id || 'alt-1');
   const [filterMode, setFilterMode] = useState<'all' | 'critical' | 'unacknowledged'>('all');
 
-  const fallbackAlert: AlertItem = {
+  const fallbackAlert: AlertItem = useMemo(() => ({
     id: 'alt-default',
     alertCode: 'ALT-SYS-01',
     severity: 'Info',
@@ -70,21 +65,25 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
       tempTrend: [30, 31, 32, 32.5]
     },
     maintenanceLogs: []
-  };
+  }), []);
 
-  const selectedAlert = (alerts && alerts.length > 0)
-    ? (alerts.find(a => a.id === selectedAlertId) || alerts[0] || fallbackAlert)
-    : fallbackAlert;
+  const selectedAlert = useMemo(() => {
+    return (alerts && alerts.length > 0)
+      ? (alerts.find(a => a.id === selectedAlertId) || alerts[0] || fallbackAlert)
+      : fallbackAlert;
+  }, [alerts, selectedAlertId, fallbackAlert]);
 
-  const criticalCount = alerts.filter(a => a.severity === 'Critical' && !a.resolved).length;
-  const warningCount = alerts.filter(a => a.severity === 'Warning' && !a.resolved).length;
+  const criticalCount = useMemo(() => alerts.filter(a => a.severity === 'Critical' && !a.resolved).length, [alerts]);
+  const warningCount = useMemo(() => alerts.filter(a => a.severity === 'Warning' && !a.resolved).length, [alerts]);
 
-  const filteredAlerts = alerts.filter(a => {
-    if (a.resolved) return false;
-    if (filterMode === 'critical') return a.severity === 'Critical';
-    if (filterMode === 'unacknowledged') return !a.acknowledged;
-    return true;
-  });
+  const filteredAlerts = useMemo(() => {
+    return alerts.filter(a => {
+      if (a.resolved) return false;
+      if (filterMode === 'critical') return a.severity === 'Critical';
+      if (filterMode === 'unacknowledged') return !a.acknowledged;
+      return true;
+    });
+  }, [alerts, filterMode]);
 
   return (
     <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-4rem)] overflow-hidden bg-[#090d16] text-slate-100">

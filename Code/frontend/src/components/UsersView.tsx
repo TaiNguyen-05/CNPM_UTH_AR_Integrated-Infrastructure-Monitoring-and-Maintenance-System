@@ -1,33 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Users, 
   UserCheck, 
   ShieldAlert, 
-  Search, 
   Filter, 
-  Plus, 
   Lock, 
   Unlock, 
   Check, 
   X, 
-  MoreVertical, 
   Shield, 
-  ExternalLink,
   Clock,
-  Eye,
-  Settings,
   UserPlus,
   Edit,
   Trash2,
-  CheckCircle2,
-  XCircle,
-  KeyRound,
-  Mail,
-  AlertTriangle,
-  LogIn
+  CheckCircle2, 
+  XCircle, 
+  KeyRound, 
+  Mail, 
+  AlertTriangle, 
+  LogIn 
 } from 'lucide-react';
 import { arImmsApi } from '../services/api';
 import { UserItem } from '../types';
+import { UI_STYLES, cn } from '../styles/theme';
+import { UiKpiCard, UiSearchInput } from './common';
 
 interface UsersViewProps {
   users: UserItem[];
@@ -86,18 +82,20 @@ export const UsersView: React.FC<UsersViewProps> = ({
     }
   };
 
-  const pendingCount = users.filter(u => u.status === 'Pending').length;
-  const lockedCount = users.filter(u => u.status === 'Locked').length;
-  const activeCount = users.filter(u => u.status === 'Active').length;
+  const pendingCount = useMemo(() => users.filter(u => u.status === 'Pending').length, [users]);
+  const lockedCount = useMemo(() => users.filter(u => u.status === 'Locked').length, [users]);
+  const activeCount = useMemo(() => users.filter(u => u.status === 'Active').length, [users]);
 
-  const filteredUsers = users.filter(user => {
-    const matchesRole = roleFilter === 'All Roles' || user.role === roleFilter;
-    const matchesSearch = !searchQuery || 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.userId.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesRole && matchesSearch;
-  });
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const matchesRole = roleFilter === 'All Roles' || user.role === roleFilter;
+      const matchesSearch = !searchQuery || 
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.userId.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesRole && matchesSearch;
+    });
+  }, [users, roleFilter, searchQuery]);
 
   const rbacPermissions = [
     { module: 'Digital Twin & 3D WebGL', desc: 'Xem mô hình 3D, nhiệt độ, telemetry thời gian thực', admin: true, tech: true },
@@ -110,44 +108,36 @@ export const UsersView: React.FC<UsersViewProps> = ({
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5 bg-[#080b0e] text-slate-100">
+    <div className={UI_STYLES.surfaces.pageContainer}>
       {/* Top Banner / Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#222c37] pb-5">
+      <div className={UI_STYLES.headers.viewHeader}>
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <h1 className={UI_STYLES.headers.title}>
               Quản Lý Người Dùng & Phân Quyền (RBAC)
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider uppercase bg-sky-500/10 text-sky-400 border border-sky-500/20">
+            <span className={UI_STYLES.badges.pill}>
               Access Control
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className={UI_STYLES.headers.subtitle}>
             Quản trị danh sách nhân sự (Admin & Technician), phân vai trò và phê duyệt quyền truy cập hệ thống.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Tab buttons */}
-          <div className="flex items-center bg-[#11161b] p-1 rounded-xl border border-[#222c37]">
+          <div className={UI_STYLES.buttons.tabWrapper}>
             <button
               onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'users'
-                  ? 'bg-[#38bdf8] text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={activeTab === 'users' ? UI_STYLES.buttons.tabActive : UI_STYLES.buttons.tabInactive}
             >
               <Users className="w-3.5 h-3.5" />
               Người Dùng ({users.length})
             </button>
             <button
               onClick={() => setActiveTab('rbac-matrix')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'rbac-matrix'
-                  ? 'bg-[#38bdf8] text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={activeTab === 'rbac-matrix' ? UI_STYLES.buttons.tabActive : UI_STYLES.buttons.tabInactive}
             >
               <KeyRound className="w-3.5 h-3.5" />
               Ma Trận Quyền Hạn
@@ -159,7 +149,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-[#11161b] border border-[#222c37] text-slate-300 text-xs rounded-xl px-3 py-2 pr-8 appearance-none focus:outline-none focus:border-[#38bdf8]"
+              className={UI_STYLES.forms.select}
             >
               <option value="All Roles">Tất cả vai trò</option>
               <option value="Admin">👑 Admin</option>
@@ -172,7 +162,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
           <button
             onClick={handleTestSendEmail}
             disabled={isSendingEmail}
-            className="flex items-center gap-1.5 bg-[#11161b] hover:bg-[#1a222a] text-slate-300 hover:text-white text-xs font-bold px-3 py-2 rounded-xl border border-[#222c37] transition-all disabled:opacity-50"
+            className={UI_STYLES.buttons.secondary}
             title="Gửi email cảnh báo thử nghiệm tới quản trị viên"
           >
             <Mail className="w-3.5 h-3.5 text-amber-400" />
@@ -188,7 +178,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
               }
               onInviteUser();
             }}
-            className="flex items-center gap-1.5 bg-[#38bdf8] hover:bg-[#0284c7] text-slate-950 text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md"
+            className={UI_STYLES.buttons.primary}
           >
             <UserPlus className="w-3.5 h-3.5" />
             Thêm / Mời Người Dùng
@@ -215,7 +205,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
           {onRequireLogin && (
             <button
               onClick={onRequireLogin}
-              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all font-mono"
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all font-mono cursor-pointer"
             >
               <LogIn className="w-3.5 h-3.5" /> Đăng Nhập Hệ Thống
             </button>
@@ -261,90 +251,63 @@ export const UsersView: React.FC<UsersViewProps> = ({
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-[#0c1015] border border-[#222c37] p-4 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-md">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">Nhân Sự Hoạt Động</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <UserCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl lg:text-3xl font-black text-white font-mono">{activeCount}</span>
-            <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono">
-              Đã xác thực
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-[#0c1015] border border-[#222c37] p-4 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-md">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">Yêu Cầu Chờ Duyệt</span>
-            <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl lg:text-3xl font-black text-white font-mono">{pendingCount}</span>
-            <span className="text-xs font-semibold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md font-mono">
-              Chờ phê duyệt
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-[#0c1015] border border-[#222c37] p-4 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-md">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">Tài Khoản Đã Khóa</span>
-            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              <ShieldAlert className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl lg:text-3xl font-black text-white font-mono">{lockedCount}</span>
-            <span className="text-xs font-semibold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md font-mono">
-              Vô hiệu hóa
-            </span>
-          </div>
-        </div>
+        <UiKpiCard
+          label="Nhân Sự Hoạt Động"
+          value={activeCount}
+          tagText="Đã xác thực"
+          variant="success"
+          icon={<UserCheck className="w-4 h-4" />}
+        />
+        <UiKpiCard
+          label="Yêu Cầu Chờ Duyệt"
+          value={pendingCount}
+          tagText="Chờ phê duyệt"
+          variant="info"
+          icon={<Clock className="w-4 h-4" />}
+        />
+        <UiKpiCard
+          label="Tài Khoản Đã Khóa"
+          value={lockedCount}
+          tagText="Vô hiệu hóa"
+          variant="danger"
+          icon={<ShieldAlert className="w-4 h-4" />}
+        />
       </div>
 
       {/* Main Content Area */}
       {activeTab === 'users' ? (
-        <div className="bg-[#0c1015] border border-[#222c37] rounded-2xl overflow-hidden flex flex-col shadow-lg">
-          <div className="px-5 py-3.5 border-b border-[#222c37] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#11161b]">
-            <h2 className="text-xs font-bold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
+        <div className={UI_STYLES.surfaces.cardSurface}>
+          <div className={UI_STYLES.headers.cardHeader}>
+            <h2 className={UI_STYLES.headers.sectionTitle}>
               <Shield className="w-4 h-4 text-[#38bdf8]" />
               Danh Sách Người Dùng & Phân Quyền
             </h2>
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm người dùng..."
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="bg-[#161d24] border border-[#222c37] text-xs text-slate-200 rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:border-[#38bdf8] w-48 sm:w-60 font-mono"
-                />
-                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+              <UiSearchInput
+                placeholder="Tìm kiếm người dùng..."
+                value={searchQuery}
+                onChange={onSearchChange}
+                inputClassName="w-48 sm:w-60"
+              />
               <span className="text-xs text-slate-400 font-mono bg-[#161d24] px-2.5 py-1 rounded-lg border border-[#222c37]">
                 {filteredUsers.length} Users
               </span>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className={UI_STYLES.tables.wrapper}>
+            <table className={UI_STYLES.tables.table}>
               <thead>
-                <tr className="border-b border-[#222c37] bg-[#0c1015] text-[11px] text-slate-400 font-mono uppercase">
-                  <th className="p-3">Họ và Tên</th>
-                  <th className="p-3">Email Liên Hệ</th>
-                  <th className="p-3">Vai Trò (Role)</th>
-                  <th className="p-3">Trạng Thái</th>
-                  <th className="p-3">Đăng Nhập Gần Nhất</th>
-                  <th className="p-3 text-right">Thao Tác Quản Trị</th>
+                <tr className={UI_STYLES.tables.headTr}>
+                  <th className={UI_STYLES.tables.cell}>Họ và Tên</th>
+                  <th className={UI_STYLES.tables.cell}>Email Liên Hệ</th>
+                  <th className={UI_STYLES.tables.cell}>Vai Trò (Role)</th>
+                  <th className={UI_STYLES.tables.cell}>Trạng Thái</th>
+                  <th className={UI_STYLES.tables.cell}>Đăng Nhập Gần Nhất</th>
+                  <th className={cn(UI_STYLES.tables.cell, "text-right")}>Thao Tác Quản Trị</th>
                 </tr>
               </thead>
-              <tbody className="text-xs divide-y divide-[#1e2733]">
+              <tbody className={UI_STYLES.tables.body}>
                 {filteredUsers.map((user) => {
                   const isPending = user.status === 'Pending';
                   const isLocked = user.status === 'Locked';
@@ -352,7 +315,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
                   const isTechnician = user.role === 'Technician';
 
                   return (
-                    <tr key={user.id} className="hover:bg-[#161d24] transition-colors">
+                    <tr key={user.id} className={UI_STYLES.tables.row}>
                       <td className="p-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 font-mono">
@@ -486,9 +449,9 @@ export const UsersView: React.FC<UsersViewProps> = ({
         </div>
       ) : (
         /* RBAC Permission Matrix */
-        <div className="bg-[#0c1015] border border-[#222c37] rounded-2xl overflow-hidden flex flex-col shadow-lg">
-          <div className="px-5 py-3.5 border-b border-[#222c37] flex justify-between items-center bg-[#11161b]">
-            <h2 className="text-xs font-bold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
+        <div className={UI_STYLES.surfaces.cardSurface}>
+          <div className={UI_STYLES.headers.cardHeader}>
+            <h2 className={UI_STYLES.headers.sectionTitle}>
               <KeyRound className="w-4 h-4 text-[#38bdf8]" />
               Ma Trận Phân Quyền Vai Trò (Role-Based Access Control)
             </h2>
@@ -501,21 +464,21 @@ export const UsersView: React.FC<UsersViewProps> = ({
           </div>
 
           <div className="overflow-x-auto p-4">
-            <table className="w-full text-left border-collapse">
+            <table className={UI_STYLES.tables.table}>
               <thead>
                 <tr className="border-b border-[#222c37] text-[11px] font-bold text-slate-400 bg-[#11161b]">
-                  <th className="p-3">Tính Năng / Phân Hệ</th>
-                  <th className="p-3">Mô Tả Quyền Hạn</th>
-                  <th className="p-3 text-center">Admin (Quản Trị)</th>
-                  <th className="p-3 text-center">Technician (Kỹ Thuật)</th>
+                  <th className={UI_STYLES.tables.cell}>Tính Năng / Phân Hệ</th>
+                  <th className={UI_STYLES.tables.cell}>Mô Tả Quyền Hạn</th>
+                  <th className={cn(UI_STYLES.tables.cell, "text-center")}>Admin (Quản Trị)</th>
+                  <th className={cn(UI_STYLES.tables.cell, "text-center")}>Technician (Kỹ Thuật)</th>
                 </tr>
               </thead>
-              <tbody className="text-xs divide-y divide-[#1e2733]">
+              <tbody className={UI_STYLES.tables.body}>
                 {rbacPermissions.map((perm, idx) => (
-                  <tr key={idx} className="hover:bg-[#161d24] transition-colors">
-                    <td className="p-3 font-bold text-white font-mono">{perm.module}</td>
-                    <td className="p-3 text-slate-400">{perm.desc}</td>
-                    <td className="p-3 text-center">
+                  <tr key={idx} className={UI_STYLES.tables.row}>
+                    <td className={cn(UI_STYLES.tables.cell, "font-bold text-white font-mono")}>{perm.module}</td>
+                    <td className={cn(UI_STYLES.tables.cell, "text-slate-400")}>{perm.desc}</td>
+                    <td className={cn(UI_STYLES.tables.cell, "text-center")}>
                       {perm.admin ? (
                         <span className="inline-flex items-center gap-1 text-emerald-400 font-bold font-mono text-[11px]">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Toàn quyền
@@ -524,7 +487,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
                         <XCircle className="w-4 h-4 text-slate-600 inline" />
                       )}
                     </td>
-                    <td className="p-3 text-center">
+                    <td className={cn(UI_STYLES.tables.cell, "text-center")}>
                       {perm.tech ? (
                         <span className="inline-flex items-center gap-1 text-sky-400 font-bold font-mono text-[11px]">
                           <CheckCircle2 className="w-4 h-4 text-sky-400" /> Đọc & Ghi

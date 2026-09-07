@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { 
   TrendingUp, 
   Zap, 
-  PieChart, 
   BarChart3, 
   Download, 
   Calendar, 
@@ -10,13 +9,10 @@ import {
   Server, 
   Layers, 
   CheckCircle2, 
-  AlertCircle, 
-  Thermometer, 
-  Cpu, 
-  HardDrive,
-  Printer
+  AlertCircle 
 } from 'lucide-react';
 import { Rack, AssetItem } from '../types';
+import { UI_STYLES, cn } from '../styles/theme';
 
 interface AnalyticsViewProps {
   racks: Rack[];

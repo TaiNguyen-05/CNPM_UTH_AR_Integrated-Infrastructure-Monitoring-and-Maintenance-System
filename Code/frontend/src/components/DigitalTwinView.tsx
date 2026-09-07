@@ -10,18 +10,16 @@ import {
   X,
   Flame,
   Activity,
-  ShieldCheck,
   HardDrive,
-  Wifi,
   Fan,
   QrCode,
   Copy,
   Check,
-  ExternalLink,
   AlertTriangle
 } from 'lucide-react';
 import { Rack, RackUnit } from '../types';
 import { RackElevationView } from './RackElevationView';
+import { UI_STYLES, cn } from '../styles/theme';
 
 interface DigitalTwinViewProps {
   racks: Rack[];

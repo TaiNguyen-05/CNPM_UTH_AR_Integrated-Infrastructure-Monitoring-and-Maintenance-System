@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
@@ -6,23 +6,21 @@ import {
   Eye, 
   Printer, 
   Edit, 
-  Trash2,
+  Trash2, 
   Download, 
   QrCode, 
   CheckCircle2, 
   AlertCircle, 
   Clock, 
-  ShieldCheck,
-  Check,
-  Server,
-  Sparkles,
-  Cpu,
-  Layers,
-  Activity,
-  Zap,
-  Thermometer
+  Check, 
+  Server, 
+  Layers, 
+  Activity, 
+  Zap, 
+  Thermometer 
 } from 'lucide-react';
 import { AssetItem, Rack } from '../types';
+import { UI_STYLES, cn } from '../styles/theme';
 
 interface AssetsViewProps {
   assets: AssetItem[];
@@ -64,26 +62,32 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
   const [localSearch, setLocalSearch] = useState<string>('');
 
   const currentSearch = searchQuery || localSearch;
-  const selectedAsset = assets.find(a => a.id === selectedAssetId) || assets[0];
+  const selectedAsset = useMemo(() => {
+    return assets.find(a => a.id === selectedAssetId) || assets[0];
+  }, [assets, selectedAssetId]);
 
-  const filteredAssets = assets.filter(a => {
-    const matchesRack = selectedRackFilter === 'All Racks' || a.rack === selectedRackFilter || a.uPosition.includes(selectedRackFilter);
-    const q = currentSearch.toLowerCase();
-    const matchesSearch = !q || 
-      (a.name && a.name.toLowerCase().includes(q)) ||
-      (a.model && a.model.toLowerCase().includes(q)) ||
-      (a.guid && a.guid.toLowerCase().includes(q)) ||
-      (a.serialNumber && a.serialNumber.toLowerCase().includes(q));
-    return matchesRack && matchesSearch;
-  });
+  const filteredAssets = useMemo(() => {
+    return assets.filter(a => {
+      const matchesRack = selectedRackFilter === 'All Racks' || a.rack === selectedRackFilter || a.uPosition.includes(selectedRackFilter);
+      const q = currentSearch.toLowerCase();
+      const matchesSearch = !q || 
+        (a.name && a.name.toLowerCase().includes(q)) ||
+        (a.model && a.model.toLowerCase().includes(q)) ||
+        (a.guid && a.guid.toLowerCase().includes(q)) ||
+        (a.serialNumber && a.serialNumber.toLowerCase().includes(q));
+      return matchesRack && matchesSearch;
+    });
+  }, [assets, selectedRackFilter, currentSearch]);
 
-  const filteredRacks = racks.filter(r => {
-    const q = currentSearch.toLowerCase();
-    return !q || 
-      r.name.toLowerCase().includes(q) || 
-      (r.zone && r.zone.toLowerCase().includes(q)) ||
-      (r.location && r.location.toLowerCase().includes(q));
-  });
+  const filteredRacks = useMemo(() => {
+    return racks.filter(r => {
+      const q = currentSearch.toLowerCase();
+      return !q || 
+        r.name.toLowerCase().includes(q) || 
+        (r.zone && r.zone.toLowerCase().includes(q)) ||
+        (r.location && r.location.toLowerCase().includes(q));
+    });
+  }, [racks, currentSearch]);
 
   const handleDownloadSVG = () => {
     if (!selectedAsset) return;
@@ -147,13 +151,11 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
         {/* Tab switcher & Actions */}
         <div className="w-full md:w-auto flex flex-wrap items-center gap-3">
           {/* Sub-tab Switcher */}
-          <div className="flex bg-[#11161b] p-1 rounded-xl border border-[#222c37]">
+          <div className={UI_STYLES.buttons.tabWrapper}>
             <button
               onClick={() => setActiveTab('devices')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'devices'
-                  ? 'bg-[#38bdf8] text-[#080b0e] shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                activeTab === 'devices' ? UI_STYLES.buttons.tabActive : UI_STYLES.buttons.tabInactive
               }`}
             >
               <Server className="w-3.5 h-3.5" />
@@ -162,9 +164,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
             <button
               onClick={() => setActiveTab('racks')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'racks'
-                  ? 'bg-[#38bdf8] text-[#080b0e] shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                activeTab === 'racks' ? UI_STYLES.buttons.tabActive : UI_STYLES.buttons.tabInactive
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -173,7 +173,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
           </div>
 
           {/* Search input */}
-          <div className="flex items-center bg-[#11161b] rounded-xl px-3 py-1.5 border border-[#222c37] focus-within:border-[#38bdf8] transition-colors">
+          <div className={UI_STYLES.forms.searchWrapper}>
             <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
             <input
               type="text"
@@ -204,7 +204,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
               <select
                 value={selectedRackFilter}
                 onChange={(e) => setSelectedRackFilter(e.target.value)}
-                className="bg-transparent border-none focus:outline-none text-xs font-semibold text-slate-200 cursor-pointer outline-none"
+                className={UI_STYLES.forms.select}
               >
                 <option value="All Racks" className="bg-[#11161b]">Tất cả tủ Rack</option>
                 {racks.map(r => (
@@ -219,7 +219,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
           {activeTab === 'devices' ? (
             <button
               onClick={onOpenNewAsset}
-              className="bg-[#38bdf8] hover:bg-[#7dd3fc] text-[#080b0e] px-4 py-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer active:scale-95"
+              className={UI_STYLES.buttons.primary}
             >
               <Plus className="w-4 h-4" />
               <span>Thêm Thiết Bị Mới</span>
@@ -227,7 +227,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
           ) : (
             <button
               onClick={onOpenNewRack}
-              className="bg-[#38bdf8] hover:bg-[#7dd3fc] text-[#080b0e] px-4 py-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer active:scale-95"
+              className={UI_STYLES.buttons.primary}
             >
               <Plus className="w-4 h-4" />
               <span>Thêm Tủ Rack Mới</span>
