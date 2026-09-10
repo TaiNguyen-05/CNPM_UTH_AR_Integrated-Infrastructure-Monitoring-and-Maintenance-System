@@ -38,6 +38,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSupport,
   onSignOut
 }) => {
+  const isCurrentAdmin = (currentUser?.role || '').toUpperCase() === 'ADMIN';
+
   const navItems = [
     {
       id: 'digital-twin' as TabType,
@@ -61,13 +63,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: alertCount > 0 ? alertCount : null,
       badgeColor: 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
     },
-    {
+    ...(isCurrentAdmin ? [{
       id: 'users' as TabType,
       label: 'Người Dùng & Phân Quyền',
       icon: Users,
       badge: pendingUsersCount > 0 ? pendingUsersCount : null,
       badgeColor: 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-    },
+    }] : []),
     {
       id: 'audit-logs' as TabType,
       label: 'Nhật Ký Kiểm Toán',

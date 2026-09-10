@@ -4,7 +4,7 @@ import {
   Camera, Terminal as TerminalIcon, Box, Activity, Server, AlertTriangle, 
   Users as UsersIcon, FileText, CheckCircle2, ShieldAlert, Cpu, 
   ExternalLink, QrCode, RefreshCw, Zap, Shield, Sparkles, LogIn, LogOut, ChevronRight,
-  Plus, Trash2, Edit, Layers, TrendingUp, Wrench, Menu, Smartphone
+  Plus, Trash2, Edit, Layers, TrendingUp, Wrench, Menu, X, Smartphone
 } from 'lucide-react';
 import { TabType, AssetItem, AlertItem, UserItem, AuditLogItem, Rack, RackUnit, TelemetryPoint, TicketItem, TicketPriority, TicketStatus } from './types';
 import { 
@@ -469,6 +469,16 @@ export const App: React.FC = () => {
   const [activeTelemetry, setActiveTelemetry] = useState<TelemetryPoint | null>(null);
   const [activeViewSection, setActiveViewSection] = useState<'twin' | 'telemetry' | 'assets' | 'alerts' | 'tickets' | 'users' | 'audit' | 'analytics'>('twin');
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
+
+  const isAdmin = (currentUser?.role || '').toUpperCase() === 'ADMIN';
+  const isTechnician = (currentUser?.role || '').toUpperCase() === 'TECHNICIAN';
+
+  // Chặn Technician truy cập khu vực Quản trị Người dùng & RBAC
+  useEffect(() => {
+    if (!isAdmin && activeViewSection === 'users') {
+      setActiveViewSection('tickets');
+    }
+  }, [isAdmin, activeViewSection]);
 
   // Particles config
   const particles = useMemo(
@@ -1269,17 +1279,19 @@ export const App: React.FC = () => {
             <a href="#architecture" className="transition-colors hover:text-[#00f0ff]">
               Kiến Trúc
             </a>
-            <button
-              onClick={() => {
-                setActiveViewSection('users');
-                const el = document.getElementById('operations');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="transition-colors hover:text-[#00f0ff] flex items-center gap-1.5 cursor-pointer uppercase tracking-widest text-slate-400 font-mono"
-            >
-              <Shield className="w-3.5 h-3.5 text-[#00f0ff]" />
-              Trang Quản Trị
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  setActiveViewSection('users');
+                  const el = document.getElementById('operations');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="transition-colors hover:text-[#00f0ff] flex items-center gap-1.5 cursor-pointer uppercase tracking-widest text-slate-400 font-mono"
+              >
+                <Shield className="w-3.5 h-3.5 text-[#00f0ff]" />
+                Trang Quản Trị
+              </button>
+            )}
             <a href="#modules" className="transition-colors hover:text-[#00f0ff]">
               Modules
             </a>
@@ -1303,18 +1315,20 @@ export const App: React.FC = () => {
           {/* Actions & Profile */}
           <div className="flex items-center gap-3">
             {/* Admin Portal Direct Button */}
-            <button 
-              onClick={() => {
-                setActiveViewSection('users');
-                const el = document.getElementById('operations');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="keycap-glow flex items-center gap-1.5 border border-[#38bdf8]/50 bg-[#11161b] px-3.5 py-1.5 font-mono text-xs uppercase tracking-widest text-[#38bdf8] hover:text-white transition-all hover:border-[#00f0ff] hover:bg-[#38bdf8]/10 cursor-pointer shadow-sm font-bold"
-              title="Mở Trang Quản Trị Hệ Thống & Phân Quyền"
-            >
-              <Shield className="w-3.5 h-3.5 text-[#38bdf8]" />
-              Trang Quản Trị
-            </button>
+            {isAdmin && (
+              <button 
+                onClick={() => {
+                  setActiveViewSection('users');
+                  const el = document.getElementById('operations');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="keycap-glow flex items-center gap-1.5 border border-[#38bdf8]/50 bg-[#11161b] px-3.5 py-1.5 font-mono text-xs uppercase tracking-widest text-[#38bdf8] hover:text-white transition-all hover:border-[#00f0ff] hover:bg-[#38bdf8]/10 cursor-pointer shadow-sm font-bold"
+                title="Mở Trang Quản Trị Hệ Thống & Phân Quyền"
+              >
+                <Shield className="w-3.5 h-3.5 text-[#38bdf8]" />
+                Trang Quản Trị
+              </button>
+            )}
 
             {!currentUser ? (
               <button
@@ -1467,20 +1481,22 @@ export const App: React.FC = () => {
                   <span>Tủ Rack ({racks.length})</span>
                 </button>
 
-                <button
-                  onClick={() => {
-                    setActiveViewSection('users');
-                    setIsMobileMenuOpen(false);
-                    const el = document.getElementById('operations');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className={`p-2 rounded-xl border text-left text-[11px] font-bold transition-all flex items-center gap-2 ${
-                    activeViewSection === 'users' ? 'bg-indigo-500/15 border-indigo-500 text-indigo-300' : 'bg-[#11161b] border-[#222c37] text-slate-300'
-                  }`}
-                >
-                  <UsersIcon className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Người Dùng</span>
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setActiveViewSection('users');
+                      setIsMobileMenuOpen(false);
+                      const el = document.getElementById('operations');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`p-2 rounded-xl border text-left text-[11px] font-bold transition-all flex items-center gap-2 ${
+                      activeViewSection === 'users' ? 'bg-indigo-500/15 border-indigo-500 text-indigo-300' : 'bg-[#11161b] border-[#222c37] text-slate-300'
+                    }`}
+                  >
+                    <UsersIcon className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Người Dùng</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => {
@@ -1594,14 +1610,14 @@ export const App: React.FC = () => {
             <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
               <button
                 onClick={() => {
-                  setActiveViewSection('users');
+                  setActiveViewSection(isAdmin ? 'users' : 'tickets');
                   const el = document.getElementById('operations');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="keycap-glow flex items-center justify-center gap-2 rounded-none bg-[#38bdf8] px-8 py-4 text-center font-mono text-xs font-bold uppercase tracking-widest text-[#080b0e] transition-all hover:bg-[#00f0ff] cursor-pointer"
               >
-                <Shield className="w-4 h-4" />
-                Vào Trang Quản Trị
+                {isAdmin ? <Shield className="w-4 h-4" /> : <Wrench className="w-4 h-4" />}
+                {isAdmin ? 'Vào Trang Quản Trị' : 'Vào Phiếu Kỹ Thuật & Bảo Trì'}
               </button>
               <a
                 href="#architecture"
@@ -1903,11 +1919,11 @@ export const App: React.FC = () => {
           <div className="mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-[#222c37] pb-6">
             <div>
               <span className="text-xs uppercase tracking-widest text-[#38bdf8] font-mono flex items-center gap-1.5 font-bold">
-                <Shield className="w-3.5 h-3.5 text-[#38bdf8]" />
-                TRANG QUẢN TRỊ // VẬN HÀNH & GIÁM SÁT
+                {isAdmin ? <Shield className="w-3.5 h-3.5 text-[#38bdf8]" /> : <Wrench className="w-3.5 h-3.5 text-[#38bdf8]" />}
+                {isAdmin ? 'TRANG QUẢN TRỊ // VẬN HÀNH & GIÁM SÁT' : 'KHU VỰC VẬN HÀNH // GIÁM SÁT & BẢO TRÌ'}
               </span>
               <h2 className="text-3xl font-bold tracking-tight text-white mt-1 font-mono">
-                Trung Tâm Quản Trị & Vận Hành Hệ Thống
+                {isAdmin ? 'Trung Tâm Quản Trị & Vận Hành Hệ Thống' : 'Trung Tâm Vận Hành & Giám Sát Kỹ Thuật'}
               </h2>
             </div>
             
@@ -1924,7 +1940,9 @@ export const App: React.FC = () => {
                   <option value="alerts">🚨 Cảnh Báo Sự Cố ({alerts.filter(a => !a.resolved).length})</option>
                   <option value="tickets">🔧 Phiếu Bảo Trì & AR ({tickets.filter(t => t.status !== 'CLOSED').length})</option>
                   <option value="assets">🖥️ Quản Trị Tủ Rack & Thiết Bị ({assets.length})</option>
-                  <option value="users">👥 Quản Trị Người Dùng & RBAC ({users.length})</option>
+                  {isAdmin && (
+                    <option value="users">👥 Quản Trị Người Dùng & RBAC ({users.length})</option>
+                  )}
                   <option value="audit">📜 Nhật Ký Kiểm Toán (Audit Logs)</option>
                   <option value="analytics">📈 Báo Cáo, Chỉ Số MTTR & PUE</option>
                 </select>
@@ -1975,17 +1993,19 @@ export const App: React.FC = () => {
                 <Server className="w-3.5 h-3.5" />
                 Quản Trị Rack & Thiết Bị ({assets.length})
               </button>
-              <button
-                onClick={() => setActiveViewSection('users')}
-                className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                  activeViewSection === 'users'
-                    ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
-                    : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
-                }`}
-              >
-                <UsersIcon className="w-3.5 h-3.5" />
-                Người Dùng & RBAC ({users.length})
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveViewSection('users')}
+                  className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    activeViewSection === 'users'
+                      ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
+                      : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <UsersIcon className="w-3.5 h-3.5" />
+                  Người Dùng & RBAC ({users.length})
+                </button>
+              )}
               <button
                 onClick={() => setActiveViewSection('audit')}
                 className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 ${
@@ -2092,7 +2112,7 @@ export const App: React.FC = () => {
               />
             )}
 
-            {activeViewSection === 'users' && (
+            {activeViewSection === 'users' && isAdmin && (
               <UsersView
                 users={users}
                 currentUser={currentUser}

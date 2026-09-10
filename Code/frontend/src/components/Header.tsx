@@ -61,13 +61,14 @@ export const Header: React.FC<HeaderProps> = ({
   const userRole = currentUser?.role || 'Admin';
   const userInitials = currentUser?.initials || 'SJ';
   const userAvatar = currentUser?.avatarUrl || (currentUser?.role === 'Admin' ? MOCK_AVATAR_ADMIN : undefined);
+  const isCurrentAdmin = (currentUser?.role || '').toUpperCase() === 'ADMIN';
 
   const navLinks = [
     { id: 'digital-twin' as TabType, label: '3D Twin // Floor' },
     { id: 'telemetry' as TabType, label: 'Console // Stream' },
     { id: 'assets-qr' as TabType, label: 'Hardware // AR' },
     { id: 'alerts' as TabType, label: 'Incidents // Alerts', badge: unreadAlerts.length > 0 ? unreadAlerts.length : null },
-    { id: 'users' as TabType, label: 'Enclave // RBAC' },
+    ...(isCurrentAdmin ? [{ id: 'users' as TabType, label: 'Enclave // RBAC' }] : []),
     { id: 'audit-logs' as TabType, label: 'Logs // Audit' },
   ];
 

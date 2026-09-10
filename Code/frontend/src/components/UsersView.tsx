@@ -107,6 +107,22 @@ export const UsersView: React.FC<UsersViewProps> = ({
     { module: 'Chính Sách & Cảnh Báo Email/SMS', desc: 'Cấu hình ngưỡng nhiệt độ, SMTP cảnh báo khẩn cấp', admin: true, tech: false },
   ];
 
+  if (!isCurrentAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-[#0c1015] border border-red-500/30 rounded-2xl my-6">
+        <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4 shadow-lg shadow-red-500/10">
+          <Shield className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold text-white font-mono uppercase tracking-wider mb-2">
+          Truy Cập Bị Giới Hạn (403 Forbidden)
+        </h3>
+        <p className="text-sm text-slate-400 max-w-md mb-6 leading-relaxed">
+          Khu vực Quản Trị Người Dùng & Phân Quyền (RBAC) chỉ dành riêng cho tài khoản <span className="text-amber-300 font-bold">Admin</span>. Bạn đang đăng nhập với vai trò <span className="text-sky-300 font-bold">{currentUser?.name ? `${currentUser.name} (${currentUser.role})` : 'Chưa đăng nhập'}</span>.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={UI_STYLES.surfaces.pageContainer}>
       {/* Top Banner / Header */}
