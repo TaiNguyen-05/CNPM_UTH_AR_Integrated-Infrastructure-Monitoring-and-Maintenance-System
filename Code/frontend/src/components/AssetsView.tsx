@@ -58,7 +58,6 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
   const [activeTab, setActiveTab] = useState<'devices' | 'racks'>('devices');
   const [selectedAssetId, setSelectedAssetId] = useState<string>(assets[0]?.id || 'asset-1');
   const [selectedRackFilter, setSelectedRackFilter] = useState<string>('All Racks');
-  const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const [localSearch, setLocalSearch] = useState<string>('');
 
   const currentSearch = searchQuery || localSearch;
@@ -88,47 +87,6 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
         (r.location && r.location.toLowerCase().includes(q));
     });
   }, [racks, currentSearch]);
-
-  const handleDownloadSVG = () => {
-    if (!selectedAsset) return;
-    const svgContent = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
-  <rect width="100%" height="100%" fill="#080b0e" stroke="#00f0ff" stroke-width="4" rx="12"/>
-  <rect x="20" y="20" width="260" height="50" fill="#11161b" rx="6"/>
-  <text x="150" y="45" fill="#38bdf8" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle">AR-IMMS INDUSTRIAL MARKER</text>
-  <text x="150" y="62" fill="#94a3b8" font-family="sans-serif" font-size="10" text-anchor="middle">DATACENTER ASSET TRACKING</text>
-  
-  <rect x="50" y="90" width="200" height="200" fill="#ffffff" stroke="#191c1e" stroke-width="2"/>
-  <rect x="65" y="105" width="40" height="40" fill="#000000"/>
-  <rect x="75" y="115" width="20" height="20" fill="#ffffff"/>
-  <rect x="195" y="105" width="40" height="40" fill="#000000"/>
-  <rect x="205" y="115" width="20" height="20" fill="#ffffff"/>
-  <rect x="65" y="235" width="40" height="40" fill="#000000"/>
-  <rect x="75" y="245" width="20" height="20" fill="#ffffff"/>
-  
-  <rect x="130" y="120" width="40" height="40" fill="#000000"/>
-  <rect x="120" y="180" width="60" height="30" fill="#000000"/>
-  <rect x="190" y="220" width="45" height="45" fill="#000000"/>
-  <circle cx="150" cy="260" r="10" fill="#0284c7"/>
-
-  <text x="150" y="320" fill="#ffffff" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle">${selectedAsset.name}</text>
-  <text x="150" y="345" fill="#38bdf8" font-family="monospace" font-size="12" text-anchor="middle">GUID: ${selectedAsset.guid}</text>
-  <text x="150" y="370" fill="#94a3b8" font-family="sans-serif" font-size="11" text-anchor="middle">${selectedAsset.uPosition} | ${selectedAsset.model}</text>
-</svg>`;
-
-    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `AR_MARKER_${selectedAsset.name}_${selectedAsset.guid}.svg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    setDownloadSuccess(true);
-    setTimeout(() => setDownloadSuccess(false), 2500);
-  };
 
   return (
     <div className="p-4 md:p-6 max-w-[1600px] mx-auto flex flex-col gap-6 text-slate-100">
@@ -409,33 +367,6 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
                       GUID: {selectedAsset.guid}
                     </div>
                   </div>
-                </div>
-
-                <div className="p-3 bg-[#11161b] border-t border-[#222c37] flex justify-stretch gap-3">
-                  <button
-                    onClick={handleDownloadSVG}
-                    className="flex-1 bg-[#161d24] hover:bg-[#222c37] border border-[#222c37] text-slate-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    {downloadSuccess ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-300 font-mono">Đã Lưu!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-mono">Tải SVG QR</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => onOpenPrintModal && onOpenPrintModal(selectedAsset)}
-                    className="flex-1 bg-[#38bdf8] hover:bg-[#7dd3fc] text-[#080b0e] px-4 py-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer active:scale-95"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>In Nhãn Tem</span>
-                  </button>
                 </div>
               </div>
             )}
