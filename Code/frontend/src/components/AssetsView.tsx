@@ -209,8 +209,8 @@ export const AssetsView: React.FC<AssetsViewProps> = ({
               </span>
             </div>
 
-            <div className="overflow-y-auto flex-1 p-2">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-auto flex-1 p-2">
+              <table className="w-full min-w-[620px] text-left border-collapse">
                 <thead className="sticky top-0 bg-[#11161b] z-10 border-b border-[#222c37] shadow-sm">
                   <tr>
                     <th className="p-3 text-[11px] font-bold text-slate-400 w-10"></th>

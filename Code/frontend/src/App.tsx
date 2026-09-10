@@ -4,7 +4,7 @@ import {
   Camera, Terminal as TerminalIcon, Box, Activity, Server, AlertTriangle, 
   Users as UsersIcon, FileText, CheckCircle2, ShieldAlert, Cpu, 
   ExternalLink, QrCode, RefreshCw, Zap, Shield, Sparkles, LogIn, LogOut, ChevronRight,
-  Plus, Trash2, Edit, Layers, TrendingUp, Wrench
+  Plus, Trash2, Edit, Layers, TrendingUp, Wrench, Menu, Smartphone
 } from 'lucide-react';
 import { TabType, AssetItem, AlertItem, UserItem, AuditLogItem, Rack, RackUnit, TelemetryPoint, TicketItem, TicketPriority, TicketStatus } from './types';
 import { 
@@ -41,11 +41,13 @@ import { AuthView } from './components/AuthView';
 import { LiveSystemLogsSection, SystemLogEntry } from './components/LiveSystemLogsSection';
 import { arImmsApi } from './services/api';
 import { socketService } from './services/socketService';
+import { DeviceViewportSimulator } from './components/DeviceViewportSimulator';
 
 type RevealId = "architecture" | "console" | "modules" | "operations" | "subscribe";
 
 export const App: React.FC = () => {
   const [scrolled, setScrolled] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [revealed, setRevealed] = useState<Set<RevealId>>(
     new Set(["architecture", "console", "modules", "operations", "subscribe"])
   );
@@ -1221,7 +1223,8 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#080b0e] text-slate-200 antialiased selection:bg-[#f59e0b] selection:text-[#080b0e] font-sans">
+    <DeviceViewportSimulator>
+      <div className="min-h-screen overflow-x-hidden bg-[#080b0e] text-slate-200 antialiased selection:bg-[#f59e0b] selection:text-[#080b0e] font-sans">
       {/* Background Atmosphere Matrix */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute inset-0 terminal-grid opacity-60" />
@@ -1347,8 +1350,194 @@ export const App: React.FC = () => {
                 </button>
               </div>
             )}
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="flex md:hidden items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#161d24] border border-[#222c37] text-slate-200 hover:text-[#00f0ff] hover:border-[#38bdf8]/40 transition-all cursor-pointer"
+              title="Mở thanh điều hướng di động"
+            >
+              {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 top-16 z-40 md:hidden bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 p-5 flex flex-col justify-between font-mono border-b border-[#222c37]">
+            <div className="flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-160px)] pr-1">
+              <div className="text-[11px] font-bold text-[#38bdf8] uppercase tracking-widest border-b border-[#222c37] pb-1.5 flex items-center justify-between">
+                <span>MENU ĐIỀU HƯỚNG</span>
+                <span className="text-[10px] text-slate-500">AR-IMMS MOBILE</span>
+              </div>
+
+              <a
+                href="#architecture"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-[#11161b] border border-[#222c37] text-xs font-bold text-slate-200 hover:text-[#00f0ff] hover:border-[#00f0ff]/40 transition-all"
+              >
+                <Cpu className="w-4 h-4 text-[#00f0ff]" />
+                <span>Kiến Trúc Hệ Thống</span>
+              </a>
+
+              <a
+                href="#modules"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-[#11161b] border border-[#222c37] text-xs font-bold text-slate-200 hover:text-[#00f0ff] hover:border-[#00f0ff]/40 transition-all"
+              >
+                <Box className="w-4 h-4 text-[#00f0ff]" />
+                <span>Các Modules Cốt Lõi</span>
+              </a>
+
+              <a
+                href="#operations"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  const el = document.getElementById('operations');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-[#11161b] border border-[#222c37] text-xs font-bold text-slate-200 hover:text-[#ffb03a] hover:border-[#ffb03a]/40 transition-all"
+              >
+                <Activity className="w-4 h-4 text-[#ffb03a]" />
+                <span>Khu Vực Vận Hành & Quản Trị</span>
+              </a>
+
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-[#222c37] pb-1.5 mt-2">
+                TRUY CẬP NHANH PHÂN HỆ
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setActiveViewSection('twin');
+                    setIsMobileMenuOpen(false);
+                    const el = document.getElementById('operations');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`p-2 rounded-xl border text-left text-[11px] font-bold transition-all flex items-center gap-2 ${
+                    activeViewSection === 'twin' ? 'bg-[#38bdf8]/15 border-[#38bdf8] text-[#38bdf8]' : 'bg-[#11161b] border-[#222c37] text-slate-300'
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5 text-[#38bdf8]" />
+                  <span>Telemetry</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveViewSection('alerts');
+                    setIsMobileMenuOpen(false);
+                    const el = document.getElementById('operations');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`p-2 rounded-xl border text-left text-[11px] font-bold transition-all flex items-center gap-2 ${
+                    activeViewSection === 'alerts' ? 'bg-red-500/15 border-red-500 text-red-400' : 'bg-[#11161b] border-[#222c37] text-slate-300'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                  <span>Cảnh Báo ({alerts.filter(a => !a.resolved).length})</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveViewSection('tickets');
+                    setIsMobileMenuOpen(false);
+                    const el = document.getElementById('operations');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`p-2 rounded-xl border text-left text-[11px] font-bold transition-all flex items-center gap-2 ${
+                    activeViewSection === 'tickets' ? 'bg-sky-500/15 border-sky-500 text-sky-300' : 'bg-[#11161b] border-[#222c37] text-slate-300'
+                  }`}
+                >
+                  <Wrench className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Bảo Trì & AR</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveViewSection('assets');
+                    setIsMobileMenuOpen(false);
+                    const el = document.getElementById('operations');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`p-2 rounded-xl border text-left text-[11px] font-bold transition-all flex items-center gap-2 ${
+                    activeViewSection === 'assets' ? 'bg-[#ffb03a]/15 border-[#ffb03a] text-[#ffb03a]' : 'bg-[#11161b] border-[#222c37] text-slate-300'
+                  }`}
+                >
+                  <Server className="w-3.5 h-3.5 text-[#ffb03a]" />
+                  <span>Tủ Rack ({racks.length})</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveViewSection('users');
+                    setIsMobileMenuOpen(false);
+                    const el = document.getElementById('operations');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`p-2 rounded-xl border text-left text-[11px] font-bold transition-all flex items-center gap-2 ${
+                    activeViewSection === 'users' ? 'bg-indigo-500/15 border-indigo-500 text-indigo-300' : 'bg-[#11161b] border-[#222c37] text-slate-300'
+                  }`}
+                >
+                  <UsersIcon className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Người Dùng</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveViewSection('analytics');
+                    setIsMobileMenuOpen(false);
+                    const el = document.getElementById('operations');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`p-2 rounded-xl border text-left text-[11px] font-bold transition-all flex items-center gap-2 ${
+                    activeViewSection === 'analytics' ? 'bg-teal-500/15 border-teal-500 text-teal-300' : 'bg-[#11161b] border-[#222c37] text-slate-300'
+                  }`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Báo Cáo PUE</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#222c37] flex items-center justify-between">
+              {currentUser ? (
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded bg-gradient-to-tr from-[#38bdf8] to-[#f59e0b] flex items-center justify-center font-bold text-xs text-[#080b0e]">
+                      {currentUser.initials || currentUser.name.charAt(0)}
+                    </span>
+                    <div>
+                      <div className="text-xs font-bold text-white leading-none">{currentUser.name}</div>
+                      <div className="text-[10px] text-sky-400">{currentUser.role}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentUser(null);
+                      localStorage.removeItem('ar_imms_user');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="px-2.5 py-1.5 bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Đăng Xuất</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="w-full py-2 bg-[#38bdf8] hover:bg-[#7dd3fc] text-[#080b0e] rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Đăng Nhập / Đăng Ký</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Header Section */}
@@ -1723,20 +1912,39 @@ export const App: React.FC = () => {
             </div>
             
             {/* View Switcher Tabs */}
-            <div className="flex flex-wrap gap-2 font-mono text-xs">
-              <button
-                onClick={() => setActiveViewSection('twin')}
-                className={`px-3 py-1.5 border transition-all cursor-pointer ${
-                  activeViewSection === 'twin'
-                    ? 'border-[#38bdf8] bg-[#38bdf8]/10 text-[#38bdf8]'
-                    : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
-                }`}
-              >
-                Đo Đạc Telemetry
-              </button>
+            <div className="w-full xl:w-auto">
+              {/* Mobile Quick Dropdown */}
+              <div className="block lg:hidden mb-3">
+                <select
+                  value={activeViewSection}
+                  onChange={(e) => setActiveViewSection(e.target.value as any)}
+                  className="w-full bg-[#11161b] border border-[#38bdf8]/50 text-sky-300 text-xs font-bold font-mono py-2.5 px-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#38bdf8] cursor-pointer"
+                >
+                  <option value="twin">📊 Đo Đạc Telemetry</option>
+                  <option value="alerts">🚨 Cảnh Báo Sự Cố ({alerts.filter(a => !a.resolved).length})</option>
+                  <option value="tickets">🔧 Phiếu Bảo Trì & AR ({tickets.filter(t => t.status !== 'CLOSED').length})</option>
+                  <option value="assets">🖥️ Quản Trị Tủ Rack & Thiết Bị ({assets.length})</option>
+                  <option value="users">👥 Quản Trị Người Dùng & RBAC ({users.length})</option>
+                  <option value="audit">📜 Nhật Ký Kiểm Toán (Audit Logs)</option>
+                  <option value="analytics">📈 Báo Cáo, Chỉ Số MTTR & PUE</option>
+                </select>
+              </div>
+
+              {/* Scrollable Tabs Bar */}
+              <div className="flex overflow-x-auto no-scrollbar py-1 gap-1.5 sm:gap-2 font-mono text-xs scroll-smooth max-w-full">
+                <button
+                  onClick={() => setActiveViewSection('twin')}
+                  className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 ${
+                    activeViewSection === 'twin'
+                      ? 'border-[#38bdf8] bg-[#38bdf8]/10 text-[#38bdf8]'
+                      : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Đo Đạc Telemetry
+                </button>
               <button
                 onClick={() => setActiveViewSection('alerts')}
-                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                   activeViewSection === 'alerts'
                     ? 'border-red-500 bg-red-500/10 text-red-400'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -1747,7 +1955,7 @@ export const App: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveViewSection('tickets')}
-                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                   activeViewSection === 'tickets'
                     ? 'border-sky-500 bg-sky-500/10 text-sky-300 font-bold shadow-sm'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -1758,7 +1966,7 @@ export const App: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveViewSection('assets')}
-                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                   activeViewSection === 'assets'
                     ? 'border-[#ffb03a] bg-[#ffb03a]/10 text-[#ffb03a]'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -1769,7 +1977,7 @@ export const App: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveViewSection('users')}
-                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                   activeViewSection === 'users'
                     ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -1780,7 +1988,7 @@ export const App: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveViewSection('audit')}
-                className={`px-3 py-1.5 border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 ${
                   activeViewSection === 'audit'
                     ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -1790,7 +1998,7 @@ export const App: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveViewSection('analytics')}
-                className={`px-3 py-1.5 border transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                   activeViewSection === 'analytics'
                     ? 'border-teal-400 bg-teal-400/10 text-teal-300'
                     : 'border-[#222c37] bg-[#11161b] text-slate-400 hover:text-white'
@@ -1799,6 +2007,7 @@ export const App: React.FC = () => {
                 <TrendingUp className="w-3.5 h-3.5" />
                 Báo Cáo & PUE / Quy Hoạch
               </button>
+            </div>
             </div>
           </div>
 
@@ -2152,7 +2361,8 @@ export const App: React.FC = () => {
           />
         </div>
       )}
-    </div>
+      </div>
+    </DeviceViewportSimulator>
   );
 };
 

@@ -41,6 +41,15 @@
   background: #334155;
 }
 
+/* Hide scrollbar for clean mobile tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Micro Workspace Protocol Special Effects */
 .terminal-grid {
   background-size: 40px 40px;
