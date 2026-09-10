@@ -41,7 +41,6 @@ import { AuthView } from './components/AuthView';
 import { LiveSystemLogsSection, SystemLogEntry } from './components/LiveSystemLogsSection';
 import { arImmsApi } from './services/api';
 import { socketService } from './services/socketService';
-import { DeviceViewportSimulator } from './components/DeviceViewportSimulator';
 
 type RevealId = "architecture" | "console" | "modules" | "operations" | "subscribe";
 
@@ -1233,8 +1232,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <DeviceViewportSimulator>
-      <div className="min-h-screen overflow-x-hidden bg-[#080b0e] text-slate-200 antialiased selection:bg-[#f59e0b] selection:text-[#080b0e] font-sans">
+    <div className="min-h-screen overflow-x-hidden bg-[#080b0e] text-slate-200 antialiased selection:bg-[#f59e0b] selection:text-[#080b0e] font-sans">
       {/* Background Atmosphere Matrix */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute inset-0 terminal-grid opacity-60" />
@@ -2382,7 +2380,6 @@ export const App: React.FC = () => {
         </div>
       )}
       </div>
-    </DeviceViewportSimulator>
   );
 };
 
