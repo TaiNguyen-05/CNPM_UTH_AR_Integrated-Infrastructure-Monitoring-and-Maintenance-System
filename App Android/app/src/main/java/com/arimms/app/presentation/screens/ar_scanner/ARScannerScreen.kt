@@ -3,6 +3,7 @@ package com.arimms.app.presentation.screens.ar_scanner
 import android.Manifest
 import android.content.pm.PackageManager
 import android.util.Log
+import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -86,6 +88,7 @@ fun ARScannerScreen(
     var isFlashOn by remember { mutableStateOf(false) }
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     var allNodes by remember { mutableStateOf<List<ServerNode>>(emptyList()) }
+    var lastScanTimestamp by remember { mutableStateOf(0L) }
 
     // Real-time telemetry updates for the detected node
     LaunchedEffect(detectedNode?.id) {
@@ -119,11 +122,14 @@ fun ARScannerScreen(
 
                     cameraProviderFuture.addListener({
                         val cameraProvider = cameraProviderFuture.get()
-                        val preview = Preview.Builder().build().also {
-                            it.setSurfaceProvider(previewView.surfaceProvider)
-                        }
+                        val preview = Preview.Builder()
+                            .setTargetResolution(Size(1280, 720))
+                            .build().also {
+                                it.setSurfaceProvider(previewView.surfaceProvider)
+                            }
 
                         val imageAnalysis = ImageAnalysis.Builder()
+                            .setTargetResolution(Size(1280, 720))
                             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                             .build()
 
@@ -136,13 +142,16 @@ fun ARScannerScreen(
                                 )
                                 barcodeScanner.process(image)
                                     .addOnSuccessListener { barcodes ->
-                                        for (barcode in barcodes) {
-                                            val rawValue = barcode.rawValue
-                                            if (!rawValue.isNullOrBlank() && rawValue != recognizedMarker) {
-                                                recognizedMarker = rawValue
+                                        val validBarcode = barcodes.firstOrNull { !it.rawValue.isNullOrBlank() }
+                                        if (validBarcode != null) {
+                                            val rawValue = validBarcode.rawValue!!
+                                            val now = System.currentTimeMillis()
+                                            if (detectedNode == null || detectedNode?.id.isNullOrBlank() || now - lastScanTimestamp > 500L) {
+                                                lastScanTimestamp = now
                                                 scope.launch {
                                                     repository.getNodeByMarker(rawValue).onSuccess { node ->
                                                         if (node != null) {
+                                                            recognizedMarker = rawValue
                                                             detectedNode = node
                                                         }
                                                     }
@@ -167,6 +176,17 @@ fun ARScannerScreen(
                                 imageAnalysis
                             )
                             cameraControl = camera.cameraControl
+
+                            previewView.setOnTouchListener { view, event ->
+                                if (event.action == android.view.MotionEvent.ACTION_UP) {
+                                    val factory = previewView.meteringPointFactory
+                                    val point = factory.createPoint(event.x, event.y)
+                                    val action = FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE).build()
+                                    cameraControl?.startFocusAndMetering(action)
+                                    view.performClick()
+                                }
+                                true
+                            }
                         } catch (e: Exception) {
                             Log.e("ARScannerScreen", "Camera binding failed", e)
                         }
@@ -262,26 +282,30 @@ fun ARScannerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
                 onClick = onNavigateBack,
                 modifier = Modifier
+                    .size(38.dp)
                     .clip(CircleShape)
-                    .background(Color(0xCCFFFFFF))
+                    .background(Color(0xEEFFFFFF))
             ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary, modifier = Modifier.size(20.dp))
             }
 
             Surface(
                 color = Color(0xEEFFFFFF),
                 shape = RoundedCornerShape(20.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.5f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.5f)),
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .padding(horizontal = 8.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -292,10 +316,13 @@ fun ARScannerScreen(
                             .background(if (detectedNode != null) StatusHealthy else PrimaryCyan)
                     )
                     Text(
-                        text = if (detectedNode != null) "LOCKED: ${detectedNode!!.markerCode}" else "SCANNING AR MARKERS...",
+                        text = if (detectedNode != null) "LOCKED: ${detectedNode!!.name}" else "SCANNING AR MARKERS...",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        softWrap = false,
                         fontFamily = FontFamily.Monospace
                     )
                 }
@@ -307,13 +334,15 @@ fun ARScannerScreen(
                     cameraControl?.enableTorch(isFlashOn)
                 },
                 modifier = Modifier
+                    .size(38.dp)
                     .clip(CircleShape)
-                    .background(Color(0xCCFFFFFF))
+                    .background(Color(0xEEFFFFFF))
             ) {
                 Icon(
                     imageVector = if (isFlashOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
                     contentDescription = "Flashlight",
-                    tint = if (isFlashOn) PrimaryCyan else TextSecondary
+                    tint = if (isFlashOn) PrimaryCyan else TextSecondary,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -358,7 +387,7 @@ fun ARScannerScreen(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    text = "${node.markerCode} (U${node.rackUnitPosition})",
+                                    text = "${node.markerCode.substringAfterLast("/")} (U${node.rackUnitPosition})",
                                     fontSize = 11.sp,
                                     color = if (isSelected) PrimaryCyan else TextSecondary,
                                     fontWeight = FontWeight.Bold,
@@ -393,72 +422,122 @@ fun ARScannerScreen(
                         )
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            // Header: Tag, Name & Status Badge
+                            // Header Row: Rack Info & Status Badge
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.weight(1f, fill = false)
+                                ) {
+                                    Surface(
+                                        color = PrimaryCyan.copy(alpha = 0.15f),
+                                        shape = RoundedCornerShape(4.dp)
                                     ) {
-                                        Surface(
-                                            color = PrimaryCyan.copy(alpha = 0.15f),
-                                            shape = RoundedCornerShape(4.dp)
-                                        ) {
-                                            Text(
-                                                text = node.markerCode,
-                                                fontSize = 11.sp,
-                                                color = PrimaryCyan,
-                                                fontWeight = FontWeight.Black,
-                                                fontFamily = FontFamily.Monospace,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                            )
-                                        }
                                         Text(
-                                            text = "Tủ: ${node.rackId.uppercase()} / U${node.rackUnitPosition} (${node.unitHeight}U)",
-                                            fontSize = 11.sp,
-                                            color = TextSecondary,
-                                            fontFamily = FontFamily.Monospace
+                                            text = node.markerCode.substringAfterLast("/").ifBlank { node.markerCode },
+                                            fontSize = 10.sp,
+                                            color = PrimaryCyan,
+                                            fontWeight = FontWeight.Black,
+                                            fontFamily = FontFamily.Monospace,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
-                                    Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = node.name,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = TextPrimary,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "${node.model} • ${node.ipAddress}",
+                                        text = "TỦ: ${node.rackId.uppercase()} • U${node.rackUnitPosition} (${node.unitHeight}U)",
                                         fontSize = 11.sp,
-                                        color = TextSecondary
+                                        color = TextSecondary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        maxLines = 1
                                     )
                                 }
-                                StatusBadge(status = telem.status)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    StatusBadge(status = telem.status)
+                                    IconButton(
+                                        onClick = {
+                                            detectedNode = null
+                                            recognizedMarker = null
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Close",
+                                            tint = TextSecondary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Node Name & Model/IP
+                            Column {
+                                Text(
+                                    text = node.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.Black
+                                )
+                                Text(
+                                    text = "${node.model} • IP: ${node.ipAddress}",
+                                    fontSize = 11.sp,
+                                    color = TextSecondary
+                                )
                             }
 
                             Divider(color = BorderStroke)
 
-                            // Telemetry Live Metrics Row
+                            // Telemetry Live Metrics (5 equal-width clean stat boxes)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                MetricItem(label = "CPU USAGE", value = "${telem.cpuUsagePercent}%", color = CpuColor)
-                                MetricItem(label = "RAM USAGE", value = "${telem.memoryUsagePercent}%", color = RamColor)
-                                MetricItem(
-                                    label = "CHASSIS TEMP",
-                                    value = "${telem.temperatureCelsius}°C",
-                                    color = if (telem.temperatureCelsius > 75) StatusCritical else TempColor
-                                )
-                                MetricItem(label = "FAN SPEED", value = "${telem.fanSpeedRpm} RPM", color = NetColor)
-                                MetricItem(label = "POWER", value = "${telem.powerWatts} W", color = PowerColor)
+                                listOf(
+                                    Triple("CPU", "${telem.cpuUsagePercent}%", CpuColor),
+                                    Triple("RAM", "${telem.memoryUsagePercent}%", RamColor),
+                                    Triple("NHIỆT", "${telem.temperatureCelsius}°C", if (telem.temperatureCelsius > 75) StatusCritical else TempColor),
+                                    Triple("QUẠT", "${telem.fanSpeedRpm}", NetColor),
+                                    Triple("ĐIỆN", "${telem.powerWatts}W", PowerColor)
+                                ).forEach { (label, value, color) ->
+                                    Surface(
+                                        modifier = Modifier.weight(1f),
+                                        color = Color(0x0A000000),
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = androidx.compose.foundation.BorderStroke(0.5.dp, BorderStroke)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = label,
+                                                fontSize = 9.sp,
+                                                color = TextSecondary,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1
+                                            )
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = value,
+                                                fontSize = 11.sp,
+                                                color = color,
+                                                fontWeight = FontWeight.Black,
+                                                fontFamily = FontFamily.Monospace,
+                                                maxLines = 1
+                                            )
+                                        }
+                                    }
+                                }
                             }
 
                             // Active Docker Workloads Pills
@@ -493,7 +572,8 @@ fun ARScannerScreen(
                             // Action Buttons
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Blink LED
                                 OutlinedButton(
@@ -502,38 +582,46 @@ fun ARScannerScreen(
                                             repository.toggleNodeLed(node.id)
                                         }
                                     },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(38.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(
                                         contentColor = if (node.isBlinkingLed) StatusWarning else PrimaryCyan
-                                    )
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Lightbulb,
                                         contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(15.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         if (node.isBlinkingLed) "TẮT LED" else "NHÁY ĐÈN LED",
                                         fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
 
                                 // Open Detail
                                 Button(
                                     onClick = { onNavigateToNodeDetail(node.id) },
-                                    modifier = Modifier.weight(1.2f),
+                                    modifier = Modifier
+                                        .weight(1.1f)
+                                        .height(38.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = PrimaryCyan,
                                         contentColor = Color.White
-                                    )
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                                 ) {
-                                    Text("XEM CHI TIẾT", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("XEM CHI TIẾT", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(15.dp))
                                 }
                             }
                         }

@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.play.services.mlkit.barcode.scanning)
 
     // Network & Real-time
+    implementation(libs.play.services.auth)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging.interceptor)

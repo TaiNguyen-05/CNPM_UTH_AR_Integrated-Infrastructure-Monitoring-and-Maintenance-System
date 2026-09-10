@@ -38,6 +38,7 @@ import { NodeDetailModal } from './components/modals/NodeDetailModal';
 import { RackModal } from './components/modals/RackModal';
 import { EditUserModal } from './components/modals/EditUserModal';
 import { AuthView } from './components/AuthView';
+import { LiveSystemLogsSection, SystemLogEntry } from './components/LiveSystemLogsSection';
 import { arImmsApi } from './services/api';
 import { socketService } from './services/socketService';
 
@@ -58,6 +59,16 @@ export const App: React.FC = () => {
   const [users, setUsers] = useState<UserItem[]>(INITIAL_USERS);
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(INITIAL_AUDIT_LOGS);
+  const [liveSystemLogs, setLiveSystemLogs] = useState<SystemLogEntry[]>([]);
+
+  const addLiveLog = useCallback((entry: Omit<SystemLogEntry, 'id' | 'timestamp'>) => {
+    const newLog: SystemLogEntry = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toLocaleTimeString(),
+      ...entry
+    };
+    setLiveSystemLogs(prev => [...prev, newLog]);
+  }, []);
 
   // Tải danh sách Người dùng thực tế từ Database
   const fetchDbUsers = useCallback(async () => {
@@ -138,16 +149,172 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Tải danh sách Cảnh Báo (Alerts) thời gian thực từ Database
+  const fetchAlerts = useCallback(async () => {
+    try {
+      const res = await arImmsApi.getAlerts();
+      if (res && res.data && res.data.length > 0) {
+        const mapped: AlertItem[] = res.data.map((a: any) => ({
+          id: a.id,
+          alertCode: a.id,
+          severity: (a.severity === 'critical' ? 'Critical' : a.severity === 'warning' ? 'Warning' : 'Info') as any,
+          title: a.title || a.message || `Cảnh báo trên ${a.node_id || a.server_node_id}`,
+          description: a.message || a.title || 'Phát hiện bất thường vượt ngưỡng an toàn.',
+          time: 'Vừa xong',
+          loggedTimeUtc: a.created_at || new Date().toISOString(),
+          location: a.node_id || a.server_node_id ? `Node ${a.node_id || a.server_node_id}` : 'Rack Alpha',
+          assignedTo: 'Kỹ thuật viên hiện trường',
+          zone: 'Zone Alpha',
+          acknowledged: a.status === 'acknowledged' || a.status === 'resolved',
+          resolved: a.status === 'resolved',
+          snapshot: {
+            rackTemp: `${a.metric_value || 42}°C`,
+            tempRate: '+1.2°C/10m',
+            fanSpeed: '4,800 RPM',
+            fanStatus: 'Tăng tốc khẩn cấp',
+            powerDraw: '4.8 kW',
+            powerStatus: 'Bình thường',
+            tempTrend: [35, 42, 58, a.metric_value || 75]
+          },
+          maintenanceLogs: []
+        }));
+        setAlerts(mapped);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải danh sách alerts:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDbUsers();
     fetchTickets();
+    fetchAlerts();
 
     // Socket.io Real-time ticket updates
-    const unsubCreated = socketService.on('ticket_created', () => fetchTickets());
-    const unsubAssigned = socketService.on('ticket_assigned', () => fetchTickets());
-    const unsubResolved = socketService.on('ticket_resolved', () => fetchTickets());
-    const unsubClosed = socketService.on('ticket_closed', () => fetchTickets());
-    const unsubLog = socketService.on('ticket_ar_log_added', () => fetchTickets());
+    const unsubCreated = socketService.on('ticket_created', (data: any) => {
+      fetchTickets();
+      if (data) {
+        addLiveLog({
+          source: 'mobile',
+          level: 'info',
+          message: `App Mobile: Tạo phiếu bảo trì mới [${data.id || 'TCK'}]: "${data.title || 'Sửa chữa sự cố'}"`,
+          details: `Kỹ thuật viên: ${data.assigned_technician_name || 'Đang điều phối'} • Node: ${data.node_id || data.server_node_id || 'N/A'}`
+        });
+      }
+    });
+
+    const unsubAssigned = socketService.on('ticket_assigned', (data: any) => {
+      fetchTickets();
+      if (data) {
+        addLiveLog({
+          source: 'mobile',
+          level: 'info',
+          message: `Điều phối phiếu [${data.id || data.ticket_id}]: Giao cho ${data.technician_name || 'Kỹ thuật viên'}`,
+          details: `Ghi chú điều phối: ${data.notes || 'Chuyển phiếu từ Web/App'}`
+        });
+      }
+    });
+
+    const unsubResolved = socketService.on('ticket_resolved', (data: any) => {
+      fetchTickets();
+      if (data) {
+        addLiveLog({
+          source: 'mobile',
+          level: 'success',
+          message: `Kỹ thuật viên đã xử lý xong phiếu [${data.id || data.ticket_id}] -> RESOLVED`,
+          details: `Nghiệm thu: ${data.resolution_notes || 'Khắc phục hoàn tất sự cố tại hiện trường'}`
+        });
+      }
+    });
+
+    const unsubClosed = socketService.on('ticket_closed', (data: any) => {
+      fetchTickets();
+      if (data) {
+        addLiveLog({
+          source: 'mobile',
+          level: 'success',
+          message: `Nghiệm thu & Đóng phiếu bảo trì [${data.id || data.ticket_id}] -> CLOSED`,
+          details: 'Hoàn tất quy trình bảo trì hạ tầng'
+        });
+      }
+    });
+
+    const unsubLog = socketService.on('ticket_ar_log_added', (data: any) => {
+      fetchTickets();
+      if (data) {
+        addLiveLog({
+          source: 'mobile',
+          level: 'info',
+          message: `AR Tracking: Nhật ký thao tác AR mới trên phiếu [${data.ticket_id || 'TCK'}]`,
+          details: `Hành động: ${data.action || 'Quét máy chủ / Nháy LED / Ghi nhận bảo trì'}`
+        });
+      }
+    });
+
+    // Socket.io Real-time alert updates
+    const unsubAlertCreated = socketService.on('alert_created', (data: any) => {
+      fetchAlerts();
+      if (data) {
+        addLiveLog({
+          source: 'alert',
+          level: 'critical',
+          message: `Cảnh báo mới [${data.id || 'ALT'}]: ${data.title || data.message || 'Phát hiện vượt ngưỡng'}`,
+          details: `Mức độ: ${data.severity || 'CRITICAL'} • Thiết bị: ${data.node_id || data.server_node_id || 'DC Alpha'}`,
+          nodeId: data.node_id || data.server_node_id
+        });
+      }
+    });
+
+    const unsubAlertUpdated = socketService.on('alert_updated', (data: any) => {
+      fetchAlerts();
+    });
+
+    const unsubAlertResolved = socketService.on('alert_resolved', (data: any) => {
+      fetchAlerts();
+      if (data) {
+        addLiveLog({
+          source: 'alert',
+          level: 'success',
+          message: `Cảnh báo [${data.id || data.alert_id}] đã được giải quyết an toàn`,
+          details: data.message || 'Hạ nhiệt độ về ngưỡng cho phép'
+        });
+      }
+    });
+
+    const unsubAlertDeleted = socketService.on('alert_deleted', () => fetchAlerts());
+    const unsubStats = socketService.on('stats_updated', () => {
+      fetchAlerts();
+      fetchTickets();
+    });
+
+    // Socket.io Real-time user lifecycle updates
+    const unsubUserCreated = socketService.on('user_created', (data: any) => {
+      fetchDbUsers();
+      if (data) {
+        addLiveLog({
+          source: 'auth',
+          level: 'info',
+          message: `Đăng ký tài khoản mới: ${data.full_name || data.name || data.email} (${data.role || 'TECHNICIAN'})`,
+          details: `Email: ${data.email} • Trạng thái: ${data.status || 'PENDING_APPROVAL'}`
+        });
+      }
+    });
+
+    const unsubUserUpdated = socketService.on('user_updated', () => fetchDbUsers());
+
+    const unsubUserApproved = socketService.on('user_approved', (data: any) => {
+      fetchDbUsers();
+      if (data) {
+        addLiveLog({
+          source: 'web',
+          level: 'success',
+          message: `Quản trị viên đã phê duyệt tài khoản: ${data.full_name || data.name || data.email}`,
+          details: `Quyền: ${data.role || 'TECHNICIAN'} • Trạng thái: APPROVED`
+        });
+      }
+    });
+
+    const unsubUserDeleted = socketService.on('user_deleted', () => fetchDbUsers());
 
     return () => {
       unsubCreated();
@@ -155,8 +322,36 @@ export const App: React.FC = () => {
       unsubResolved();
       unsubClosed();
       unsubLog();
+      unsubAlertCreated();
+      unsubAlertUpdated();
+      unsubAlertResolved();
+      unsubAlertDeleted();
+      unsubStats();
+      unsubUserCreated();
+      unsubUserUpdated();
+      unsubUserApproved();
+      unsubUserDeleted();
     };
-  }, [fetchDbUsers, fetchTickets]);
+  }, [fetchDbUsers, fetchTickets, fetchAlerts]);
+
+  // Alert Handlers
+  const handleAcknowledgeAlert = async (alertId: string) => {
+    try {
+      await arImmsApi.acknowledgeAlert(alertId, currentUser?.id || 'OPERATOR');
+      await fetchAlerts();
+    } catch (err) {
+      console.error('Lỗi tiếp nhận alert:', err);
+    }
+  };
+
+  const handleResolveAlert = async (alertId: string) => {
+    try {
+      await arImmsApi.resolveAlert(alertId, 'Đã xử lý xong từ Web Dashboard');
+      await fetchAlerts();
+    } catch (err) {
+      console.error('Lỗi giải quyết alert:', err);
+    }
+  };
 
   // Ticket CRUD Handlers
   const handleCreateTicket = async (ticketData: {
@@ -1003,14 +1198,6 @@ export const App: React.FC = () => {
     ]);
   };
 
-  const handleAcknowledgeAlert = (id: string) => {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a));
-  };
-
-  const handleResolveAlert = (id: string) => {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, resolved: true, acknowledged: true } : a));
-  };
-
   const revealClass = (id: RevealId) => (revealed.has(id) ? "code-reveal active" : "code-reveal");
 
   // Nếu chưa đăng nhập: Bắt buộc hiển thị màn hình Đăng Nhập / Xác Thực (AuthView)
@@ -1738,33 +1925,8 @@ export const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Section 6: Subscribe to Core Logs */}
-        <section
-          id="subscribe"
-          data-reveal-id="subscribe"
-          className={`${revealClass("subscribe")} relative mx-auto max-w-4xl overflow-hidden px-6 py-20 text-center`}
-        >
-          <div className="pointer-events-none absolute inset-0 rounded-full bg-[#ffb03a]/5 blur-3xl" />
-          <div className="relative z-10 space-y-8">
-            <Icon icon="ph:fingerprint-light" className="animate-pulse text-4xl text-[#38bdf8] mx-auto" />
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-5xl">
-              Đăng Ký Nhận Nhật Ký Hệ Thống
-            </h2>
-            <p className="mx-auto max-w-xl text-sm font-light leading-relaxed text-slate-400 sm:text-base">
-              Nhận cập nhật đo đạc telemetry mới nhất về môi trường máy chủ, các bản firmware nâng cấp và tài liệu kỹ thuật chuyên sâu.
-            </p>
-            <div className="mx-auto flex max-w-md flex-col items-center gap-4 sm:flex-row">
-              <input
-                type="email"
-                placeholder="nguoivanhang@domain.com"
-                className="w-full border border-[#222c37] bg-[#161d24] px-5 py-4 font-mono text-xs text-white placeholder:text-slate-600 focus:border-[#38bdf8] focus:outline-none transition-colors"
-              />
-              <button className="w-full whitespace-nowrap bg-[#38bdf8] px-8 py-4 font-mono text-xs font-bold uppercase tracking-widest text-[#080b0e] transition-colors hover:bg-[#00f0ff] sm:w-auto">
-                Kết Nối Node
-              </button>
-            </div>
-          </div>
-        </section>
+        {/* Section 6: Unified Real-Time System Log Feed (Web & Mobile AR) */}
+        <LiveSystemLogsSection externalLogs={liveSystemLogs} />
 
         {/* Footer */}
         <footer className="relative overflow-hidden border-t border-[#222c37]/40 bg-[#11161b] px-6 pb-12 pt-20">
@@ -1910,6 +2072,16 @@ export const App: React.FC = () => {
             setArTargetAlert(null);
           }}
           onAssignTicket={(alertId, assignee, notes) => {
+            const target = arTargetAlert || alerts.find(a => a.id === alertId) || alerts[0];
+            const techUser = users.find(u => u.name.includes(assignee) || u.email.includes(assignee));
+            handleCreateTicket({
+              server_node_id: (target as any)?.node_id || (target as any)?.nodeId || target?.location?.replace('Node ', '') || 'SRV-NODE-01',
+              title: `[ĐIỀU PHỐI] Xử lý ${target.title}`,
+              description: notes,
+              priority: (target.severity === 'Critical' ? 'CRITICAL' : 'HIGH') as TicketPriority,
+              assigned_technician_id: techUser?.id || 'USR-002',
+              assigned_technician_name: techUser?.name || assignee
+            });
             setIsCreateTicketModalOpen(false);
             setArTargetAlert(null);
           }}

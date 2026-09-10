@@ -1,5 +1,6 @@
 package com.arimms.app.presentation.screens.node_detail
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -140,19 +141,23 @@ fun NodeDetailScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text("BỘ NHỚ RAM ĐANG DÙNG", fontSize = 10.sp, color = TextSecondary)
-                                Text("${telem.memoryUsedGb} / ${serverNode.totalRamGb} GB", fontSize = 12.sp, color = TextPrimary, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("RAM ĐANG DÙNG", fontSize = 10.sp, color = TextSecondary, maxLines = 1, softWrap = false)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("${telem.memoryUsedGb} / ${serverNode.totalRamGb} GB", fontSize = 11.sp, color = TextPrimary, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, maxLines = 1, softWrap = false)
                             }
-                            Column {
-                                Text("LƯU LƯỢNG MẠNG (IN/OUT)", fontSize = 10.sp, color = TextSecondary)
-                                Text("${telem.networkInKbps} / ${telem.networkOutKbps} Kbps", fontSize = 12.sp, color = NetColor, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                            Column(modifier = Modifier.weight(1.1f)) {
+                                Text("MẠNG (IN/OUT)", fontSize = 10.sp, color = TextSecondary, maxLines = 1, softWrap = false)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("${telem.networkInKbps}/${telem.networkOutKbps}k", fontSize = 11.sp, color = NetColor, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, maxLines = 1, softWrap = false)
                             }
-                            Column {
-                                Text("TỐC ĐỘ QUẠT", fontSize = 10.sp, color = TextSecondary)
-                                Text("${telem.fanSpeedRpm} RPM", fontSize = 12.sp, color = PowerColor, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                            Column(modifier = Modifier.weight(0.9f)) {
+                                Text("TỐC ĐỘ QUẠT", fontSize = 10.sp, color = TextSecondary, maxLines = 1, softWrap = false)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("${telem.fanSpeedRpm} RPM", fontSize = 11.sp, color = PowerColor, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, maxLines = 1, softWrap = false)
                             }
                         }
                     }
@@ -170,14 +175,18 @@ fun NodeDetailScreen(
                                 text = "LỊCH SỬ BIẾN THIÊN CPU (%)",
                                 fontSize = 12.sp,
                                 color = TextSecondary,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                             Text(
                                 text = "${telem.cpuUsagePercent}%",
                                 fontSize = 12.sp,
                                 color = CpuColor,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -195,17 +204,21 @@ fun NodeDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "LỊCH SỬ BIẾN THIÊN NHIỆT ĐỘ CHASSIS (°C)",
+                                text = "LỊCH SỬ NHIỆT ĐỘ CHASSIS",
                                 fontSize = 12.sp,
                                 color = TextSecondary,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                             Text(
                                 text = "${telem.temperatureCelsius}°C",
                                 fontSize = 12.sp,
                                 color = if (telem.temperatureCelsius > 75) StatusCritical else TempColor,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -288,6 +301,48 @@ fun NodeDetailScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+                        }
+                    }
+                }
+
+                // Simulate Fault / Test Alert Button
+                item {
+                    var isInjectingFault by remember { mutableStateOf(false) }
+                    val context = androidx.compose.ui.platform.LocalContext.current
+
+                    Button(
+                        onClick = {
+                            isInjectingFault = true
+                            scope.launch {
+                                val res = repository.simulateNodeAlert(serverNode.id, "temp", 88.5)
+                                if (res.isSuccess) {
+                                    Toast.makeText(
+                                        context,
+                                        "🚀 Đã kích hoạt quá tải (Temp 88.5°C) cho máy chủ! Cảnh báo đã đồng bộ sang Web và App.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(context, "Lỗi gửi tín hiệu test tới backend", Toast.LENGTH_SHORT).show()
+                                }
+                                isInjectingFault = false
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = StatusCritical.copy(alpha = 0.15f),
+                            contentColor = StatusCritical
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, StatusCritical.copy(alpha = 0.6f)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        if (isInjectingFault) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = StatusCritical)
+                        } else {
+                            Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("TEST KÍCH HOẠT CẢNH BÁO MÁY CHỦ (88.5°C)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }

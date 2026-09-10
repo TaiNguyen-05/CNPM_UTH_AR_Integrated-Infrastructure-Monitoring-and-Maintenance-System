@@ -238,9 +238,10 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(
-                        "Vercel Cloud" to "https://ar-imms-monitor.vercel.app",
-                        "10.0.2.2:9999" to "http://10.0.2.2:9999",
-                        "Localhost" to "http://localhost:3000"
+                        "Wi-Fi LAN" to "http://192.168.1.15:9999",
+                        "USB/ADB" to "http://localhost:9999",
+                        "Emulator" to "http://10.0.2.2:9999",
+                        "Cloud" to "https://ar-imms-monitor.vercel.app"
                     ).forEach { (label, url) ->
                         Surface(
                             modifier = Modifier

@@ -4,7 +4,6 @@ import android.util.Log
 import com.arimms.app.data.local.AppPreferences
 import com.arimms.app.domain.model.*
 import com.google.gson.Gson
-import com.google.gson.JsonObject
 import io.socket.client.IO
 import io.socket.client.Socket
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +27,9 @@ class SocketManager(
     private val _alertsStream = MutableSharedFlow<SystemAlert>(replay = 1)
     val alertsStream: SharedFlow<SystemAlert> = _alertsStream.asSharedFlow()
 
+    private val _ticketsStream = MutableSharedFlow<MaintenanceTicket>(replay = 1)
+    val ticketsStream: SharedFlow<MaintenanceTicket> = _ticketsStream.asSharedFlow()
+
     private val _connectionState = MutableSharedFlow<Boolean>(replay = 1)
     val connectionState: SharedFlow<Boolean> = _connectionState.asSharedFlow()
 
@@ -37,7 +39,7 @@ class SocketManager(
             val serverUrl = preferences.serverUrl
             val options = IO.Options().apply {
                 reconnection = true
-                reconnectionAttempts = 10
+                reconnectionAttempts = 20
                 reconnectionDelay = 2000
                 timeout = 10000
                 preferences.authToken?.let { token ->
@@ -49,6 +51,12 @@ class SocketManager(
                 on(Socket.EVENT_CONNECT) {
                     Log.d("SocketManager", "Connected to Socket.IO backend at $serverUrl")
                     scope.launch { _connectionState.emit(true) }
+                    try {
+                        val joinPayload = JSONObject().apply { put("room", "dashboard") }
+                        emit("join_room", joinPayload)
+                    } catch (e: Exception) {
+                        Log.w("SocketManager", "Failed to emit join_room", e)
+                    }
                 }
 
                 on(Socket.EVENT_DISCONNECT) {
@@ -91,8 +99,8 @@ class SocketManager(
                                 memoryTotalGb = 64.0,
                                 diskUsagePercent = disk,
                                 temperatureCelsius = temp,
-                                networkInKbps = json.optDouble("net_in", 1200.0),
-                                networkOutKbps = json.optDouble("net_out", 3400.0),
+                                networkInKbps = json.optDouble("network_in_kbps", json.optDouble("net_in", 1200.0)),
+                                networkOutKbps = json.optDouble("network_out_kbps", json.optDouble("net_out", 3400.0)),
                                 powerWatts = power,
                                 fanSpeedRpm = fan,
                                 status = healthStatus
@@ -104,6 +112,7 @@ class SocketManager(
                     }
                 }
 
+                on("telemetry_stream", telemetryHandler)
                 on("telemetry_update", telemetryHandler)
                 on("telemetry:metric", telemetryHandler)
                 on("telemetry_broadcast", telemetryHandler)
@@ -141,9 +150,63 @@ class SocketManager(
                     }
                 }
 
-                on("new_alert", alertHandler)
+                on("alert_created", alertHandler)
                 on("alert_updated", alertHandler)
+                on("alert_acknowledged", alertHandler)
+                on("alert_resolved", alertHandler)
+                on("new_alert", alertHandler)
                 on("alert:new", alertHandler)
+
+                // Handle Maintenance Tickets
+                val ticketHandler: (Array<Any>) -> Unit = { args ->
+                    val data = args.firstOrNull()
+                    if (data != null) {
+                        try {
+                            val json = if (data is JSONObject) data else JSONObject(data.toString())
+                            val ticketId = json.optString("id", "")
+                            val title = json.optString("title", "Phiếu bảo trì")
+                            val desc = json.optString("description", "")
+                            val priorityStr = json.optString("priority", "MEDIUM").uppercase()
+                            val statusStr = json.optString("status", "OPEN").uppercase()
+                            val techId = json.optString("assigned_technician_id", json.optString("technician_id", "TECH-4421"))
+                            val techName = json.optString("assigned_technician_name", json.optString("technician_name", "Robert King (Field Tech)"))
+                            val nodeId = json.optString("server_node_id", json.optString("node_id", "a2-unit-03"))
+                            val notes = if (json.has("resolution_notes") && !json.isNull("resolution_notes")) json.optString("resolution_notes") else null
+
+                            val priority = when (priorityStr) {
+                                "CRITICAL", "EMERGENCY" -> TicketPriority.EMERGENCY
+                                "HIGH" -> TicketPriority.HIGH
+                                "LOW" -> TicketPriority.LOW
+                                else -> TicketPriority.MEDIUM
+                            }
+                            val status = try { TicketStatus.valueOf(statusStr) } catch (e: Exception) { TicketStatus.OPEN }
+
+                            val ticket = MaintenanceTicket(
+                                id = ticketId,
+                                title = title,
+                                description = desc,
+                                priority = priority,
+                                status = status,
+                                assignedToUserId = techId,
+                                assignedToName = techName,
+                                nodeId = nodeId,
+                                nodeName = nodeId,
+                                rackCode = "RACK-A2",
+                                roomName = "Server Room 01 (Data Hall Alpha)",
+                                resolutionNotes = notes
+                            )
+                            scope.launch { _ticketsStream.emit(ticket) }
+                        } catch (e: Exception) {
+                            Log.e("SocketManager", "Failed to parse ticket event", e)
+                        }
+                    }
+                }
+
+                on("ticket_created", ticketHandler)
+                on("ticket_updated", ticketHandler)
+                on("ticket_assigned", ticketHandler)
+                on("ticket_resolved", ticketHandler)
+                on("ticket_closed", ticketHandler)
 
                 connect()
             }
@@ -158,3 +221,4 @@ class SocketManager(
         socket = null
     }
 }
+

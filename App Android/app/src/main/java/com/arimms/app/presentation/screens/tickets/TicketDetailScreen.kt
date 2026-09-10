@@ -228,38 +228,122 @@ fun TicketDetailScreen(
                         }
                     }
                     TicketStatus.IN_PROGRESS -> {
-                        Button(
-                            onClick = {
-                                if (rootCauseText.isBlank() || resolutionText.isBlank()) {
-                                    Toast.makeText(context, "Vui lòng nhập nguyên nhân và biện pháp khắc phục!", Toast.LENGTH_LONG).show()
-                                    return@Button
-                                }
-                                scope.launch {
-                                    isSaving = true
-                                    repository.resolveTicket(
-                                        ticketId = currentTicket.id,
-                                        rootCause = rootCauseText.trim(),
-                                        resolution = resolutionText.trim(),
-                                        photoUri = "https://arimms.io/proofs/${currentTicket.id}.jpg"
-                                    ).onSuccess {
-                                        ticket = it
-                                        Toast.makeText(context, "Đã gửi yêu cầu đóng phiếu thành công!", Toast.LENGTH_SHORT).show()
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            // Option 1: Hoàn tất & Đóng phiếu ngay lập tức
+                            Button(
+                                onClick = {
+                                    if (rootCauseText.isBlank() || resolutionText.isBlank()) {
+                                        Toast.makeText(context, "Vui lòng nhập nguyên nhân và biện pháp khắc phục!", Toast.LENGTH_LONG).show()
+                                        return@Button
                                     }
-                                    isSaving = false
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = StatusHealthy, contentColor = Color.White),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("HOÀN TẤT & XIN ĐÓNG PHIẾU", fontWeight = FontWeight.Bold)
+                                    scope.launch {
+                                        isSaving = true
+                                        repository.resolveTicket(
+                                            ticketId = currentTicket.id,
+                                            rootCause = rootCauseText.trim(),
+                                            resolution = resolutionText.trim(),
+                                            photoUri = "https://arimms.io/proofs/${currentTicket.id}.jpg"
+                                        )
+                                        repository.closeTicket(currentTicket.id).onSuccess {
+                                            ticket = it
+                                            Toast.makeText(context, "✓ Đã hoàn tất sửa chữa và ĐÓNG PHIẾU thành công!", Toast.LENGTH_LONG).show()
+                                        }
+                                        isSaving = false
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = StatusHealthy, contentColor = Color.White),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("HOÀN TẤT VÀ ĐÓNG PHIẾU NGAY", fontWeight = FontWeight.Bold)
+                            }
+
+                            // Option 2: Hoàn tất và gửi duyệt đóng
+                            OutlinedButton(
+                                onClick = {
+                                    if (rootCauseText.isBlank() || resolutionText.isBlank()) {
+                                        Toast.makeText(context, "Vui lòng nhập nguyên nhân và biện pháp khắc phục!", Toast.LENGTH_LONG).show()
+                                        return@OutlinedButton
+                                    }
+                                    scope.launch {
+                                        isSaving = true
+                                        repository.resolveTicket(
+                                            ticketId = currentTicket.id,
+                                            rootCause = rootCauseText.trim(),
+                                            resolution = resolutionText.trim(),
+                                            photoUri = "https://arimms.io/proofs/${currentTicket.id}.jpg"
+                                        ).onSuccess {
+                                            ticket = it
+                                            Toast.makeText(context, "Đã gửi báo cáo giải quyết thành công!", Toast.LENGTH_SHORT).show()
+                                        }
+                                        isSaving = false
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(46.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryCyan),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryCyan.copy(alpha = 0.6f)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("GỬI BÁO CÁO CHỜ DUYỆT ĐÓNG", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                            }
                         }
                     }
-                    TicketStatus.RESOLVED, TicketStatus.CLOSED -> {
+                    TicketStatus.RESOLVED -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Surface(
+                                color = StatusWarningBg,
+                                shape = RoundedCornerShape(10.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, StatusWarning.copy(alpha = 0.5f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.Info, contentDescription = null, tint = StatusWarning)
+                                    Text(
+                                        "Đã giải quyết xong. Nhấn nút bên dưới để Nghiệm thu & Đóng phiếu chính thức.",
+                                        fontSize = 12.sp,
+                                        color = StatusWarning,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            // Nút Đóng Phiếu Bảo Trì
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        isSaving = true
+                                        repository.closeTicket(currentTicket.id).onSuccess {
+                                            ticket = it
+                                            Toast.makeText(context, "✓ Đã nghiệm thu và ĐÓNG PHIẾU BẢO TRÌ thành công!", Toast.LENGTH_LONG).show()
+                                        }
+                                        isSaving = false
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = StatusHealthy, contentColor = Color.White),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.CheckCircleOutline, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("NGHIỆM THU & ĐÓNG PHIẾU BẢO TRÌ", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    TicketStatus.CLOSED -> {
                         Surface(
                             color = StatusHealthyBg,
                             shape = RoundedCornerShape(10.dp),
@@ -271,13 +355,20 @@ fun TicketDetailScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = StatusHealthy)
-                                Text(
-                                    "Phiếu bảo trì này đã hoàn tất và đang chờ Operator duyệt đóng.",
-                                    fontSize = 13.sp,
-                                    color = StatusHealthy,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Icon(Icons.Default.Verified, contentDescription = null, tint = StatusHealthy)
+                                Column {
+                                    Text(
+                                        "✓ Phiếu bảo trì này đã hoàn tất và ĐÃ ĐƯỢC ĐÓNG (CLOSED).",
+                                        fontSize = 13.sp,
+                                        color = StatusHealthy,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "Hệ thống đã cập nhật trạng thái bình thường cho máy chủ và thiết bị liên quan.",
+                                        fontSize = 11.sp,
+                                        color = TextSecondary
+                                    )
+                                }
                             }
                         }
                     }

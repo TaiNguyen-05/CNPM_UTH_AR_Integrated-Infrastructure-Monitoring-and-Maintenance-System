@@ -36,3 +36,6 @@ Thumbs.db
 *.iml
 .kotlin/
 **/bin/
+
+# Test Reports
+tests_selenium/reports/

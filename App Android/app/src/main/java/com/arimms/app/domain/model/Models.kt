@@ -12,8 +12,17 @@ data class User(
     val fullName: String,
     val role: UserRole,
     val email: String,
-    val token: String? = null
+    val token: String? = null,
+    val status: String? = "APPROVED",
+    val avatarUrl: String? = null
 )
+
+sealed class GoogleAuthResult {
+    data class Success(val user: User) : GoogleAuthResult()
+    data class PendingApproval(val user: User) : GoogleAuthResult()
+    data class Locked(val message: String) : GoogleAuthResult()
+    data class Failure(val error: String) : GoogleAuthResult()
+}
 
 enum class NodeHealthStatus {
     HEALTHY,

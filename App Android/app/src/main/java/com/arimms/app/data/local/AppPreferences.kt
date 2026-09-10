@@ -16,11 +16,18 @@ class AppPreferences(context: Context) {
         private const val KEY_USER_DATA = "user_data"
         private const val KEY_AUTH_TOKEN = "auth_token"
         private const val KEY_REGISTERED_USERS = "registered_users"
-        const val DEFAULT_SERVER_URL = "https://ar-imms-monitor.vercel.app"
+        const val DEFAULT_SERVER_URL = "http://192.168.1.15:9999"
     }
 
     var serverUrl: String
-        get() = prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
+        get() {
+            val saved = prefs.getString(KEY_SERVER_URL, null)
+            return if (saved.isNullOrBlank() || saved.contains("ar-imms-monitor.vercel.app", ignoreCase = true)) {
+                DEFAULT_SERVER_URL
+            } else {
+                saved
+            }
+        }
         set(value) = prefs.edit().putString(KEY_SERVER_URL, value).apply()
 
     val isDemoMode: Boolean

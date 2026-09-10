@@ -76,6 +76,22 @@ class ARImmsRepositoryImpl(
                 fullName = "Nguyen Van B",
                 role = UserRole.TECHNICIAN,
                 email = "tech.nguyenvanb@ar-imms.dc"
+            ),
+            User(
+                id = "USR-7FF9",
+                username = "trungtamgiamsatarimms@gmail.com",
+                fullName = "Nguyễn Thành Tài",
+                role = UserRole.TECHNICIAN,
+                email = "trungtamgiamsatarimms@gmail.com",
+                status = "APPROVED"
+            ),
+            User(
+                id = "USR-5BC8",
+                username = "taint2360@ut.edu.vn",
+                fullName = "Tài Nguyễn Thành",
+                role = UserRole.TECHNICIAN,
+                email = "taint2360@ut.edu.vn",
+                status = "APPROVED"
             )
         )
 
@@ -83,412 +99,176 @@ class ARImmsRepositoryImpl(
         val INITIAL_UNIFIED_NODES = listOf(
             // Rack A1 (Compute & Storage Zone 1-A)
             ServerNode(
-                id = "pdu-main-a",
-                name = "PDU Main A",
-                ipAddress = "192.168.1.10",
+                id = "SRV-NODE-01",
+                name = "Primary Compute Node 01",
+                ipAddress = "192.168.1.101",
                 rackId = "rack-a1",
-                rackUnitPosition = 1,
-                unitHeight = 1,
-                markerCode = "ar-imms://node/pdu-main-a",
-                model = "APC 8000 PDU",
-                cpuModel = "Microcontroller MCU-8",
-                totalCores = 2,
-                totalRamGb = 4,
-                totalDiskGb = 16,
-                osName = "Embedded PowerOS",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "pdu-main-a",
-                    cpuUsagePercent = 12.0,
-                    memoryUsagePercent = 18.0,
-                    memoryUsedGb = 0.72,
-                    memoryTotalGb = 4.0,
-                    diskUsagePercent = 10.0,
-                    temperatureCelsius = 24.0,
-                    networkInKbps = 800.0,
-                    networkOutKbps = 600.0,
-                    powerWatts = 120.0,
-                    fanSpeedRpm = 2200,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "pdu-backup-b",
-                name = "PDU Backup B",
-                ipAddress = "192.168.1.11",
-                rackId = "rack-a1",
-                rackUnitPosition = 2,
-                unitHeight = 1,
-                markerCode = "ar-imms://node/pdu-backup-b",
-                model = "APC 8000 PDU",
-                cpuModel = "Microcontroller MCU-8",
-                totalCores = 2,
-                totalRamGb = 4,
-                totalDiskGb = 16,
-                osName = "Embedded PowerOS",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "pdu-backup-b",
-                    cpuUsagePercent = 10.0,
-                    memoryUsagePercent = 15.0,
-                    memoryUsedGb = 0.6,
-                    memoryTotalGb = 4.0,
-                    diskUsagePercent = 10.0,
-                    temperatureCelsius = 25.0,
-                    networkInKbps = 600.0,
-                    networkOutKbps = 500.0,
-                    powerWatts = 110.0,
-                    fanSpeedRpm = 2200,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "storage-vault-1",
-                name = "Storage Vault 1",
-                ipAddress = "192.168.1.20",
-                rackId = "rack-a1",
-                rackUnitPosition = 3,
+                rackUnitPosition = 38,
                 unitHeight = 2,
-                markerCode = "ar-imms://node/storage-vault-1",
-                model = "NetApp FAS",
-                cpuModel = "Intel Xeon Silver 4314",
-                totalCores = 16,
-                totalRamGb = 64,
-                totalDiskGb = 24000,
-                osName = "ONTAP 9.12",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "storage-vault-1",
-                    cpuUsagePercent = 32.0,
-                    memoryUsagePercent = 44.0,
-                    memoryUsedGb = 28.16,
-                    memoryTotalGb = 64.0,
-                    diskUsagePercent = 68.0,
-                    temperatureCelsius = 28.0,
-                    networkInKbps = 4500.0,
-                    networkOutKbps = 7200.0,
-                    powerWatts = 380.0,
-                    fanSpeedRpm = 3800,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "app-node-01",
-                name = "App Node 01",
-                ipAddress = "192.168.1.31",
-                rackId = "rack-a1",
-                rackUnitPosition = 4,
-                unitHeight = 1,
-                markerCode = "ar-imms://node/app-node-01",
-                model = "Dell PowerEdge R640",
-                cpuModel = "Intel Xeon Gold 6248R",
-                totalCores = 24,
+                markerCode = "ar-imms://node/SRV-NODE-01",
+                model = "Dell PowerEdge R740 / Xeon Gold 6248R",
+                cpuModel = "Intel Xeon Gold 6248R @ 3.00GHz (24C/48T)",
+                totalCores = 48,
                 totalRamGb = 64,
                 totalDiskGb = 2000,
                 osName = "Ubuntu Server 22.04 LTS",
                 currentTelemetry = TelemetryMetric(
-                    nodeId = "app-node-01",
-                    cpuUsagePercent = 45.0,
-                    memoryUsagePercent = 50.0,
-                    memoryUsedGb = 32.0,
+                    nodeId = "SRV-NODE-01",
+                    cpuUsagePercent = 96.0,
+                    memoryUsagePercent = 60.0,
+                    memoryUsedGb = 38.4,
                     memoryTotalGb = 64.0,
-                    diskUsagePercent = 25.0,
-                    temperatureCelsius = 29.0,
-                    networkInKbps = 3200.0,
-                    networkOutKbps = 5400.0,
-                    powerWatts = 280.0,
+                    diskUsagePercent = 40.0,
+                    temperatureCelsius = 75.0,
+                    networkInKbps = 500.0,
+                    networkOutKbps = 600.0,
+                    powerWatts = 450.0,
+                    fanSpeedRpm = 6200,
+                    status = NodeHealthStatus.HEALTHY
+                )
+            ),
+            ServerNode(
+                id = "SRV-NODE-02",
+                name = "Secondary Compute Node 02",
+                ipAddress = "192.168.1.102",
+                rackId = "rack-a1",
+                rackUnitPosition = 35,
+                unitHeight = 2,
+                markerCode = "ar-imms://node/SRV-NODE-02",
+                model = "Dell PowerEdge R740 / Xeon Gold 6248R",
+                cpuModel = "Intel Xeon Gold 6248R @ 3.00GHz (24C/48T)",
+                totalCores = 48,
+                totalRamGb = 64,
+                totalDiskGb = 2000,
+                osName = "Ubuntu Server 22.04 LTS",
+                currentTelemetry = TelemetryMetric(
+                    nodeId = "SRV-NODE-02",
+                    cpuUsagePercent = 42.0,
+                    memoryUsagePercent = 55.0,
+                    memoryUsedGb = 35.2,
+                    memoryTotalGb = 64.0,
+                    diskUsagePercent = 38.0,
+                    temperatureCelsius = 38.0,
+                    networkInKbps = 1200.0,
+                    networkOutKbps = 2400.0,
+                    powerWatts = 320.0,
                     fanSpeedRpm = 4200,
                     status = NodeHealthStatus.HEALTHY
                 )
             ),
             ServerNode(
-                id = "app-node-02",
-                name = "App Node 02",
-                ipAddress = "192.168.1.32",
+                id = "SRV-NODE-03",
+                name = "Database Primary Replica",
+                ipAddress = "192.168.1.103",
                 rackId = "rack-a1",
-                rackUnitPosition = 5,
-                unitHeight = 1,
-                markerCode = "ar-imms://node/app-node-02",
+                rackUnitPosition = 30,
+                unitHeight = 4,
+                markerCode = "ar-imms://node/SRV-NODE-03",
+                model = "HPE ProLiant DL380 Gen10",
+                cpuModel = "AMD EPYC 7742 (64C/128T)",
+                totalCores = 64,
+                totalRamGb = 128,
+                totalDiskGb = 8000,
+                osName = "Enterprise RHEL 9.2",
+                currentTelemetry = TelemetryMetric(
+                    nodeId = "SRV-NODE-03",
+                    cpuUsagePercent = 78.0,
+                    memoryUsagePercent = 74.0,
+                    memoryUsedGb = 94.7,
+                    memoryTotalGb = 128.0,
+                    diskUsagePercent = 82.5,
+                    temperatureCelsius = 64.0,
+                    networkInKbps = 4200.0,
+                    networkOutKbps = 6800.0,
+                    powerWatts = 520.0,
+                    fanSpeedRpm = 5400,
+                    status = NodeHealthStatus.HEALTHY
+                )
+            ),
+            ServerNode(
+                id = "SRV-NODE-04",
+                name = "Application Web Gateway",
+                ipAddress = "192.168.1.104",
+                rackId = "rack-a2",
+                rackUnitPosition = 36,
+                unitHeight = 2,
+                markerCode = "ar-imms://node/SRV-NODE-04",
+                model = "Supermicro 1U TwinPro",
+                cpuModel = "Intel Xeon Platinum 8380",
+                totalCores = 40,
+                totalRamGb = 64,
+                totalDiskGb = 2000,
+                osName = "Debian 12 Bookworm",
+                currentTelemetry = TelemetryMetric(
+                    nodeId = "SRV-NODE-04",
+                    cpuUsagePercent = 38.0,
+                    memoryUsagePercent = 48.0,
+                    memoryUsedGb = 30.7,
+                    memoryTotalGb = 64.0,
+                    diskUsagePercent = 32.0,
+                    temperatureCelsius = 35.0,
+                    networkInKbps = 9500.0,
+                    networkOutKbps = 14200.0,
+                    powerWatts = 360.0,
+                    fanSpeedRpm = 4500,
+                    status = NodeHealthStatus.HEALTHY
+                )
+            ),
+            ServerNode(
+                id = "SRV-NODE-05",
+                name = "Log Aggregator & Pipeline",
+                ipAddress = "192.168.1.105",
+                rackId = "rack-a2",
+                rackUnitPosition = 20,
+                unitHeight = 3,
+                markerCode = "ar-imms://node/SRV-NODE-05",
                 model = "Dell PowerEdge R640",
                 cpuModel = "Intel Xeon Gold 6248R",
                 totalCores = 24,
                 totalRamGb = 64,
-                totalDiskGb = 2000,
-                osName = "Ubuntu Server 22.04 LTS",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "app-node-02",
-                    cpuUsagePercent = 48.0,
-                    memoryUsagePercent = 52.0,
-                    memoryUsedGb = 33.28,
-                    memoryTotalGb = 64.0,
-                    diskUsagePercent = 28.0,
-                    temperatureCelsius = 30.0,
-                    networkInKbps = 3600.0,
-                    networkOutKbps = 5800.0,
-                    powerWatts = 290.0,
-                    fanSpeedRpm = 4300,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-
-            // Rack A2 (Compute & AI Acceleration Zone 1-A)
-            ServerNode(
-                id = "patch-panel-a2",
-                name = "Patch Panel A2-P1",
-                ipAddress = "192.168.1.5",
-                rackId = "rack-a2",
-                rackUnitPosition = 1,
-                unitHeight = 1,
-                markerCode = "ar-imms://node/patch-panel-a2",
-                model = "Cat6A 48-Port Panel",
-                cpuModel = "Passive Terminal",
-                totalCores = 1,
-                totalRamGb = 1,
-                totalDiskGb = 1,
-                osName = "Hardware Layer",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "patch-panel-a2",
-                    cpuUsagePercent = 0.0,
-                    memoryUsagePercent = 0.0,
-                    memoryUsedGb = 0.0,
-                    memoryTotalGb = 1.0,
-                    diskUsagePercent = 0.0,
-                    temperatureCelsius = 22.0,
-                    networkInKbps = 9500.0,
-                    networkOutKbps = 9500.0,
-                    powerWatts = 0.0,
-                    fanSpeedRpm = 0,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "tor-switch-02",
-                name = "TOR Switch 02",
-                ipAddress = "192.168.1.2",
-                rackId = "rack-a2",
-                rackUnitPosition = 2,
-                unitHeight = 1,
-                markerCode = "ar-imms://node/tor-switch-02",
-                model = "Cisco Nexus 9300",
-                cpuModel = "Cisco Quad-Core ASIC",
-                totalCores = 8,
-                totalRamGb = 16,
-                totalDiskGb = 64,
-                osName = "NX-OS 10.3",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "tor-switch-02",
-                    cpuUsagePercent = 52.0,
-                    memoryUsagePercent = 60.0,
-                    memoryUsedGb = 9.6,
-                    memoryTotalGb = 16.0,
-                    diskUsagePercent = 15.0,
-                    temperatureCelsius = 32.0,
-                    networkInKbps = 14500.0,
-                    networkOutKbps = 18200.0,
-                    powerWatts = 220.0,
-                    fanSpeedRpm = 5100,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "a2-unit-03",
-                name = "A2 - Unit 03",
-                ipAddress = "192.168.1.102",
-                rackId = "rack-a2",
-                rackUnitPosition = 3,
-                unitHeight = 2,
-                markerCode = "ar-imms://node/a2-unit-03",
-                model = "XR-9000 Compute Blade",
-                cpuModel = "Intel Xeon Platinum 8380",
-                totalCores = 40,
-                totalRamGb = 128,
                 totalDiskGb = 4000,
                 osName = "Ubuntu Server 22.04 LTS",
                 currentTelemetry = TelemetryMetric(
-                    nodeId = "a2-unit-03",
-                    cpuUsagePercent = 95.0,
-                    memoryUsagePercent = 62.0,
-                    memoryUsedGb = 79.36,
-                    memoryTotalGb = 128.0,
-                    diskUsagePercent = 28.0,
-                    temperatureCelsius = 92.0,
-                    networkInKbps = 1400.0,
-                    networkOutKbps = 2100.0,
-                    powerWatts = 650.0,
-                    fanSpeedRpm = 1200,
+                    nodeId = "SRV-NODE-05",
+                    cpuUsagePercent = 88.0,
+                    memoryUsagePercent = 82.0,
+                    memoryUsedGb = 52.4,
+                    memoryTotalGb = 64.0,
+                    diskUsagePercent = 75.0,
+                    temperatureCelsius = 78.0,
+                    networkInKbps = 8200.0,
+                    networkOutKbps = 4100.0,
+                    powerWatts = 420.0,
+                    fanSpeedRpm = 6800,
                     status = NodeHealthStatus.CRITICAL
                 )
             ),
             ServerNode(
-                id = "gpu-node-04",
-                name = "GPU Node 04",
-                ipAddress = "192.168.1.106",
-                rackId = "rack-a2",
-                rackUnitPosition = 4,
-                unitHeight = 4,
-                markerCode = "ar-imms://node/gpu-node-04",
-                model = "NVIDIA DGX A100",
-                cpuModel = "AMD EPYC 7742 + 8x A100 SXM4",
-                totalCores = 64,
-                totalRamGb = 512,
-                totalDiskGb = 15000,
-                osName = "DGX OS 6 (Ubuntu 22.04)",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "gpu-node-04",
-                    cpuUsagePercent = 70.0,
-                    memoryUsagePercent = 75.0,
-                    memoryUsedGb = 384.0,
-                    memoryTotalGb = 512.0,
-                    diskUsagePercent = 40.0,
-                    temperatureCelsius = 58.0,
-                    networkInKbps = 18000.0,
-                    networkOutKbps = 24000.0,
-                    powerWatts = 2800.0,
-                    fanSpeedRpm = 6800,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "compute-node-05",
-                name = "Compute Node 05",
-                ipAddress = "192.168.1.105",
-                rackId = "rack-a2",
-                rackUnitPosition = 5,
-                unitHeight = 2,
-                markerCode = "ar-imms://node/compute-node-05",
-                model = "Dell PowerEdge R740xd",
-                cpuModel = "Intel Xeon Gold 6248R",
-                totalCores = 48,
-                totalRamGb = 128,
-                totalDiskGb = 8000,
-                osName = "Ubuntu Server 22.04 LTS",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "compute-node-05",
-                    cpuUsagePercent = 38.0,
-                    memoryUsagePercent = 42.0,
-                    memoryUsedGb = 53.76,
-                    memoryTotalGb = 128.0,
-                    diskUsagePercent = 20.0,
-                    temperatureCelsius = 34.0,
-                    networkInKbps = 2400.0,
-                    networkOutKbps = 3900.0,
-                    powerWatts = 340.0,
-                    fanSpeedRpm = 4400,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "database-worker",
-                name = "Database Worker",
-                ipAddress = "192.168.1.103",
-                rackId = "rack-a2",
-                rackUnitPosition = 6,
-                unitHeight = 4,
-                markerCode = "ar-imms://node/database-worker",
-                model = "HP DL580 Gen10",
-                cpuModel = "Intel Xeon Platinum 8280 (4P/112C)",
-                totalCores = 112,
-                totalRamGb = 256,
-                totalDiskGb = 12000,
-                osName = "Red Hat Enterprise Linux 9",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "database-worker",
-                    cpuUsagePercent = 65.0,
-                    memoryUsagePercent = 80.0,
-                    memoryUsedGb = 204.8,
-                    memoryTotalGb = 256.0,
-                    diskUsagePercent = 55.0,
-                    temperatureCelsius = 36.0,
-                    networkInKbps = 5200.0,
-                    networkOutKbps = 8900.0,
-                    powerWatts = 580.0,
-                    fanSpeedRpm = 4600,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-
-            // Rack B1 (Network & Security Zone 1-B)
-            ServerNode(
-                id = "edge-router-b1",
+                id = "SRV-NODE-06",
                 name = "Edge Router B1",
-                ipAddress = "192.168.1.1",
+                ipAddress = "192.168.1.106",
                 rackId = "rack-b1",
                 rackUnitPosition = 1,
                 unitHeight = 2,
-                markerCode = "ar-imms://node/edge-router-b1",
-                model = "Juniper MX240",
-                cpuModel = "Trio 6 ASIC Packet Forwarding Engine",
-                totalCores = 16,
+                markerCode = "ar-imms://node/SRV-NODE-06",
+                model = "Juniper MX204",
+                cpuModel = "Broadcom StrataXGS",
+                totalCores = 8,
                 totalRamGb = 32,
-                totalDiskGb = 128,
-                osName = "Junos OS 22.4",
+                totalDiskGb = 500,
+                osName = "Junos OS 21.4",
                 currentTelemetry = TelemetryMetric(
-                    nodeId = "edge-router-b1",
+                    nodeId = "SRV-NODE-06",
                     cpuUsagePercent = 22.0,
-                    memoryUsagePercent = 30.0,
-                    memoryUsedGb = 9.6,
+                    memoryUsagePercent = 35.0,
+                    memoryUsedGb = 11.2,
                     memoryTotalGb = 32.0,
-                    diskUsagePercent = 18.0,
+                    diskUsagePercent = 15.0,
                     temperatureCelsius = 28.0,
-                    networkInKbps = 22000.0,
-                    networkOutKbps = 28000.0,
-                    powerWatts = 420.0,
-                    fanSpeedRpm = 4800,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "core-firewall-01",
-                name = "Core Firewall 01",
-                ipAddress = "192.168.1.3",
-                rackId = "rack-b1",
-                rackUnitPosition = 2,
-                unitHeight = 2,
-                markerCode = "ar-imms://node/core-firewall-01",
-                model = "Palo Alto PA-3200",
-                cpuModel = "Multi-Core Dedicated Security Processor",
-                totalCores = 16,
-                totalRamGb = 32,
-                totalDiskGb = 256,
-                osName = "PAN-OS 11.0",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "core-firewall-01",
-                    cpuUsagePercent = 40.0,
-                    memoryUsagePercent = 45.0,
-                    memoryUsedGb = 14.4,
-                    memoryTotalGb = 32.0,
-                    diskUsagePercent = 22.0,
-                    temperatureCelsius = 31.0,
-                    networkInKbps = 18000.0,
-                    networkOutKbps = 18000.0,
-                    powerWatts = 360.0,
-                    fanSpeedRpm = 4900,
-                    status = NodeHealthStatus.HEALTHY
-                )
-            ),
-            ServerNode(
-                id = "backup-appliance",
-                name = "Backup Appliance",
-                ipAddress = "192.168.1.50",
-                rackId = "rack-b1",
-                rackUnitPosition = 3,
-                unitHeight = 2,
-                markerCode = "ar-imms://node/backup-appliance",
-                model = "Veeam Vault Storage",
-                cpuModel = "AMD EPYC 7282",
-                totalCores = 16,
-                totalRamGb = 64,
-                totalDiskGb = 32000,
-                osName = "Hardened Linux Backup Repo",
-                currentTelemetry = TelemetryMetric(
-                    nodeId = "backup-appliance",
-                    cpuUsagePercent = 15.0,
-                    memoryUsagePercent = 25.0,
-                    memoryUsedGb = 16.0,
-                    memoryTotalGb = 64.0,
-                    diskUsagePercent = 48.0,
-                    temperatureCelsius = 27.0,
-                    networkInKbps = 1200.0,
-                    networkOutKbps = 800.0,
-                    powerWatts = 260.0,
-                    fanSpeedRpm = 3600,
+                    networkInKbps = 25000.0,
+                    networkOutKbps = 24800.0,
+                    powerWatts = 210.0,
+                    fanSpeedRpm = 3200,
                     status = NodeHealthStatus.HEALTHY
                 )
             )
@@ -591,7 +371,20 @@ class ARImmsRepositoryImpl(
     private val _ticketsState = MutableStateFlow<List<MaintenanceTicket>>(INITIAL_UNIFIED_TICKETS)
 
     init {
-        // Listen to live Telemetry streams from Socket.IO to update nodes in real time
+        // Start Socket.IO connection immediately
+        socketManager.connect()
+
+        // 1. Initial background fetch from live backend REST API to guarantee data synchronization
+        scope.launch {
+            try {
+                getNodes()
+                getRacks()
+                getAlerts()
+                getTickets()
+            } catch (_: Exception) {}
+        }
+
+        // 2. Listen to live Telemetry streams from Socket.IO to update nodes in real time
         scope.launch {
             socketManager.telemetryStream.collect { metric ->
                 val current = _liveNodesState.value.toMutableList()
@@ -604,7 +397,7 @@ class ARImmsRepositoryImpl(
             }
         }
 
-        // Listen to live Alert streams from Socket.IO
+        // 3. Listen to live Alert streams from Socket.IO (alert_created, alert_updated, etc.)
         scope.launch {
             socketManager.alertsStream.collect { alert ->
                 val current = _alertsState.value.toMutableList()
@@ -615,6 +408,20 @@ class ARImmsRepositoryImpl(
                     current.add(0, alert)
                 }
                 _alertsState.value = current
+            }
+        }
+
+        // 4. Listen to live Ticket streams from Socket.IO (ticket_created, ticket_updated, ticket_assigned, ticket_resolved, etc.)
+        scope.launch {
+            socketManager.ticketsStream.collect { ticket ->
+                val current = _ticketsState.value.toMutableList()
+                val idx = current.indexOfFirst { it.id.equals(ticket.id, ignoreCase = true) }
+                if (idx >= 0) {
+                    current[idx] = ticket
+                } else {
+                    current.add(0, ticket)
+                }
+                _ticketsState.value = current
             }
         }
     }
@@ -640,20 +447,26 @@ class ARImmsRepositoryImpl(
                     it.email.lowercase() == cleanIdentifier ||
                     it.userId?.lowercase() == cleanIdentifier ||
                     it.id.lowercase() == cleanIdentifier ||
-                    it.name.lowercase() == cleanIdentifier
+                    it.fullName?.lowercase() == cleanIdentifier ||
+                    it.name?.lowercase() == cleanIdentifier
                 }
 
                 if (matched != null) {
+                    val resolvedName = matched.fullName?.ifBlank { null }
+                        ?: matched.name?.ifBlank { null }
+                        ?: matched.email.substringBefore("@")
                     val domainUser = User(
-                        id = matched.id,
+                        id = matched.id.ifBlank { matched.userId ?: "USR-${matched.email.hashCode()}" },
                         username = matched.email,
-                        fullName = matched.name,
+                        fullName = resolvedName,
                         role = when (matched.role.uppercase()) {
                             "ADMIN" -> UserRole.ADMIN
                             "OPERATOR", "VIEWER" -> UserRole.OPERATOR
                             else -> UserRole.TECHNICIAN
                         },
                         email = matched.email,
+                        status = matched.status ?: "APPROVED",
+                        avatarUrl = matched.avatar,
                         token = "jwt-session-${System.currentTimeMillis()}"
                     )
                     preferences.authToken = domainUser.token
@@ -811,12 +624,13 @@ class ARImmsRepositoryImpl(
             try {
                 apiClient.getService().createUser(
                     mapOf(
+                        "full_name" to fullName.trim(),
                         "name" to fullName.trim(),
                         "email" to email.trim().lowercase(),
                         "role" to role.name,
                         "user_id" to username.trim(),
                         "department" to "Phòng Vận Hành Hạ Tầng AR-IMMS",
-                        "status" to "ACTIVE"
+                        "status" to if (role == UserRole.ADMIN) "PENDING_APPROVAL" else "APPROVED"
                     )
                 )
             } catch (_: Exception) {}
@@ -834,6 +648,159 @@ class ARImmsRepositoryImpl(
                 e.message ?: "Lỗi đăng ký tài khoản"
             }
             Result.failure(Exception(msg))
+        }
+    }
+
+    override suspend fun loginWithGoogle(
+        email: String,
+        fullName: String,
+        avatar: String?
+    ): GoogleAuthResult {
+        val cleanEmail = email.trim().lowercase()
+        val cleanName = fullName.trim().ifBlank {
+            cleanEmail.substringBefore("@").replace(".", " ")
+                .split(" ")
+                .joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
+        }
+        val avatarUrl = avatar ?: "https://lh3.googleusercontent.com/a/default-user"
+
+        if (cleanEmail.isBlank() || !cleanEmail.contains("@")) {
+            return GoogleAuthResult.Failure("Email Google không hợp lệ!")
+        }
+
+        return try {
+            // 1. Try calling backend Google SSO endpoint (/api/users/google)
+            val req = GoogleAuthRequest(
+                email = cleanEmail,
+                fullName = cleanName,
+                avatar = avatarUrl
+            )
+
+            var res = try {
+                apiClient.getService().googleAuth(req)
+            } catch (e: Exception) {
+                null
+            }
+
+            if (res == null || !res.isSuccessful) {
+                try {
+                    res = apiClient.getService().googleAuthDirect(req)
+                } catch (_: Exception) {}
+            }
+
+            if (res != null && res.isSuccessful && res.body()?.data != null) {
+                val u = res.body()!!.data!!
+                val mappedRole = when (u.role.uppercase()) {
+                    "ADMIN" -> UserRole.ADMIN
+                    "OPERATOR", "VIEWER" -> UserRole.OPERATOR
+                    else -> UserRole.TECHNICIAN
+                }
+                val rawStatus = (u.status ?: "APPROVED").uppercase()
+
+                val domainUser = User(
+                    id = u.id,
+                    username = u.email,
+                    fullName = u.fullName ?: u.name ?: cleanName,
+                    role = mappedRole,
+                    email = u.email,
+                    token = "jwt-session-google-${System.currentTimeMillis()}",
+                    status = rawStatus,
+                    avatarUrl = u.avatar ?: avatarUrl
+                )
+
+                preferences.saveRegisteredUser(domainUser)
+
+                when (rawStatus) {
+                    "APPROVED", "ACTIVE" -> {
+                        preferences.authToken = domainUser.token
+                        preferences.currentUser = domainUser
+                        socketManager.connect()
+                        return GoogleAuthResult.Success(domainUser)
+                    }
+                    "LOCKED" -> {
+                        return GoogleAuthResult.Locked("Tài khoản Google này đã bị Khóa bởi Quản trị viên.")
+                    }
+                    else -> {
+                        // PENDING_APPROVAL / PENDING
+                        return GoogleAuthResult.PendingApproval(domainUser)
+                    }
+                }
+            }
+
+            // 2. Check locally saved registered users (Offline / Local sync)
+            val registeredMatch = preferences.getRegisteredUsers().find {
+                it.email.lowercase() == cleanEmail
+            }
+            if (registeredMatch != null) {
+                val status = (registeredMatch.status ?: "APPROVED").uppercase()
+                if (status == "APPROVED" || status == "ACTIVE") {
+                    val activeUser = registeredMatch.copy(
+                        token = "jwt-session-google-${System.currentTimeMillis()}",
+                        avatarUrl = avatarUrl
+                    )
+                    preferences.authToken = activeUser.token
+                    preferences.currentUser = activeUser
+                    socketManager.connect()
+                    return GoogleAuthResult.Success(activeUser)
+                } else if (status == "LOCKED") {
+                    return GoogleAuthResult.Locked("Tài khoản Google này đã bị Khóa bởi Quản trị viên.")
+                } else {
+                    return GoogleAuthResult.PendingApproval(registeredMatch)
+                }
+            }
+
+            // 3. Check unified system accounts (Shared approved DC Google accounts)
+            val sysMatch = UNIFIED_SYSTEM_ACCOUNTS.find { it.email.lowercase() == cleanEmail }
+            if (sysMatch != null) {
+                val status = (sysMatch.status ?: "APPROVED").uppercase()
+                if (status == "APPROVED" || status == "ACTIVE") {
+                    val activeUser = sysMatch.copy(
+                        token = "jwt-session-google-${System.currentTimeMillis()}",
+                        avatarUrl = avatarUrl
+                    )
+                    preferences.authToken = activeUser.token
+                    preferences.currentUser = activeUser
+                    preferences.saveRegisteredUser(activeUser)
+                    socketManager.connect()
+                    return GoogleAuthResult.Success(activeUser)
+                }
+            }
+
+            // 4. Fallback: Register new Google user as Technician with Pending status
+            val newGoogleUser = User(
+                id = "USR-GG-${System.currentTimeMillis() % 10000}",
+                username = cleanEmail,
+                fullName = cleanName,
+                role = UserRole.TECHNICIAN,
+                email = cleanEmail,
+                token = "jwt-session-google-${System.currentTimeMillis()}",
+                status = "PENDING_APPROVAL",
+                avatarUrl = avatarUrl
+            )
+            preferences.saveRegisteredUser(newGoogleUser)
+
+            // Try creating on live backend REST API
+            try {
+                apiClient.getService().createUser(
+                    mapOf(
+                        "name" to cleanName,
+                        "email" to cleanEmail,
+                        "role" to "TECHNICIAN",
+                        "user_id" to newGoogleUser.id,
+                        "department" to "Phòng Vận Hành Hạ Tầng AR-IMMS",
+                        "status" to "PENDING_APPROVAL"
+                    )
+                )
+            } catch (_: Exception) {}
+
+            GoogleAuthResult.PendingApproval(newGoogleUser)
+        } catch (e: Exception) {
+            val msg = if (e is java.net.ConnectException || e is java.net.SocketTimeoutException || e is java.net.UnknownHostException) {
+                "Không thể kết nối đến máy chủ (${preferences.serverUrl}). Vui lòng kiểm tra lại mạng!"
+            } else {
+                e.message ?: "Lỗi xác thực Google SSO. Vui lòng thử lại!"
+            }
+            GoogleAuthResult.Failure(msg)
         }
     }
 
@@ -940,29 +907,121 @@ class ARImmsRepositoryImpl(
         }
     }
 
-    override suspend fun getNodeById(nodeId: String): Result<ServerNode?> {
-        val all = _liveNodesState.value
-        val match = all.find {
-            it.id.equals(nodeId, ignoreCase = true) ||
-            it.markerCode.equals(nodeId, ignoreCase = true) ||
-            it.name.equals(nodeId, ignoreCase = true)
+    private fun extractCandidateKeys(markerCode: String): List<String> {
+        val raw = markerCode.trim()
+        val candidates = mutableListOf<String>()
+        candidates.add(raw)
+
+        val decoded = try {
+            java.net.URLDecoder.decode(raw, "UTF-8")
+        } catch (_: Exception) {
+            raw
         }
-        return Result.success(match)
+        if (decoded != raw) candidates.add(decoded)
+
+        for (target in listOf(raw, decoded)) {
+            // If URL contains ?node= or &node= (e.g., https://ar-imms-monitor.vercel.app/?node=SRV-NODE-01)
+            if (target.contains("node=")) {
+                val nodeParam = target.substringAfter("node=").substringBefore("&").substringBefore("#").trim()
+                if (nodeParam.isNotEmpty()) {
+                    candidates.add(nodeParam)
+                }
+            }
+
+            // If URL has path segment /node/ or /nodes/
+            if (target.contains("/node/")) {
+                val pathNode = target.substringAfter("/node/").substringBefore("?").substringBefore("/").trim()
+                if (pathNode.isNotEmpty()) candidates.add(pathNode)
+            }
+            if (target.contains("/nodes/")) {
+                val pathNode = target.substringAfter("/nodes/").substringBefore("?").substringBefore("/").trim()
+                if (pathNode.isNotEmpty()) candidates.add(pathNode)
+            }
+
+            val stripped = target
+                .removePrefix("ar-imms://node/")
+                .removePrefix("arimms://node/")
+                .removePrefix("ar-imms://")
+                .removePrefix("arimms://")
+                .removePrefix("node/")
+                .removePrefix("https://")
+                .removePrefix("http://")
+                .trim()
+            candidates.add(stripped)
+
+            if (stripped.contains("?")) {
+                candidates.add(stripped.substringBefore("?"))
+            }
+
+            candidates.add(stripped.replace("_", "-"))
+            candidates.add(stripped.replace("-", "_"))
+            candidates.add(stripped.replace(" ", "-"))
+            candidates.add(stripped.replace(" ", "_"))
+            candidates.add(stripped.replace("-", " "))
+            candidates.add(stripped.replace("_", " "))
+        }
+
+        return candidates.filter { it.isNotBlank() }.distinct()
+    }
+
+    override suspend fun getNodeById(nodeId: String): Result<ServerNode?> {
+        val candidates = extractCandidateKeys(nodeId)
+        var all = _liveNodesState.value
+
+        fun findMatch(nodes: List<ServerNode>): ServerNode? {
+            for (key in candidates) {
+                val match = nodes.find { node ->
+                    node.id.equals(key, ignoreCase = true) ||
+                    node.markerCode.equals(key, ignoreCase = true) ||
+                    node.name.equals(key, ignoreCase = true) ||
+                    node.markerCode.contains(key, ignoreCase = true) ||
+                    (key.length >= 3 && node.id.contains(key, ignoreCase = true)) ||
+                    (key.length >= 3 && key.contains(node.id, ignoreCase = true)) ||
+                    (key.length >= 4 && node.name.contains(key, ignoreCase = true))
+                }
+                if (match != null) return match
+            }
+            return null
+        }
+
+        var result = findMatch(all)
+        if (result == null) {
+            getNodes().onSuccess { fetched ->
+                all = fetched
+                result = findMatch(all)
+            }
+        }
+        return Result.success(result)
     }
 
     override suspend fun getNodeByMarker(markerCode: String): Result<ServerNode?> {
-        val cleanCode = markerCode.trim()
-            .removePrefix("ar-imms://node/")
-            .removePrefix("arimms://node/")
-            .removePrefix("arimms://")
-            .removePrefix("node/")
-        val all = _liveNodesState.value
-        val match = all.find {
-            it.markerCode.contains(cleanCode, ignoreCase = true) ||
-            it.id.equals(cleanCode, ignoreCase = true) ||
-            it.name.contains(cleanCode, ignoreCase = true)
+        val candidates = extractCandidateKeys(markerCode)
+        var all = _liveNodesState.value
+
+        fun findMatch(nodes: List<ServerNode>): ServerNode? {
+            for (key in candidates) {
+                val match = nodes.find { node ->
+                    node.id.equals(key, ignoreCase = true) ||
+                    node.markerCode.equals(key, ignoreCase = true) ||
+                    node.name.equals(key, ignoreCase = true) ||
+                    node.markerCode.contains(key, ignoreCase = true) ||
+                    (key.length >= 3 && node.id.contains(key, ignoreCase = true)) ||
+                    (key.length >= 3 && key.contains(node.id, ignoreCase = true)) ||
+                    (key.length >= 4 && node.name.contains(key, ignoreCase = true))
+                }
+                if (match != null) return match
+            }
+            return null
         }
-        return Result.success(match ?: all.firstOrNull())
+
+        var result = findMatch(all)
+        if (result == null) {
+            getNodes().onSuccess { fetched ->
+                all = fetched
+                result = findMatch(all)
+            }
+        }
+        return Result.success(result)
     }
 
     override suspend fun addNode(node: ServerNode): Result<ServerNode> {
@@ -1070,7 +1129,7 @@ class ARImmsRepositoryImpl(
 
     override suspend fun getTickets(assignedUserId: String?, status: TicketStatus?): Result<List<MaintenanceTicket>> {
         return try {
-            val response = apiClient.getService().getTickets(status = status?.name, assignedTo = assignedUserId)
+            val response = apiClient.getService().getTickets(status = status?.name, technicianId = assignedUserId)
             if (response.isSuccessful && response.body()?.data != null && response.body()!!.data!!.isNotEmpty()) {
                 val tickets = response.body()!!.data!!.map { dto ->
                     val priority = when (dto.priority.uppercase()) {
@@ -1156,8 +1215,158 @@ class ARImmsRepositoryImpl(
         }
     }
 
+    override suspend fun getUsers(): Result<List<User>> {
+        return try {
+            val response = apiClient.getService().getUsers()
+            if (response.isSuccessful && response.body()?.data != null) {
+                val dbList = response.body()!!.data!!
+                val users = dbList.map { dto ->
+                    val role = when ((dto.role).uppercase()) {
+                        "ADMIN" -> UserRole.ADMIN
+                        "OPERATOR", "VIEWER" -> UserRole.OPERATOR
+                        else -> UserRole.TECHNICIAN
+                    }
+                    val fullName = dto.fullName?.ifBlank { null }
+                        ?: dto.name?.ifBlank { null }
+                        ?: dto.email.substringBefore("@")
+                    User(
+                        id = dto.id.ifBlank { dto.userId ?: "USR-${dto.email.hashCode()}" },
+                        username = dto.email,
+                        fullName = fullName,
+                        role = role,
+                        email = dto.email,
+                        status = dto.status ?: "APPROVED",
+                        avatarUrl = dto.avatar
+                    )
+                }
+                Result.success(users)
+            } else {
+                // Fallback to locally registered users and seed users
+                val localUsers = preferences.getRegisteredUsers()
+                val fallbackList = if (localUsers.isNotEmpty()) {
+                    localUsers
+                } else {
+                    listOf(
+                        User("USR-5BC8", "taint2360@ut.edu.vn", "Tài Nguyễn Thành", UserRole.TECHNICIAN, "taint2360@ut.edu.vn", status = "APPROVED"),
+                        User("TECH-1001", "tbui@ar-imms.corp", "Trần Văn Bình", UserRole.TECHNICIAN, "tbui@ar-imms.corp", status = "APPROVED"),
+                        User("USR-003", "tech.nguyenvanb@ar-imms.dc", "Nguyen Van B", UserRole.TECHNICIAN, "tech.nguyenvanb@ar-imms.dc", status = "APPROVED"),
+                        User("ADM-0001", "sjenkins@ar-imms.corp", "Sarah Jenkins", UserRole.ADMIN, "sjenkins@ar-imms.corp", status = "APPROVED")
+                    )
+                }
+                Result.success(fallbackList)
+            }
+        } catch (e: Exception) {
+            val localUsers = preferences.getRegisteredUsers()
+            val fallbackList = if (localUsers.isNotEmpty()) {
+                localUsers
+            } else {
+                listOf(
+                    User("USR-5BC8", "taint2360@ut.edu.vn", "Tài Nguyễn Thành", UserRole.TECHNICIAN, "taint2360@ut.edu.vn", status = "APPROVED"),
+                    User("TECH-1001", "tbui@ar-imms.corp", "Trần Văn Bình", UserRole.TECHNICIAN, "tbui@ar-imms.corp", status = "APPROVED"),
+                    User("USR-003", "tech.nguyenvanb@ar-imms.dc", "Nguyen Van B", UserRole.TECHNICIAN, "tech.nguyenvanb@ar-imms.dc", status = "APPROVED"),
+                    User("ADM-0001", "sjenkins@ar-imms.corp", "Sarah Jenkins", UserRole.ADMIN, "sjenkins@ar-imms.corp", status = "APPROVED")
+                )
+            }
+            Result.success(fallbackList)
+        }
+    }
+
+    override suspend fun createTicket(
+        nodeId: String,
+        title: String,
+        description: String,
+        priority: TicketPriority,
+        alertId: String?,
+        assignedUserId: String?,
+        assignedUserName: String?
+    ): Result<MaintenanceTicket> {
+        val techId = assignedUserId ?: preferences.currentUser?.id ?: "USR-002"
+        val techName = assignedUserName ?: preferences.currentUser?.fullName ?: "Robert King (Field Tech)"
+        val priorityStr = when (priority) {
+            TicketPriority.EMERGENCY -> "CRITICAL"
+            TicketPriority.HIGH -> "HIGH"
+            TicketPriority.LOW -> "LOW"
+            else -> "MEDIUM"
+        }
+
+        val nodeObj = _liveNodesState.value.find { it.id.equals(nodeId, ignoreCase = true) }
+        val nodeName = nodeObj?.name ?: nodeId
+        val rackCode = nodeObj?.rackId?.uppercase() ?: "RACK-A2"
+
+        return try {
+            val reqPayload = mapOf(
+                "server_node_id" to nodeId,
+                "title" to title,
+                "description" to description,
+                "priority" to priorityStr,
+                "alert_id" to alertId,
+                "assigned_technician_id" to techId,
+                "assigned_technician_name" to techName
+            )
+            val response = apiClient.getService().createTicket(reqPayload)
+            val ticketId = response.body()?.data?.id ?: "TCK-${System.currentTimeMillis().toString().takeLast(6)}"
+
+            val newTicket = MaintenanceTicket(
+                id = ticketId,
+                title = title,
+                description = description,
+                priority = priority,
+                status = TicketStatus.ASSIGNED,
+                assignedToUserId = techId,
+                assignedToName = techName,
+                nodeId = nodeId,
+                nodeName = nodeName,
+                rackCode = rackCode,
+                roomName = "Server Room 01 (Data Hall Alpha)",
+                alertId = alertId,
+                createdAt = System.currentTimeMillis()
+            )
+
+            val current = _ticketsState.value.toMutableList()
+            current.removeAll { it.id.equals(ticketId, ignoreCase = true) }
+            current.add(0, newTicket)
+            _ticketsState.value = current
+
+            Result.success(newTicket)
+        } catch (e: Exception) {
+            val fallbackId = "TCK-${System.currentTimeMillis().toString().takeLast(6)}"
+            val newTicket = MaintenanceTicket(
+                id = fallbackId,
+                title = title,
+                description = description,
+                priority = priority,
+                status = TicketStatus.ASSIGNED,
+                assignedToUserId = techId,
+                assignedToName = techName,
+                nodeId = nodeId,
+                nodeName = nodeName,
+                rackCode = rackCode,
+                roomName = "Server Room 01 (Data Hall Alpha)",
+                alertId = alertId,
+                createdAt = System.currentTimeMillis()
+            )
+            val current = _ticketsState.value.toMutableList()
+            current.add(0, newTicket)
+            _ticketsState.value = current
+            Result.success(newTicket)
+        }
+    }
+
     override suspend fun checkInTicket(ticketId: String): Result<MaintenanceTicket> {
-        return updateTicketStatus(ticketId, TicketStatus.IN_PROGRESS, "Kỹ thuật viên đã quét QR và Check-in AR tại tủ Rack A2")
+        val notes = "Kỹ thuật viên đã quét QR và Check-in AR tại hiện trường"
+        try {
+            apiClient.getService().addArLog(
+                ticketId,
+                mapOf(
+                    "action" to "QR_SCANNED_CHECKIN",
+                    "details" to mapOf(
+                        "device" to "Android Mobile AR Scanner",
+                        "technician" to (preferences.currentUser?.fullName ?: "Robert King")
+                    )
+                )
+            )
+        } catch (_: Exception) {}
+        return updateTicketStatus(ticketId, TicketStatus.IN_PROGRESS, notes)
     }
 
     override suspend fun resolveTicket(
@@ -1166,7 +1375,40 @@ class ARImmsRepositoryImpl(
         resolution: String,
         photoUri: String?
     ): Result<MaintenanceTicket> {
-        return updateTicketStatus(ticketId, TicketStatus.RESOLVED, "Nguyên nhân: $rootCause. Giải pháp: $resolution")
+        val notes = "Nguyên nhân: $rootCause. Giải pháp: $resolution"
+        try {
+            apiClient.getService().resolveTicket(
+                ticketId,
+                mapOf("notes" to notes)
+            )
+        } catch (_: Exception) {}
+        return updateTicketStatus(ticketId, TicketStatus.RESOLVED, notes)
+    }
+
+    override suspend fun closeTicket(ticketId: String): Result<MaintenanceTicket> {
+        val notes = "Đã nghiệm thu và đóng phiếu bảo trì thành công"
+        try {
+            apiClient.getService().closeTicket(ticketId)
+        } catch (_: Exception) {}
+        return updateTicketStatus(ticketId, TicketStatus.CLOSED, notes)
+    }
+
+    override suspend fun simulateNodeAlert(nodeId: String, metric: String, value: Double): Result<Boolean> {
+        return try {
+            val telemetryMap = mapOf(
+                "node_id" to nodeId,
+                "cpu" to if (metric == "cpu") value else 45.0,
+                "ram" to if (metric == "ram") value else 60.0,
+                "temp" to if (metric == "temp") value else 42.0,
+                "disk" to if (metric == "disk") value else 35.0,
+                "network_in_kbps" to 1500.0,
+                "network_out_kbps" to 3200.0
+            )
+            val res = apiClient.getService().sendNodeTelemetry(nodeId, telemetryMap)
+            Result.success(res.isSuccessful)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun getAlerts(state: AlertState?): Result<List<SystemAlert>> {
@@ -1204,8 +1446,9 @@ class ARImmsRepositoryImpl(
     }
 
     override suspend fun acknowledgeAlert(alertId: String): Result<SystemAlert> {
+        val currentUserId = preferences.currentUser?.id ?: "TECH-4421"
         try {
-            apiClient.getService().acknowledgeAlert(alertId)
+            apiClient.getService().acknowledgeAlert(alertId, mapOf("user_id" to currentUserId))
         } catch (_: Exception) {}
 
         val current = _alertsState.value.toMutableList()

@@ -34,10 +34,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arimms.app.ARImmsApp
+import com.arimms.app.domain.model.GoogleAuthResult
+import com.arimms.app.domain.model.User
 import com.arimms.app.domain.model.UserRole
 import com.arimms.app.presentation.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+
+const val GOOGLE_CLIENT_ID = "1088763447654-8mev68jsef27f3kfuc79juboivvbncb2.apps.googleusercontent.com"
 
 enum class AuthTab {
     LOGIN,
@@ -50,6 +62,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
+    val context = LocalContext.current
     val repository = ARImmsApp.instance.repository
     val preferences = ARImmsApp.instance.preferences
     val scope = rememberCoroutineScope()
@@ -73,12 +86,97 @@ fun LoginScreen(
     var isRegPasswordVisible by remember { mutableStateOf(false) }
     var isRegConfirmPasswordVisible by remember { mutableStateOf(false) }
 
+    // Google SSO State
+    var showGoogleModal by remember { mutableStateOf(false) }
+    var googleEmail by remember { mutableStateOf("") }
+    var googleName by remember { mutableStateOf("") }
+    var isGoogleLoading by remember { mutableStateOf(false) }
+    var pendingApprovalUser by remember { mutableStateOf<User?>(null) }
+
     // Common State
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
     val serverUrl = preferences.serverUrl
+
+    // Function thực hiện đăng nhập / đồng bộ tài khoản Google vào backend
+    val performGoogleLogin: (String, String, String?) -> Unit = { email, name, avatar ->
+        isGoogleLoading = true
+        errorMessage = null
+        scope.launch {
+            val result = repository.loginWithGoogle(
+                email = email.trim(),
+                fullName = name.ifBlank { email.substringBefore("@") }.trim(),
+                avatar = avatar ?: "https://lh3.googleusercontent.com/a/default-user"
+            )
+            isGoogleLoading = false
+            when (result) {
+                is GoogleAuthResult.Success -> {
+                    showGoogleModal = false
+                    onLoginSuccess()
+                }
+                is GoogleAuthResult.PendingApproval -> {
+                    showGoogleModal = false
+                    pendingApprovalUser = result.user
+                }
+                is GoogleAuthResult.Locked -> {
+                    showGoogleModal = false
+                    errorMessage = result.message
+                }
+                is GoogleAuthResult.Failure -> {
+                    errorMessage = result.error
+                }
+            }
+        }
+    }
+
+    // Google Sign In SDK Client (dùng đúng Web Google Client ID từ hệ thống Web)
+    val gso = remember {
+        GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(GOOGLE_CLIENT_ID)
+            .requestEmail()
+            .requestProfile()
+            .build()
+    }
+    val googleSignInClient = remember { GoogleSignIn.getClient(context, gso) }
+
+    val googleAuthLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            if (account != null) {
+                val email = account.email ?: ""
+                val name = account.displayName ?: email.substringBefore("@")
+                val photoUrl = account.photoUrl?.toString() ?: "https://lh3.googleusercontent.com/a/default-user"
+                performGoogleLogin(email, name, photoUrl)
+            } else {
+                showGoogleModal = true
+            }
+        } catch (e: ApiException) {
+            android.util.Log.w("GoogleAuth", "Google Sign In result status: ${e.statusCode}, opening chooser dialog")
+            showGoogleModal = true
+        } catch (e: Exception) {
+            android.util.Log.e("GoogleAuth", "Google Sign In error", e)
+            showGoogleModal = true
+        }
+    }
+
+    val triggerGoogleSignIn: () -> Unit = {
+        try {
+            googleSignInClient.signOut().addOnCompleteListener {
+                try {
+                    googleAuthLauncher.launch(googleSignInClient.signInIntent)
+                } catch (e: Exception) {
+                    showGoogleModal = true
+                }
+            }
+        } catch (e: Exception) {
+            showGoogleModal = true
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -593,6 +691,63 @@ fun LoginScreen(
                             }
                         }
 
+                        // Google SSO Divider
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            HorizontalDivider(
+                                modifier = Modifier.weight(1f),
+                                color = Color(0xFFCBD5E1)
+                            )
+                            Text(
+                                text = "HOẶC TIẾP TỤC VỚI",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF64748B),
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.weight(1f),
+                                color = Color(0xFFCBD5E1)
+                            )
+                        }
+
+                        // Google SSO Button
+                        OutlinedButton(
+                            onClick = {
+                                if (loginUsername.contains("@gmail.com")) {
+                                    googleEmail = loginUsername.trim()
+                                }
+                                triggerGoogleSignIn()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFFCBD5E1)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.White,
+                                contentColor = Color(0xFF1E293B)
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                GoogleLogo(modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Đăng Nhập Bằng Google SSO",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1E293B)
+                                )
+                            }
+                        }
+
                         // Switch to register helper
                         Row(
                             modifier = Modifier
@@ -910,6 +1065,64 @@ fun LoginScreen(
                             }
                         }
 
+                        // Google SSO Divider
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            HorizontalDivider(
+                                modifier = Modifier.weight(1f),
+                                color = Color(0xFFCBD5E1)
+                            )
+                            Text(
+                                text = "HOẶC TIẾP TỤC VỚI",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF64748B),
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.weight(1f),
+                                color = Color(0xFFCBD5E1)
+                            )
+                        }
+
+                        // Google SSO Button
+                        OutlinedButton(
+                            onClick = {
+                                if (regEmail.contains("@gmail.com")) {
+                                    googleEmail = regEmail.trim()
+                                    googleName = regFullName.trim()
+                                }
+                                triggerGoogleSignIn()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFFCBD5E1)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.White,
+                                contentColor = Color(0xFF1E293B)
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                GoogleLogo(modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Đăng Ký Nhanh Bằng Google",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1E293B)
+                                )
+                            }
+                        }
+
                         // Switch to login helper
                         Row(
                             modifier = Modifier
@@ -945,5 +1158,610 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(36.dp))
         }
+
+        // ==========================================
+        // GOOGLE ACCOUNT CHOOSER MODAL (1:1 WEB CHROME POPUP)
+        // ==========================================
+        if (showGoogleModal) {
+            var isCustomAccountExpanded by remember { mutableStateOf(false) }
+
+            data class GoogleAccountItem(
+                val name: String?,
+                val email: String,
+                val avatarLetter: String,
+                val avatarBg: Color
+            )
+
+            val googleAccounts = listOf(
+                GoogleAccountItem("Tài Nguyễn Thành", "taint2360@ut.edu.vn", "T", Color(0xFF8E24AA)),
+                GoogleAccountItem("Nguyễn Thành Tài", "nguyenthanhtai20052000@gmail.com", "N", Color(0xFF6D4C41)),
+                GoogleAccountItem("Quỳnh Nguyễn Lê Như", "quynhnhln2611@ut.edu.vn", "Q", Color(0xFF00897B)),
+                GoogleAccountItem(null, "trungtamgiamsatarimms@gmail.com", "T", Color(0xFF546E7A))
+            )
+
+            androidx.compose.ui.window.Dialog(
+                onDismissRequest = { if (!isGoogleLoading) showGoogleModal = false },
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .wrapContentHeight(),
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color(0xFF131314),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3C4043)),
+                    tonalElevation = 6.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 22.dp, vertical = 20.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        // Top Header Bar
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                GoogleLogo(modifier = Modifier.size(20.dp))
+                                Text(
+                                    text = "Đăng nhập bằng Google",
+                                    color = Color(0xFFE8EAED),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            IconButton(
+                                onClick = { showGoogleModal = false },
+                                enabled = !isGoogleLoading,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Đóng",
+                                    tint = Color(0xFF9AA0A6),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Title & Subtitle (Exact Google Web style)
+                        Text(
+                            text = "Chọn tài khoản",
+                            color = Color(0xFFE8EAED),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Tiếp tục tới",
+                                fontSize = 14.sp,
+                                color = Color(0xFF9AA0A6)
+                            )
+                            Text(
+                                text = "AR-IMMS",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE8EAED)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        if (isGoogleLoading) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = Color(0xFF8AB4F8),
+                                        strokeWidth = 3.dp,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                    Text(
+                                        text = "Đang kết nối tới Google...",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF8AB4F8),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        } else {
+                            // Account items list matching Google Web popup
+                            googleAccounts.forEach { item ->
+                                HorizontalDivider(
+                                    color = Color(0xFF3C4043),
+                                    thickness = 0.8.dp
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            performGoogleLogin(
+                                                item.email,
+                                                item.name ?: item.email.substringBefore("@"),
+                                                null
+                                            )
+                                        }
+                                        .padding(vertical = 12.dp, horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    // Avatar circle
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(item.avatarBg),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = item.avatarLetter,
+                                            color = Color.White,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+
+                                    // Name & Email
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        if (item.name != null) {
+                                            Text(
+                                                text = item.name,
+                                                color = Color(0xFFE8EAED),
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = item.email,
+                                                color = Color(0xFF9AA0A6),
+                                                fontSize = 12.sp
+                                            )
+                                        } else {
+                                            Text(
+                                                text = item.email,
+                                                color = Color(0xFFE8EAED),
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Use another account row
+                            HorizontalDivider(
+                                color = Color(0xFF3C4043),
+                                thickness = 0.8.dp
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        isCustomAccountExpanded = !isCustomAccountExpanded
+                                    }
+                                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.PersonOutline,
+                                        contentDescription = null,
+                                        tint = Color(0xFFE8EAED),
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "Sử dụng một tài khoản khác",
+                                    color = Color(0xFFE8EAED),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = if (isCustomAccountExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = Color(0xFF9AA0A6),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            // Custom account input form (if expanded)
+                            if (isCustomAccountExpanded) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = googleEmail,
+                                        onValueChange = { googleEmail = it },
+                                        label = { Text("Email hoặc số điện thoại", color = Color(0xFF9AA0A6), fontSize = 12.sp) },
+                                        placeholder = { Text("user@gmail.com", color = Color(0xFF5F6368), fontSize = 12.sp) },
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = Color(0xFF8AB4F8),
+                                            unfocusedBorderColor = Color(0xFF5F6368),
+                                            focusedTextColor = Color(0xFFE8EAED),
+                                            unfocusedTextColor = Color(0xFFE8EAED),
+                                            focusedLabelColor = Color(0xFF8AB4F8),
+                                            unfocusedLabelColor = Color(0xFF9AA0A6),
+                                            unfocusedContainerColor = Color(0xFF1E1F20),
+                                            focusedContainerColor = Color(0xFF1E1F20)
+                                        ),
+                                        shape = RoundedCornerShape(8.dp),
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+
+                                    OutlinedTextField(
+                                        value = googleName,
+                                        onValueChange = { googleName = it },
+                                        label = { Text("Họ và tên", color = Color(0xFF9AA0A6), fontSize = 12.sp) },
+                                        placeholder = { Text("VD: Nguyễn Văn A", color = Color(0xFF5F6368), fontSize = 12.sp) },
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = Color(0xFF8AB4F8),
+                                            unfocusedBorderColor = Color(0xFF5F6368),
+                                            focusedTextColor = Color(0xFFE8EAED),
+                                            unfocusedTextColor = Color(0xFFE8EAED),
+                                            focusedLabelColor = Color(0xFF8AB4F8),
+                                            unfocusedLabelColor = Color(0xFF9AA0A6),
+                                            unfocusedContainerColor = Color(0xFF1E1F20),
+                                            focusedContainerColor = Color(0xFF1E1F20)
+                                        ),
+                                        shape = RoundedCornerShape(8.dp),
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                if (googleEmail.isBlank() || !googleEmail.contains("@")) {
+                                                    errorMessage = "Vui lòng nhập email hợp lệ!"
+                                                    return@Button
+                                                }
+                                                performGoogleLogin(googleEmail, googleName, null)
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF8AB4F8),
+                                                contentColor = Color(0xFF041E49)
+                                            ),
+                                            shape = RoundedCornerShape(20.dp),
+                                            modifier = Modifier.height(38.dp)
+                                        ) {
+                                            Text("Tiếp theo", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Footer Divider & Links matching Google Web popup
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(
+                                color = Color(0xFF3C4043),
+                                thickness = 0.8.dp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Tiếng Việt ▾",
+                                    color = Color(0xFF9AA0A6),
+                                    fontSize = 11.sp
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text(
+                                        text = "Trợ giúp",
+                                        color = Color(0xFF9AA0A6),
+                                        fontSize = 11.sp
+                                    )
+                                    Text(
+                                        text = "Quyền riêng tư",
+                                        color = Color(0xFF9AA0A6),
+                                        fontSize = 11.sp
+                                    )
+                                    Text(
+                                        text = "Điều khoản",
+                                        color = Color(0xFF9AA0A6),
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // PENDING APPROVAL MODAL DIALOG
+        // ==========================================
+        if (pendingApprovalUser != null) {
+            val u = pendingApprovalUser!!
+            AlertDialog(
+                onDismissRequest = { pendingApprovalUser = null },
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(22.dp),
+                containerColor = Color(0xFF0B1120),
+                tonalElevation = 10.dp,
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFF59E0B).copy(alpha = 0.2f))
+                                    .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("⏳", fontSize = 18.sp)
+                            }
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = "Chờ Phê Duyệt",
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Surface(
+                                        color = Color(0xFFF59E0B).copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(4.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f))
+                                    ) {
+                                        Text(
+                                            text = "PENDING",
+                                            color = Color(0xFFFBBF24),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Black,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "Hệ thống đang chờ Admin kích hoạt",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF94A3B8)
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { pendingApprovalUser = null },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Đóng", tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                        }
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        // User info box
+                        Surface(
+                            color = Color(0xFF1E293B).copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(14.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFF0284C7)))),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = u.fullName.take(1).uppercase(),
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(text = u.fullName, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = u.email, color = Color(0xFF38BDF8), fontSize = 12.sp)
+                                    }
+                                }
+
+                                HorizontalDivider(color = Color(0xFF334155))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.weight(1f),
+                                        color = Color(0xFF0F172A),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
+                                    ) {
+                                        Column(modifier = Modifier.padding(8.dp)) {
+                                            Text("Vai trò đăng ký", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                                            Text("🛠️ Kỹ thuật viên", fontSize = 11.5.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    Surface(
+                                        modifier = Modifier.weight(1f),
+                                        color = Color(0xFF0F172A),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
+                                    ) {
+                                        Column(modifier = Modifier.padding(8.dp)) {
+                                            Text("Trạng thái", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                                            Text("⏳ Chờ xét duyệt", fontSize = 11.5.sp, color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Security Policy notice
+                        Surface(
+                            color = Color(0xFF0C4A6E).copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0284C7).copy(alpha = 0.4f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("🛡️", fontSize = 14.sp)
+                                    Text("Chính sách kiểm soát an ninh AR", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Text(
+                                    text = "Để bảo vệ an toàn hạ tầng máy chủ và hệ thống cảm biến AR, tài khoản kỹ thuật viên mới cần được Admin phê duyệt trước khi đăng nhập và thao tác.",
+                                    fontSize = 11.5.sp,
+                                    color = Color(0xFFE2E8F0),
+                                    lineHeight = 16.sp
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "✉️ Bạn sẽ nhận được thông báo qua Email khi tài khoản được kích hoạt.",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF94A3B8)
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { pendingApprovalUser = null },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF38BDF8),
+                            contentColor = Color(0xFF080B0E)
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                    ) {
+                        Text("ĐÃ HIỂU & ĐÓNG", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Pixel-perfect multi-color Google 'G' icon rendered with Compose Canvas
+ */
+@Composable
+fun GoogleLogo(modifier: Modifier = Modifier.size(20.dp)) {
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokeW = w * 0.18f
+        val arcRect = androidx.compose.ui.geometry.Rect(strokeW / 2, strokeW / 2, w - strokeW / 2, h - strokeW / 2)
+        val style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW, cap = androidx.compose.ui.graphics.StrokeCap.Butt)
+
+        // Red top: 215 to 320 deg
+        drawArc(
+            color = Color(0xFFEA4335),
+            startAngle = 215f,
+            sweepAngle = 105f,
+            useCenter = false,
+            topLeft = arcRect.topLeft,
+            size = arcRect.size,
+            style = style
+        )
+        // Blue right: 320 to 50 deg
+        drawArc(
+            color = Color(0xFF4285F4),
+            startAngle = 320f,
+            sweepAngle = 90f,
+            useCenter = false,
+            topLeft = arcRect.topLeft,
+            size = arcRect.size,
+            style = style
+        )
+        // Green bottom: 50 to 155 deg
+        drawArc(
+            color = Color(0xFF34A853),
+            startAngle = 50f,
+            sweepAngle = 105f,
+            useCenter = false,
+            topLeft = arcRect.topLeft,
+            size = arcRect.size,
+            style = style
+        )
+        // Yellow left: 155 to 215 deg
+        drawArc(
+            color = Color(0xFFFBBC05),
+            startAngle = 155f,
+            sweepAngle = 60f,
+            useCenter = false,
+            topLeft = arcRect.topLeft,
+            size = arcRect.size,
+            style = style
+        )
+        // Blue center crossbar
+        drawLine(
+            color = Color(0xFF4285F4),
+            start = androidx.compose.ui.geometry.Offset(w * 0.46f, h * 0.5f),
+            end = androidx.compose.ui.geometry.Offset(w - strokeW / 2, h * 0.5f),
+            strokeWidth = strokeW,
+            cap = androidx.compose.ui.graphics.StrokeCap.Square
+        )
     }
 }

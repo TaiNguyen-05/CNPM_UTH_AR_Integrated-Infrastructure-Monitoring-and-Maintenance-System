@@ -18,6 +18,7 @@ import {
   Clock
 } from 'lucide-react';
 import { AssetItem } from '../../types';
+import { arImmsApi } from '../../services/api';
 
 interface NodeDetailModalProps {
   asset: AssetItem;
@@ -35,6 +36,8 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [isRebooting, setIsRebooting] = useState(false);
   const [rebootSuccess, setRebootSuccess] = useState(false);
+  const [isSimulatingAlert, setIsSimulatingAlert] = useState(false);
+  const [simulateSuccess, setSimulateSuccess] = useState(false);
 
   // Generate real shareable QR link
   const directLink = typeof window !== 'undefined' 
@@ -54,6 +57,23 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
       setRebootSuccess(true);
       setTimeout(() => setRebootSuccess(false), 3000);
     }, 1500);
+  };
+
+  const handleSimulateAlert = async () => {
+    setIsSimulatingAlert(true);
+    try {
+      await arImmsApi.updateTelemetry(asset.id, {
+        disk_temp_c: 88.5,
+        cpu_usage: 95.0,
+        ram_usage: 92.0
+      });
+      setSimulateSuccess(true);
+      setTimeout(() => setSimulateSuccess(false), 3000);
+    } catch (err) {
+      console.error('Lỗi bắn tín hiệu test alert:', err);
+    } finally {
+      setIsSimulatingAlert(false);
+    }
   };
 
   // Status mapping
@@ -211,10 +231,19 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
           <div className="card-surface p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
               <div className="font-bold text-sm text-white font-mono">Thao Tác Điều Khiển Từ Xa</div>
-              <div className="text-xs text-slate-400">Gửi lệnh IPMI ACPI hoặc định vị trên sơ đồ số</div>
+              <div className="text-xs text-slate-400">Gửi lệnh IPMI, kiểm tra telemetry hoặc kích hoạt test cảnh báo</div>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+              <button
+                onClick={handleSimulateAlert}
+                disabled={isSimulatingAlert}
+                className="px-3 py-2 bg-rose-500/10 border border-rose-500/40 text-rose-300 hover:bg-rose-500/20 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <AlertTriangle className={`w-3.5 h-3.5 ${isSimulatingAlert ? 'animate-pulse' : ''}`} />
+                {isSimulatingAlert ? 'Đang gửi...' : simulateSuccess ? '✓ Đã kích hoạt' : 'Test Cảnh Báo Quá Tải'}
+              </button>
+
               <button
                 onClick={handleIpmiReboot}
                 disabled={isRebooting}

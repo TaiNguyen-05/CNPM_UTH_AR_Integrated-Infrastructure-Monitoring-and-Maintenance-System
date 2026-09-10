@@ -39,12 +39,33 @@ data class LoginResponse(
 )
 
 data class UserDto(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("user_id") val userId: String? = null,
+    @SerializedName("full_name") val fullName: String? = null,
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("email") val email: String = "",
+    @SerializedName("role") val role: String = "TECHNICIAN",
+    @SerializedName("status") val status: String? = null,
+    @SerializedName("department") val department: String? = null,
+    @SerializedName("avatar") val avatar: String? = null,
+    @SerializedName("phone_number") val phoneNumber: String? = null
+)
+
+data class GoogleAuthRequest(
+    val email: String,
+    @SerializedName("full_name") val fullName: String,
+    val avatar: String? = "https://lh3.googleusercontent.com/a/default-user"
+)
+
+data class GoogleAuthUserDto(
     val id: String,
-    val userId: String? = null,
-    val name: String,
+    @SerializedName("user_id") val userId: String? = null,
+    @SerializedName("full_name") val fullName: String? = null,
+    val name: String? = null,
     val email: String,
     val role: String,
     val status: String? = null,
+    val avatar: String? = null,
     val department: String? = null
 )
 
@@ -127,6 +148,12 @@ interface ApiService {
     @POST("auth/signup")
     suspend fun registerFlask(@Body request: SignupRequest): Response<SignupResponse>
 
+    @POST("api/users/google")
+    suspend fun googleAuth(@Body request: GoogleAuthRequest): Response<ApiResponse<GoogleAuthUserDto>>
+
+    @POST("users/google")
+    suspend fun googleAuthDirect(@Body request: GoogleAuthRequest): Response<ApiResponse<GoogleAuthUserDto>>
+
     @GET("api/nodes")
     suspend fun getNodes(
         @Query("rack_id") rackId: String? = null,
@@ -161,17 +188,51 @@ interface ApiService {
     @GET("api/tickets")
     suspend fun getTickets(
         @Query("status") status: String? = null,
-        @Query("assigned_to") assignedTo: String? = null
+        @Query("technician_id") technicianId: String? = null,
+        @Query("node_id") nodeId: String? = null
     ): Response<ApiResponse<List<TicketDto>>>
 
     @GET("api/tickets/{id}")
     suspend fun getTicketById(@Path("id") ticketId: String): Response<ApiResponse<TicketDto>>
+
+    @POST("api/tickets/{id}/assign")
+    suspend fun assignTicket(
+        @Path("id") ticketId: String,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<TicketDto>>
+
+    @POST("api/tickets/{id}/ar-log")
+    suspend fun addArLog(
+        @Path("id") ticketId: String,
+        @Body body: Map<String, Any>
+    ): Response<ApiResponse<TicketDto>>
+
+    @POST("api/tickets/{id}/resolve")
+    suspend fun resolveTicket(
+        @Path("id") ticketId: String,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<TicketDto>>
+
+    @POST("api/tickets/{id}/close")
+    suspend fun closeTicket(
+        @Path("id") ticketId: String,
+        @Body body: Map<String, String> = emptyMap()
+    ): Response<ApiResponse<TicketDto>>
 
     @PATCH("api/tickets/{id}")
     suspend fun updateTicket(
         @Path("id") ticketId: String,
         @Body request: UpdateTicketRequest
     ): Response<ApiResponse<TicketDto>>
+
+    @POST("api/tickets")
+    suspend fun createTicket(@Body body: Map<String, Any?>): Response<ApiResponse<TicketDto>>
+
+    @POST("api/nodes/{id}/telemetry")
+    suspend fun sendNodeTelemetry(
+        @Path("id") nodeId: String,
+        @Body telemetry: Map<String, Any>
+    ): Response<ApiResponse<Map<String, Any>>>
 
     @POST("api/nodes/{id}/actions/toggle-led")
     suspend fun toggleLed(@Path("id") nodeId: String): Response<ApiResponse<Map<String, Any>>>

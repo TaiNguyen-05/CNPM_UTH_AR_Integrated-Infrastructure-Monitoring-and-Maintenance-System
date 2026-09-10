@@ -13,10 +13,7 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({ asset, onClose
     window.print();
   };
 
-  const directScanUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/?node=${asset.id}`
-    : `http://localhost:9999/?node=${asset.id}`;
-
+  const directScanUrl = asset.guid || `ar-imms://node/${asset.id}`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(directScanUrl)}&margin=10`;
 
   return (

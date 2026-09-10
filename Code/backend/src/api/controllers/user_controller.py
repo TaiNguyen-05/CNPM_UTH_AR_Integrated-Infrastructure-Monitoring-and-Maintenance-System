@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from marshmallow import ValidationError
 
 from infrastructure.repositories.ar_repositories import UserRepository
@@ -26,6 +26,16 @@ user_bp = Blueprint(
 user_repo = UserRepository()
 user_service = UserService(user_repo)
 user_schema = UserSchema()
+
+
+def _broadcast_user_event(event_name: str, payload: dict):
+    socketio = getattr(current_app, 'socketio', None)
+    if socketio:
+        try:
+            socketio.emit(event_name, payload)
+            socketio.emit("stats_updated", {})
+        except Exception as e:
+            print(f"[UserController] WebSocket broadcast warning: {e}")
 
 
 # ============================================================
@@ -93,6 +103,30 @@ def create_user():
         silent=True
     ) or {}
 
+    # Map name -> full_name if full_name is not explicitly supplied
+    if "name" in data and "full_name" not in data:
+        data["full_name"] = data["name"]
+
+    # Normalize role
+    if "role" in data and isinstance(data["role"], str):
+        r = data["role"].upper()
+        if r in ["ADMIN", "TECHNICIAN", "OPERATOR"]:
+            data["role"] = r
+        elif "ADMIN" in r:
+            data["role"] = "ADMIN"
+        else:
+            data["role"] = "TECHNICIAN"
+
+    # Normalize status
+    if "status" in data and isinstance(data["status"], str):
+        st = data["status"].upper()
+        if st in ["ACTIVE", "APPROVED"]:
+            data["status"] = "APPROVED"
+        elif st in ["PENDING", "PENDING_APPROVAL"]:
+            data["status"] = "PENDING_APPROVAL"
+        elif st in ["LOCKED", "REJECTED"]:
+            data["status"] = st
+
     try:
 
         validated_data = user_schema.load(
@@ -113,8 +147,11 @@ def create_user():
             validated_data
         )
 
+        user_dict = new_user.to_dict()
+        _broadcast_user_event("user_created", user_dict)
+
         return success_response(
-            data=new_user.to_dict(),
+            data=user_dict,
             message="Đăng ký tài khoản thành công",
             status_code=201
         )
@@ -152,6 +189,10 @@ def approve_user(user_id):
             approver_id
         )
 
+        user_dict = user.to_dict()
+        _broadcast_user_event("user_updated", user_dict)
+        _broadcast_user_event("user_approved", user_dict)
+
         # Gửi email chào mừng đã được duyệt
         try:
             from services.email_service import email_service
@@ -165,7 +206,7 @@ def approve_user(user_id):
             print(f"[UserController] Lỗi gửi email chào mừng: {mail_err}")
 
         return success_response(
-            data=user.to_dict(),
+            data=user_dict,
             message=(
                 f"Đã phê duyệt tài khoản "
                 f"{user.full_name}"
@@ -276,8 +317,10 @@ def lock_user(user_id):
 
     try:
         user = user_service.lock_user(user_id)
+        user_dict = user.to_dict()
+        _broadcast_user_event("user_updated", user_dict)
         return success_response(
-            data=user.to_dict(),
+            data=user_dict,
             message=f"Đã khóa tài khoản {user.full_name}"
         )
     except Exception as e:
@@ -297,8 +340,10 @@ def unlock_user(user_id):
 
     try:
         user = user_service.unlock_user(user_id)
+        user_dict = user.to_dict()
+        _broadcast_user_event("user_updated", user_dict)
         return success_response(
-            data=user.to_dict(),
+            data=user_dict,
             message=f"Đã mở khóa tài khoản {user.full_name}"
         )
     except Exception as e:
@@ -324,8 +369,10 @@ def update_user_role(user_id):
 
     try:
         user = user_service.update_role(user_id, new_role.upper())
+        user_dict = user.to_dict()
+        _broadcast_user_event("user_updated", user_dict)
         return success_response(
-            data=user.to_dict(),
+            data=user_dict,
             message=f"Đã cập nhật vai trò {user.full_name} -> {new_role}"
         )
     except Exception as e:
@@ -347,4 +394,5 @@ def delete_user(user_id):
     if not success:
         return error_response(f"Không tìm thấy người dùng: {user_id}", status_code=404)
 
+    _broadcast_user_event("user_deleted", {"id": user_id})
     return success_response(message=f"Đã xóa tài khoản {user_id} thành công")
